@@ -5,32 +5,70 @@
  */
 
 :root {
-	--accent: #2337ff;
-	--accent-dark: #000d8a;
+	/* Palette */
+	--bg: #ffffff;
+	--bg-subtle: #f8fafc;
+	--text: #0f172a;
+	--text-muted: #64748b;
+	--border: #e2e8f0;
+	--card-bg: #ffffff;
+	--accent: #3b82f6; /* Modern Blue */
+	--accent-hover: #2563eb;
+	--accent-rgb: 59, 130, 246;
+	
+	/* Spacing & Sizes */
+	--radius: 12px;
+	--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	--shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+	
+	/* Typography */
+	--font-sans: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	
+	/* Legacy vars for fallback compatibility */
 	--black: 15, 18, 25;
-	--gray: 96, 115, 159;
-	--gray-light: 229, 233, 240;
-	--gray-dark: 34, 41, 57;
+	--gray: 100, 116, 139;
+	--gray-light: 226, 232, 240;
+	--gray-dark: 15, 23, 42;
 	--gray-gradient: rgba(var(--gray-light), 50%), #fff;
-	--box-shadow:
-		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
-		0 16px 32px rgba(var(--gray), 33%);
+	--box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
+
+[data-theme="dark"] {
+	--bg: #090d16;
+	--bg-subtle: #0f172a;
+	--text: #f1f5f9;
+	--text-muted: #94a3b8;
+	--border: #1e293b;
+	--card-bg: #0d1527;
+	--accent: #60a5fa;
+	--accent-hover: #93c5fd;
+	--accent-rgb: 96, 165, 250;
+	
+	--black: 241, 245, 249;
+	--gray: 148, 163, 184;
+	--gray-light: 30, 41, 59;
+	--gray-dark: 241, 245, 249;
+	--gray-gradient: rgba(var(--gray-light), 20%), #090d16;
+	--box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
 body {
-	font-family: var(--font-atkinson);
+	font-family: var(--font-sans);
 	margin: 0;
 	padding: 0;
 	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
-	background-size: 100% 600px;
+	background-color: var(--bg);
 	word-wrap: break-word;
 	overflow-wrap: break-word;
-	color: rgb(var(--gray-dark));
-	font-size: 20px;
+	color: var(--text);
+	font-size: 18px;
 	line-height: 1.7;
+	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
 main {
-	width: 720px;
+	width: 960px;
 	max-width: calc(100% - 2em);
 	margin: auto;
 	padding: 3em 1em;
@@ -42,7 +80,7 @@ h4,
 h5,
 h6 {
 	margin: 0 0 0.5rem 0;
-	color: rgb(var(--black));
+	color: var(--text);
 	line-height: 1.2;
 }
 h1 {
@@ -66,9 +104,11 @@ b {
 }
 a {
 	color: var(--accent);
+	text-decoration: none;
+	transition: color 0.2s ease, opacity 0.2s ease;
 }
 a:hover {
-	color: var(--accent);
+	color: var(--accent-hover);
 }
 p {
 	margin-bottom: 1em;
@@ -138,4 +178,88 @@ hr {
 	clip-path: inset(50%);
 	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
 	white-space: nowrap;
+}
+
+/* Button Styles */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1.2rem;
+	font-weight: 600;
+	font-size: 0.95rem;
+	border-radius: var(--radius);
+	border: 1px solid transparent;
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.2s ease;
+}
+.btn-primary {
+	background-color: var(--accent);
+	color: #ffffff !important;
+}
+.btn-primary:hover {
+	background-color: var(--accent-hover);
+	color: #ffffff !important;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.2);
+}
+.btn-ghost {
+	background-color: transparent;
+	border-color: var(--border);
+	color: var(--text);
+}
+.btn-ghost:hover {
+	background-color: var(--bg-subtle);
+	border-color: var(--text-muted);
+}
+
+/* Common Layout Utilities */
+.section-title {
+	font-size: 2rem;
+	font-weight: 700;
+	margin-bottom: 1.5rem;
+	letter-spacing: -0.02em;
+}
+
+.grid-cols-2 {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+}
+@media (min-width: 768px) {
+	.grid-cols-2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.grid-cols-3 {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+}
+@media (min-width: 768px) {
+	.grid-cols-3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* Code block adjustments for dark mode */
+pre {
+	border: 1px solid var(--border);
+	background-color: var(--bg-subtle) !important;
+}
+code {
+	background-color: var(--bg-subtle);
+	color: var(--accent);
+	border: 1px solid var(--border);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+pre > code {
+	background-color: transparent;
+	border: none;
+	padding: 0;
+	color: inherit;
 }
