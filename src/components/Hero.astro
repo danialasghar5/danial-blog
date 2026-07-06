@@ -1,25 +1,31 @@
 ---
 const {
-name = "Danial Asghar",
-role = "Senior Full-Stack Engineer",
-tagline = "I help founders build, scale, and ship production Rails and Shopify apps — and I write about the real engineering decisions behind them.",
+  name = "Danial Asghar",
+  role = "Senior Full-Stack Engineer",
+  tagline = "I help founders build, scale, and ship production Rails and Shopify apps — and I write about the real engineering decisions behind them.",
 } = Astro.props;
 ---
 <section class="hero">
-<p class="eyebrow">Senior Rails · AWS · Shopify</p>
-<h1>{name}</h1>
-<p class="role">{role}</p>
-<p class="tagline">{tagline}</p>
-<div class="cta">
-<a class="btn btn-primary" href="/blog">Read the blog</a>
-<a class="btn btn-ghost" href="/about">About me</a>
-</div>
+  <p class="eyebrow">Senior Rails · AWS · Shopify</p>
+  <h1>Hey, I'm <span class="highlight">{name}</span></h1>
+  <p class="role">{role}</p>
+  <p class="tagline">{tagline}</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="/blog">Read the blog</a>
+    <a class="btn btn-ghost" href="/about">About me</a>
+  </div>
 </section>
 <style>
-.hero{max-width:720px;margin:4rem auto 3rem;padding:0 1rem;}
-.eyebrow{color:var(--brand);font-weight:600;letter-spacing:.04em;font-size:.85rem;text-transform:uppercase;margin:0 0 .5rem;}
-.hero h1{font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.05;margin:0;}
-.role{font-size:1.15rem;color:var(--text-muted);margin:.4rem 0 1.2rem;}
-.tagline{font-size:1.1rem;line-height:1.6;color:var(--text);max-width:620px;}
-.cta{display:flex;gap:.75rem;margin-top:1.6rem;flex-wrap:wrap;}
+  .hero{max-width:var(--container-width, 1024px);margin:5rem auto 4rem;padding:0 1.25rem;}
+  .eyebrow{color:var(--brand);font-weight:700;letter-spacing:.08em;font-size:.85rem;text-transform:uppercase;margin:0 0 .75rem;}
+  .hero h1{font-size:clamp(2.5rem,8vw,3.8rem);line-height:1.1;margin:0;letter-spacing:-0.03em;font-weight:800;}
+  .highlight {
+    background: linear-gradient(120deg, var(--brand) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .role{font-size:1.3rem;font-weight:600;color:var(--text);margin:.5rem 0 1.5rem;opacity:0.9;}
+  .tagline{font-size:1.15rem;line-height:1.6;color:var(--text-muted);max-width:680px;margin:0 0 2.5rem 0;}
+  .cta{display:flex;gap:.75rem;margin-top:1.6rem;flex-wrap:wrap;}
 </style>
