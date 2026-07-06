@@ -1,0 +1,14 @@
+{
+  "name": "Danial Asghar",
+  "short_name": "Danial Asghar",
+  "description": "Senior full-stack engineer — Rails, Shopify, and AWS.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#2f5cff",
+  "icons": [
+    { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
