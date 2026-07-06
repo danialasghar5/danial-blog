@@ -7,10 +7,51 @@
   </form>
 </section>
 <style>
-  .cta-box{max-width:var(--container-width, 1024px);margin:4rem auto;padding:2rem;text-align:center;
-    border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-subtle);}
-  .cta-box h2{margin:0 0 .3rem;} .cta-box p{color:var(--text-muted);margin:0 0 1.2rem;}
-  form{display:flex;gap:.5rem;max-width:420px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
-  input{flex:1;min-width:200px;padding:.6rem .8rem;border:1px solid var(--border);
-    border-radius:10px;background:var(--card-bg);color:var(--text);}
+  .cta-box {
+    max-width: var(--container-width, 1024px);
+    margin: 4rem auto;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .cta-box:hover {
+    border-color: var(--brand);
+    box-shadow: var(--shadow);
+  }
+  .cta-box h2 {
+    margin: 0 0 .5rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+  .cta-box p {
+    color: var(--text-muted);
+    margin: 0 0 1.5rem;
+    font-size: 1rem;
+  }
+  form {
+    display: flex;
+    gap: .5rem;
+    max-width: 460px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  input {
+    flex: 1;
+    min-width: 240px;
+    padding: .6rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(47, 92, 255, 0.15);
+  }
 </style>
