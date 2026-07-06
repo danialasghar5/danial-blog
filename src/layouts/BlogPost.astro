@@ -16,41 +16,116 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 		<BaseHead title={title} description={description} />
 		<style>
 			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
+				width: 100%;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 3rem 1.5rem;
+			}
+			.blog-post {
+				display: flex;
+				flex-direction: column;
+				gap: 2.5rem;
 			}
 			.hero-image {
 				width: 100%;
+				border-radius: var(--radius);
+				overflow: hidden;
+				border: 1px solid var(--border);
+				aspect-ratio: 2 / 1;
 			}
 			.hero-image img {
 				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
 			}
 			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
+				color: var(--text);
+				font-size: 1.1rem;
+				line-height: 1.8;
 			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
+			.post-header {
 				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
+				margin-bottom: 2rem;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 0.75rem;
 			}
 			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
+				font-size: 0.9rem;
+				font-weight: 600;
+				color: var(--text-muted);
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
 			}
 			.last-updated-on {
 				font-style: italic;
+				font-size: 0.85rem;
+				color: var(--accent);
+				margin-top: 0.25rem;
+			}
+			.post-title {
+				font-size: clamp(2rem, 6vw, 3rem);
+				font-weight: 800;
+				letter-spacing: -0.03em;
+				line-height: 1.15;
+				margin: 0;
+			}
+			.post-desc {
+				font-size: 1.2rem;
+				color: var(--text-muted);
+				line-height: 1.5;
+				margin: 0.5rem 0 0 0;
+				max-width: 600px;
+			}
+			.divider {
+				width: 100%;
+				height: 1px;
+				background-color: var(--border);
+				margin: 1.5rem 0;
+			}
+			
+			/* Style inline content inside slot */
+			.prose :global(p) {
+				margin-bottom: 1.75rem;
+			}
+			.prose :global(h2) {
+				font-size: 1.75rem;
+				font-weight: 700;
+				margin-top: 2.5rem;
+				margin-bottom: 1rem;
+				letter-spacing: -0.02em;
+			}
+			.prose :global(h3) {
+				font-size: 1.4rem;
+				font-weight: 700;
+				margin-top: 2rem;
+				margin-bottom: 0.75rem;
+				letter-spacing: -0.01em;
+			}
+			.prose :global(ul), .prose :global(ol) {
+				margin-bottom: 1.75rem;
+				padding-left: 1.5rem;
+			}
+			.prose :global(li) {
+				margin-bottom: 0.5rem;
+			}
+			.prose :global(blockquote) {
+				border-left: 4px solid var(--accent);
+				padding: 0.5rem 0 0.5rem 1.5rem;
+				margin: 1.5rem 0;
+				color: var(--text-muted);
+				font-style: italic;
+				font-size: 1.15rem;
+				background-color: var(--bg-subtle);
+				border-radius: 0 var(--radius) var(--radius) 0;
+			}
+			.prose :global(pre) {
+				padding: 1.25rem;
+				border-radius: var(--radius);
+				margin-bottom: 1.75rem;
+				overflow-x: auto;
 			}
 		</style>
 	</head>
@@ -58,25 +133,28 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 	<body>
 		<Header />
 		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
+			<article class="blog-post">
+				<div class="post-header">
+					<div class="date">
+						<FormattedDate date={pubDate} />
+						{
+							updatedDate && (
+								<div class="last-updated-on">
+									Last updated on <FormattedDate date={updatedDate} />
+								</div>
+							)
+						}
 					</div>
+					<h1 class="post-title">{title}</h1>
+					{description && <p class="post-desc">{description}</p>}
+					<div class="divider" />
+				</div>
+				{heroImage && (
+					<div class="hero-image">
+						<Image width={1020} height={510} src={heroImage} alt={`Cover for ${title}`} />
+					</div>
+				)}
+				<div class="prose">
 					<slot />
 				</div>
 			</article>
