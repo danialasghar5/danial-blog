@@ -1,78 +1,17 @@
----
----
-<button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
-  <!-- Sun Icon (shows in dark mode to switch to light) -->
-  <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="4"></circle>
-    <path d="M12 2v2"></path>
-    <path d="M12 20v2"></path>
-    <path d="m4.93 4.93 1.41 1.41"></path>
-    <path d="m17.66 17.66 1.41 1.41"></path>
-    <path d="M2 12h2"></path>
-    <path d="M20 12h2"></path>
-    <path d="m6.34 17.66-1.41 1.41"></path>
-    <path d="m19.07 4.93-1.41 1.41"></path>
-  </svg>
-  <!-- Moon Icon (shows in light mode to switch to dark) -->
-  <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-  </svg>
+<button id="theme-toggle" aria-label="Toggle theme" class="theme-toggle">
+  <span class="sun">☀</span><span class="moon">☾</span>
 </button>
-
 <style>
-  .theme-toggle {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    width: 38px;
-    height: 38px;
-    cursor: pointer;
-    color: var(--text);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-  }
-  
-  .theme-toggle:hover {
-    background-color: var(--bg-subtle);
-    border-color: var(--text-muted);
-  }
-
-  .sun {
-    display: none;
-  }
-  .moon {
-    display: block;
-  }
-
-  :global([data-theme="dark"]) .sun {
-    display: block;
-    color: #fbbf24;
-  }
-  :global([data-theme="dark"]) .moon {
-    display: none;
-  }
+  .theme-toggle{background:none;border:1px solid var(--border);border-radius:8px;
+    width:36px;height:36px;cursor:pointer;color:var(--text);font-size:1rem;}
+  .theme-toggle:hover{background:var(--bg-subtle);}
+  [data-theme="dark"] .sun{display:none;} [data-theme="light"] .moon{display:none;}
 </style>
-
 <script>
-  function setupThemeToggle() {
-    const button = document.getElementById('theme-toggle');
-    if (!button) return;
-
-    button.addEventListener('click', () => {
-      const currentTheme = document.documentElement.dataset.theme;
-      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
-      document.documentElement.dataset.theme = nextTheme;
-      localStorage.setItem('theme', nextTheme);
-    });
-  }
-
-  // Set up on initial load
-  setupThemeToggle();
-
-  // Re-run setup on View Transitions page swap if active
-  document.addEventListener('astro:after-swap', setupThemeToggle);
+  const b = document.getElementById('theme-toggle');
+  b?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('theme', next);
+  });
 </script>
