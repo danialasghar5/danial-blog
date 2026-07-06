@@ -1,5 +1,4 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -7,78 +6,32 @@ import Hero from '../components/Hero.astro';
 import PostCard from '../components/PostCard.astro';
 import Projects from '../components/Projects.astro';
 import Newsletter from '../components/Newsletter.astro';
+import { getCollection } from 'astro:content';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-
-// Get the 3 latest blog posts
 const posts = (await getCollection('blog'))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, 3);
+.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+.slice(0, 3);
 ---
-
-<!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<Hero />
-			
-			<section class="latest-writing-section">
-				<div class="section-header">
-					<h2 class="section-title">Latest Writing</h2>
-					<a href="/blog" class="all-posts-link">All Posts &rarr;</a>
-				</div>
-				<div class="grid-cols-3">
-					{posts.map((post) => (
-						<PostCard post={post} />
-					))}
-				</div>
-			</section>
-
-			<Projects />
-
-			<Newsletter />
-		</main>
-		<Footer />
-	</body>
+<head><BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} /></head>
+<body>
+<Header />
+<main>
+<Hero />
+<section class="latest">
+<div class="latest-head"><h2>Latest writing</h2><a href="/blog">All posts →</a></div>
+<div class="post-grid">{posts.map(post => <PostCard post={post} />)}</div>
+</section>
+<Projects />
+<Newsletter />
+</main>
+<Footer />
+</body>
 </html>
-
 <style>
-	main {
-		width: 100%;
-		max-width: 960px;
-		margin: 0 auto;
-		padding: 2rem 1.5rem;
-	}
-
-	.latest-writing-section {
-		padding: 3rem 0;
-	}
-
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 2rem;
-		border-bottom: 1px solid var(--border);
-		padding-bottom: 0.75rem;
-	}
-
-	.section-title {
-		margin: 0;
-	}
-
-	.all-posts-link {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: var(--accent);
-		text-decoration: none;
-		transition: color 0.2s ease;
-	}
-
-	.all-posts-link:hover {
-		color: var(--accent-hover);
-	}
+main{width:100%;}
+.latest{max-width:960px;margin:2rem auto;padding:0 1rem;}
+.latest-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.2rem;}
+.latest-head a{color:var(--brand);text-decoration:none;font-weight:600;}
+.post-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;}
 </style>

@@ -25,7 +25,7 @@ const posts = (await getCollection('blog')).sort(
 			</div>
 
 			<section class="blog-grid-section">
-				<div class="grid-cols-2">
+				<div class="post-grid">
 					{posts.map((post) => (
 						<PostCard post={post} />
 					))}
@@ -67,5 +67,11 @@ const posts = (await getCollection('blog')).sort(
 
 	.blog-grid-section {
 		padding: 1rem 0 3rem 0;
+	}
+
+	.post-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+		gap: 1rem;
 	}
 </style>
