@@ -1,130 +1,16 @@
----
----
-<section class="newsletter-section">
-  <div class="newsletter-card">
-    <div class="newsletter-content">
-      <h2 class="newsletter-title">Subscribe to the Newsletter</h2>
-      <p class="newsletter-desc">Practical insights on Ruby on Rails, React, Shopify apps, and SaaS engineering. Handcrafted, no spam, unsubscribe anytime.</p>
-    </div>
-    
-    <form class="newsletter-form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Thanks for subscribing (mocked)!');">
-      <div class="form-group">
-        <input 
-          type="email" 
-          name="email" 
-          placeholder="your.email@example.com" 
-          required 
-          class="newsletter-input" 
-          aria-label="Email Address"
-        />
-        <button type="submit" class="btn btn-primary newsletter-btn">Subscribe</button>
-      </div>
-    </form>
-  </div>
+<section class="cta-box">
+  <h2>Get new posts by email</h2>
+  <p>Practical Rails, Shopify, and SaaS engineering. No spam.</p>
+  <form action="https://buttondown.com/api/emails/embed-subscribe/YOURNAME" method="post" target="_blank">
+    <input type="email" name="email" placeholder="you@example.com" required />
+    <button class="btn btn-primary" type="submit">Subscribe</button>
+  </form>
 </section>
-
 <style>
-  .newsletter-section {
-    padding: 3rem 0;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-
-  .newsletter-card {
-    background-color: var(--bg-subtle);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 2.5rem 2rem;
-    text-align: center;
-    max-width: 720px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    transition: border-color 0.3s ease;
-  }
-
-  .newsletter-card:hover {
-    border-color: var(--accent);
-  }
-
-  .newsletter-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
-    letter-spacing: -0.02em;
-  }
-
-  .newsletter-desc {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--text-muted);
-    margin: 0;
-    max-width: 520px;
-  }
-
-  .newsletter-form {
-    width: 100%;
-    max-width: 480px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-  }
-
-  @media (min-width: 640px) {
-    .form-group {
-      flex-direction: row;
-      background-color: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.25rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .form-group:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
-    }
-  }
-
-  .newsletter-input {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    color: var(--text);
-    width: 100%;
-    transition: all 0.2s ease;
-    outline: none;
-  }
-
-  @media (min-width: 640px) {
-    .newsletter-input {
-      border: none;
-      background-color: transparent;
-      padding: 0.75rem 0.75rem 0.75rem 1rem;
-    }
-  }
-
-  .newsletter-input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.8;
-  }
-
-  .newsletter-btn {
-    white-space: nowrap;
-  }
-
-  @media (max-width: 639px) {
-    .newsletter-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
-    }
-  }
+  .cta-box{max-width:640px;margin:4rem auto;padding:2rem;text-align:center;
+    border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-subtle);}
+  .cta-box h2{margin:0 0 .3rem;} .cta-box p{color:var(--text-muted);margin:0 0 1.2rem;}
+  form{display:flex;gap:.5rem;max-width:420px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
+  input{flex:1;min-width:200px;padding:.6rem .8rem;border:1px solid var(--border);
+    border-radius:10px;background:var(--card-bg);color:var(--text);}
 </style>
