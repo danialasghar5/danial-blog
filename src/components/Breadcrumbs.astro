@@ -1,0 +1,47 @@
+---
+// Reusable breadcrumb trail. Pass items oldest → current; the last item renders
+// as the current page (no link). Also renders a compact "back" link to the parent.
+interface Crumb { label: string; href?: string; }
+interface Props { items: Crumb[]; }
+const { items } = Astro.props;
+const parent = items.length > 1 ? items[items.length - 2] : { label: 'Home', href: '/' };
+---
+<div class="crumbs-row">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      {items.map((c, i) => (
+        <>
+          <li class:list={[{ current: i === items.length - 1 }]} aria-current={i === items.length - 1 ? 'page' : undefined}>
+            {c.href && i !== items.length - 1 ? <a href={c.href}>{c.label}</a> : c.label}
+          </li>
+          {i < items.length - 1 && <li class="sep" aria-hidden="true">/</li>}
+        </>
+      ))}
+    </ol>
+  </nav>
+  {parent.href && (
+    <a class="back-link" href={parent.href}>← Back to {parent.label}</a>
+  )}
+</div>
+
+<style>
+  .crumbs-row {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: var(--s-1) var(--s-3);
+    margin-bottom: var(--s-4);
+  }
+  .breadcrumbs ol {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    list-style: none; margin: 0; padding: 0;
+    font-size: var(--fs-sm); color: var(--text-muted);
+  }
+  .breadcrumbs a { color: var(--text-muted); }
+  .breadcrumbs a:hover { color: var(--brand); }
+  .breadcrumbs .sep { color: var(--text-faint); }
+  .breadcrumbs .current {
+    color: var(--text); max-width: 32ch;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .back-link { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .back-link:hover { color: var(--brand); }
+</style>

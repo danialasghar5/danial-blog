@@ -3,54 +3,33 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Projects from '../components/Projects.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_TITLE } from '../consts';
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`Projects | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={`Projects | ${SITE_TITLE}`} description="Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS." />
 	</head>
 	<body>
 		<Header />
-		<main>
+		<main class="container">
+			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Projects' }]} />
 			<div class="projects-header">
-				<h1 class="projects-title">Projects</h1>
-				<p class="projects-subtitle">A collection of applications, tools, and SaaS extensions I've designed, built, and shipped.</p>
+				<p class="eyebrow">Portfolio</p>
+				<h1 class="projects-title">Things I've built</h1>
+				<p class="projects-subtitle">A selection of applications, tools, and SaaS extensions I've designed, built, and shipped to production.</p>
 			</div>
-
-			<Projects showAll={true} />
+			<Projects showAll={true} withHeader={false} />
 		</main>
 		<Footer />
+
+		<style>
+			main { padding-block: var(--s-6) 0; }
+			.projects-header { padding-bottom: var(--s-4); border-bottom: 1px solid var(--border); }
+			.projects-title { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-1); }
+			.projects-subtitle { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; max-width: 62ch; }
+		</style>
 	</body>
 </html>
-
-<style>
-	main {
-		width: 100%;
-		max-width: 960px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem;
-	}
-
-	.projects-header {
-		margin-bottom: 2rem;
-		border-bottom: 1px solid var(--border);
-		padding-bottom: 1.5rem;
-	}
-
-	.projects-title {
-		font-size: 2.5rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		margin: 0 0 0.5rem 0;
-	}
-
-	.projects-subtitle {
-		font-size: 1.1rem;
-		color: var(--text-muted);
-		line-height: 1.6;
-		margin: 0;
-		max-width: 600px;
-	}
-</style>

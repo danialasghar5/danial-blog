@@ -1,63 +1,164 @@
 ---
-import AboutHeroImage from '../assets/blog-placeholder-about.jpg';
-import Layout from '../layouts/BlogPost.astro';
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Projects from '../components/Projects.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE_TITLE, ROLE, SOCIALS, EMAIL } from '../consts';
+
+// ── EDIT ME: replace the placeholders below with your real details ──────────
+const skills = [
+	{ group: 'Backend', items: ['Ruby on Rails', 'Ruby', 'PostgreSQL', 'Sidekiq', 'REST & GraphQL APIs'] },
+	{ group: 'Frontend', items: ['React', 'Hotwire / Turbo', 'TypeScript', 'Stimulus', 'Tailwind'] },
+	{ group: 'Commerce', items: ['Shopify App Dev', 'Shopify API', 'Billing / Webhooks', 'Meta Graph'] },
+	{ group: 'Cloud & Infra', items: ['AWS', 'Docker', 'Cloudflare', 'CI/CD', 'Redis'] },
+];
+
+const experience = [
+	{
+		role: 'Senior Full-Stack Engineer',
+		company: 'Freelance / Contract',
+		period: '2022 — Present',
+		points: [
+			'Ship production Rails & Shopify apps for founders and funded startups, from MVP to scale.',
+			'Cut background-job processing time ~60% by moving heavy Shopify webhook work to batched Sidekiq jobs.',
+		],
+	},
+	{
+		role: 'Full-Stack Engineer',
+		company: 'SaaS Product Company',
+		period: '2020 — 2022',
+		points: [
+			'Built multi-tenant billing and team management on a Rails + Stripe SaaS platform.',
+			'Owned the API layer serving web and mobile clients across millions of monthly requests.',
+		],
+	},
+	{
+		role: 'Backend Engineer',
+		company: 'Early-Stage Startup',
+		period: '2018 — 2020',
+		points: [
+			'Designed PostgreSQL data models and background pipelines on AWS.',
+			'Introduced automated CI/CD, cutting release time from hours to minutes.',
+		],
+	},
+];
+// ────────────────────────────────────────────────────────────────────────────
 ---
 
-<Layout
-	title="About Me"
-	description="Lorem ipsum dolor sit amet"
-	pubDate={new Date('August 08 2021')}
-	heroImage={AboutHeroImage}
->
-	<p>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-		labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo
-		viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam
-		adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus
-		et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus
-		vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque
-		sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
-	</p>
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`About | ${SITE_TITLE}`} description={`${SITE_TITLE} — ${ROLE}. Building and scaling production Rails, Shopify, and AWS applications.`} />
+	</head>
+	<body>
+		<Header />
+		<main class="container">
+			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
+			<!-- Intro -->
+			<section class="intro">
+				<div class="intro-text">
+					<p class="eyebrow">About</p>
+					<h1>Full-stack engineer building software that ships and scales.</h1>
+					<p class="lede">
+						I'm {SITE_TITLE}, a {ROLE.toLowerCase()} focused on Ruby on Rails, Shopify apps,
+						and AWS. I partner with founders to take products from first commit to production —
+						and I write about the engineering decisions along the way.
+					</p>
+					<div class="intro-cta">
+						<a class="btn btn-primary" href="/contact">Work with me</a>
+						<a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">Download résumé</a>
+						<a class="btn btn-ghost" href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
+					</div>
+				</div>
+				<aside class="intro-facts">
+					<dl>
+						<div><dt>Role</dt><dd>{ROLE}</dd></div>
+						<div><dt>Focus</dt><dd>Rails · Shopify · AWS</dd></div>
+						<div><dt>Availability</dt><dd>Open to freelance & contract</dd></div>
+						<div><dt>Email</dt><dd><a href={`mailto:${EMAIL}`}>{EMAIL}</a></dd></div>
+					</dl>
+				</aside>
+			</section>
 
-	<p>
-		Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non
-		tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non
-		blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna
-		porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis
-		massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc.
-		Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis
-		bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra
-		massa massa ultricies mi.
-	</p>
+			<!-- Skills -->
+			<section class="block">
+				<div class="section-head"><h2>Skills</h2></div>
+				<div class="skills-grid">
+					{skills.map((s) => (
+						<div class="skill-cat">
+							<h3>{s.group}</h3>
+							<ul>{s.items.map((i) => <li class="chip">{i}</li>)}</ul>
+						</div>
+					))}
+				</div>
+			</section>
 
-	<p>
-		Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl
-		suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet
-		nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae
-		turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem
-		dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat
-		semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus
-		vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum
-		facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam
-		vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla
-		urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
-	</p>
+			<!-- Experience timeline -->
+			<section class="block">
+				<div class="section-head"><h2>Experience</h2></div>
+				<ol class="timeline">
+					{experience.map((e) => (
+						<li class="tl-item">
+							<div class="tl-dot" aria-hidden="true"></div>
+							<div class="tl-body">
+								<div class="tl-head">
+									<h3>{e.role}</h3>
+									<span class="tl-period">{e.period}</span>
+								</div>
+								<p class="tl-company">{e.company}</p>
+								<ul class="tl-points">{e.points.map((p) => <li>{p}</li>)}</ul>
+							</div>
+						</li>
+					))}
+				</ol>
+			</section>
+		</main>
 
-	<p>
-		Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper
-		viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc
-		scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur
-		gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus
-		pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim
-		blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id
-		cursus metus aliquam eleifend mi.
-	</p>
+		<!-- Featured work -->
+		<Projects />
 
-	<p>
-		Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta
-		nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam
-		tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci
-		ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar
-		proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
-	</p>
-</Layout>
+		<Footer />
+
+		<style>
+			main { padding-block: var(--s-8) var(--s-4); }
+
+			.intro {
+				display: grid; grid-template-columns: 1fr; gap: var(--s-5);
+				padding-bottom: var(--s-6); border-bottom: 1px solid var(--border);
+			}
+			@media (min-width: 860px) { .intro { grid-template-columns: 1.6fr 1fr; align-items: start; } }
+			.intro h1 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-2); max-width: 18ch; }
+			.lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-4); max-width: 60ch; }
+			.intro-cta { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+			.intro-facts { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card-bg); padding: var(--s-3); }
+			.intro-facts dl { margin: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+			.intro-facts div { display: flex; flex-direction: column; gap: .1rem; }
+			.intro-facts dt { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+			.intro-facts dd { margin: 0; font-size: var(--fs-sm); font-weight: 500; }
+
+			.block { padding-block: var(--s-6); }
+
+			.skills-grid { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
+			@media (min-width: 640px) { .skills-grid { grid-template-columns: repeat(2, 1fr); } }
+			.skill-cat h3 { font-size: var(--fs-base); text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 0 0 var(--s-2); }
+			.skill-cat ul { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+
+			/* Timeline */
+			.timeline { list-style: none; margin: 0; padding: 0; }
+			.tl-item { position: relative; display: grid; grid-template-columns: auto 1fr; gap: var(--s-3); padding-bottom: var(--s-5); }
+			.tl-item:not(:last-child) .tl-dot::after {
+				content: ''; position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+				width: 2px; height: calc(100% + var(--s-2)); background: var(--border);
+			}
+			.tl-dot { position: relative; width: 14px; height: 14px; margin-top: 6px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+			.tl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; }
+			.tl-head h3 { font-size: var(--fs-lg); font-weight: 700; margin: 0; }
+			.tl-period { font-size: var(--fs-sm); color: var(--text-faint); font-weight: 500; white-space: nowrap; }
+			.tl-company { color: var(--brand); font-weight: 600; font-size: var(--fs-sm); margin: .15rem 0 var(--s-1); }
+			.tl-points { margin: 0; padding-left: 1.1rem; color: var(--text-muted); font-size: var(--fs-sm); line-height: var(--lh-normal); }
+			.tl-points li { margin-bottom: .35rem; }
+		</style>
+	</body>
+</html>

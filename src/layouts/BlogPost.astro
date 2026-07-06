@@ -2,163 +2,191 @@
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+type PostLink = { slug: string; title: string } | null;
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+interface Props {
+	title: string;
+	description: string;
+	pubDate: Date;
+	updatedDate?: Date;
+	heroImage?: CollectionEntry<'blog'>['data']['heroImage'];
+	tags?: string[];
+	readingTime?: string;
+	prevPost?: PostLink;
+	nextPost?: PostLink;
+}
+
+const {
+	title,
+	description,
+	pubDate,
+	updatedDate,
+	heroImage,
+	tags = [],
+	readingTime,
+	prevPost = null,
+	nextPost = null,
+} = Astro.props;
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: 100%;
-				max-width: 800px;
-				margin: 0 auto;
-				padding: 3rem 1.5rem;
-			}
-			.blog-post {
-				display: flex;
-				flex-direction: column;
-				gap: 2.5rem;
-			}
-			.hero-image {
-				width: 100%;
-				border-radius: var(--radius);
-				overflow: hidden;
-				border: 1px solid var(--border);
-				aspect-ratio: 2 / 1;
-			}
-			.hero-image img {
-				display: block;
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-			}
-			.prose {
-				color: var(--text);
-				font-size: 1.1rem;
-				line-height: 1.8;
-			}
-			.post-header {
-				text-align: center;
-				margin-bottom: 2rem;
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				gap: 0.75rem;
-			}
-			.date {
-				font-size: 0.9rem;
-				font-weight: 600;
-				color: var(--text-muted);
-				text-transform: uppercase;
-				letter-spacing: 0.05em;
-			}
-			.last-updated-on {
-				font-style: italic;
-				font-size: 0.85rem;
-				color: var(--accent);
-				margin-top: 0.25rem;
-			}
-			.post-title {
-				font-size: clamp(2rem, 6vw, 3rem);
-				font-weight: 800;
-				letter-spacing: -0.03em;
-				line-height: 1.15;
-				margin: 0;
-			}
-			.post-desc {
-				font-size: 1.2rem;
-				color: var(--text-muted);
-				line-height: 1.5;
-				margin: 0.5rem 0 0 0;
-				max-width: 600px;
-			}
-			.divider {
-				width: 100%;
-				height: 1px;
-				background-color: var(--border);
-				margin: 1.5rem 0;
-			}
-			
-			/* Style inline content inside slot */
-			.prose :global(p) {
-				margin-bottom: 1.75rem;
-			}
-			.prose :global(h2) {
-				font-size: 1.75rem;
-				font-weight: 700;
-				margin-top: 2.5rem;
-				margin-bottom: 1rem;
-				letter-spacing: -0.02em;
-			}
-			.prose :global(h3) {
-				font-size: 1.4rem;
-				font-weight: 700;
-				margin-top: 2rem;
-				margin-bottom: 0.75rem;
-				letter-spacing: -0.01em;
-			}
-			.prose :global(ul), .prose :global(ol) {
-				margin-bottom: 1.75rem;
-				padding-left: 1.5rem;
-			}
-			.prose :global(li) {
-				margin-bottom: 0.5rem;
-			}
-			.prose :global(blockquote) {
-				border-left: 4px solid var(--accent);
-				padding: 0.5rem 0 0.5rem 1.5rem;
-				margin: 1.5rem 0;
-				color: var(--text-muted);
-				font-style: italic;
-				font-size: 1.15rem;
-				background-color: var(--bg-subtle);
-				border-radius: 0 var(--radius) var(--radius) 0;
-			}
-			.prose :global(pre) {
-				padding: 1.25rem;
-				border-radius: var(--radius);
-				margin-bottom: 1.75rem;
-				overflow-x: auto;
-			}
-		</style>
+		<BaseHead title={`${title} | Danial Asghar`} description={description} type="article" />
 	</head>
 
 	<body>
 		<Header />
 		<main>
 			<article class="blog-post">
-				<div class="post-header">
-					<div class="date">
-						<FormattedDate date={pubDate} />
-						{
-							updatedDate && (
-								<div class="last-updated-on">
-									Last updated on <FormattedDate date={updatedDate} />
-								</div>
-							)
-						}
-					</div>
+				<Breadcrumbs items={[
+					{ label: 'Home', href: '/' },
+					{ label: 'Blog', href: '/blog' },
+					{ label: title },
+				]} />
+
+				<header class="post-header">
 					<h1 class="post-title">{title}</h1>
 					{description && <p class="post-desc">{description}</p>}
-					<div class="divider" />
-				</div>
+
+					<div class="post-meta">
+						<span class="meta-item">
+							Published <FormattedDate date={pubDate} />
+						</span>
+						{updatedDate && (
+							<span class="meta-item meta-updated">
+								Updated <FormattedDate date={updatedDate} />
+							</span>
+						)}
+						{readingTime && <span class="meta-item">{readingTime}</span>}
+					</div>
+
+					{tags.length > 0 && (
+						<ul class="post-tags">
+							{tags.map((t) => <li class="chip">{t}</li>)}
+						</ul>
+					)}
+				</header>
+
 				{heroImage && (
 					<div class="hero-image">
-						<Image width={1020} height={510} src={heroImage} alt={`Cover for ${title}`} />
+						<Image width={1080} height={540} src={heroImage} alt={`Cover for ${title}`} />
 					</div>
 				)}
+
 				<div class="prose">
 					<slot />
+				</div>
+
+				<nav class="post-nav" aria-label="More posts">
+					{prevPost ? (
+						<a class="post-nav-link prev" href={`/blog/${prevPost.slug}/`}>
+							<span class="dir">← Previous</span>
+							<span class="t">{prevPost.title}</span>
+						</a>
+					) : <span />}
+					{nextPost ? (
+						<a class="post-nav-link next" href={`/blog/${nextPost.slug}/`}>
+							<span class="dir">Next →</span>
+							<span class="t">{nextPost.title}</span>
+						</a>
+					) : <span />}
+				</nav>
+
+				<div class="back-row">
+					<a href="/blog" class="back-link">← Back to all posts</a>
 				</div>
 			</article>
 		</main>
 		<Footer />
+
+		<style>
+			main {
+				max-width: var(--container-prose);
+				margin-inline: auto;
+				padding: var(--s-6) var(--s-3) var(--s-4);
+			}
+			.blog-post { display: flex; flex-direction: column; gap: var(--s-4); }
+
+			/* Header */
+			.post-header { display: flex; flex-direction: column; gap: var(--s-2); }
+			.post-title {
+				font-size: var(--fs-4xl); font-weight: 800;
+				letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight); margin: 0;
+			}
+			.post-desc { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; }
+			.post-meta {
+				display: flex; flex-wrap: wrap; align-items: center; gap: .5rem var(--s-2);
+				font-size: var(--fs-sm); color: var(--text-muted);
+				padding-top: var(--s-1);
+			}
+			.meta-item { display: inline-flex; align-items: center; gap: .35rem; }
+			.meta-item + .meta-item::before { content: '·'; margin-right: var(--s-2); color: var(--text-faint); }
+			.meta-updated { color: var(--brand); font-weight: 500; }
+			.post-tags { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: var(--s-1) 0 0; padding: 0; }
+
+			/* Hero image */
+			.hero-image {
+				width: 100%; border-radius: var(--radius-lg); overflow: hidden;
+				border: 1px solid var(--border); aspect-ratio: 2 / 1;
+			}
+			.hero-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+			/* Prose */
+			.prose {
+				font-family: var(--font-prose);
+				color: var(--text);
+				font-size: var(--fs-lg);
+				line-height: var(--lh-prose);
+			}
+			.prose :global(p) { margin: 0 0 var(--s-3); }
+			.prose :global(h2) { font-size: var(--fs-2xl); font-weight: 700; margin: var(--s-6) 0 var(--s-2); letter-spacing: var(--tracking-tight); }
+			.prose :global(h3) { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-5) 0 var(--s-2); }
+			.prose :global(ul), .prose :global(ol) { margin: 0 0 var(--s-3); padding-left: var(--s-3); }
+			.prose :global(li) { margin-bottom: .5rem; }
+			.prose :global(img) { border-radius: var(--radius); margin: var(--s-2) 0; }
+			.prose :global(a) { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+			.prose :global(a:hover) { text-decoration-color: var(--brand); }
+			.prose :global(blockquote) {
+				border-left: 3px solid var(--brand);
+				padding: var(--s-1) var(--s-3);
+				margin: var(--s-3) 0;
+				color: var(--text-muted); font-style: italic;
+				background: var(--bg-subtle);
+				border-radius: 0 var(--radius) var(--radius) 0;
+			}
+			.prose :global(pre) { margin: 0 0 var(--s-3); }
+			.prose :global(hr) { margin: var(--s-5) 0; }
+
+			/* Prev / next */
+			.post-nav {
+				display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2);
+				margin-top: var(--s-6); padding-top: var(--s-4);
+				border-top: 1px solid var(--border);
+			}
+			.post-nav-link {
+				display: flex; flex-direction: column; gap: .35rem;
+				padding: var(--s-2) var(--s-3);
+				border: 1px solid var(--border); border-radius: var(--radius);
+				background: var(--card-bg); color: var(--text);
+				transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+			}
+			.post-nav-link:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow); }
+			.post-nav-link.next { text-align: right; }
+			.post-nav-link .dir { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+			.post-nav-link .t { font-weight: 600; font-size: var(--fs-sm); line-height: var(--lh-snug); }
+
+			.back-row { margin-top: var(--s-4); }
+			.back-link { font-weight: 600; font-size: var(--fs-sm); }
+
+			@media (max-width: 560px) {
+				.post-nav { grid-template-columns: 1fr; }
+				.post-nav-link.next { text-align: left; }
+			}
+		</style>
 	</body>
 </html>
