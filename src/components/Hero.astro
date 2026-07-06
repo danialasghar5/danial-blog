@@ -1,0 +1,99 @@
+---
+interface Props {
+  name?: string;
+  role?: string;
+  tagline?: string;
+}
+
+const {
+  name = "Danial Asghar",
+  role = "Senior Full-Stack Engineer",
+  tagline = "I build, scale, and ship production Rails, Shopify, and React applications — and write about the engineering decisions behind them.",
+} = Astro.props;
+---
+
+<section class="hero-container">
+  <div class="hero-content">
+    <span class="hero-eyebrow">Rails · React · Shopify · Cloud</span>
+    <h1 class="hero-title">Hey, I'm <span class="highlight">{name}</span></h1>
+    <p class="hero-role">{role}</p>
+    <p class="hero-tagline">{tagline}</p>
+    <div class="hero-ctas">
+      <a href="/blog" class="btn btn-primary">Read the Blog</a>
+      <a href="/projects" class="btn btn-ghost">View Projects</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-container {
+    padding: 5rem 0 4rem 0;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 8vw, 3.8rem);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .highlight {
+    background: linear-gradient(120deg, var(--accent) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-role {
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 1.5rem 0;
+    opacity: 0.9;
+  }
+
+  .hero-tagline {
+    font-size: clamp(1.05rem, 3vw, 1.2rem);
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin: 0 0 2.5rem 0;
+    max-width: 680px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 640px) {
+    .hero-container {
+      padding: 3rem 0 2rem 0;
+    }
+    .hero-ctas {
+      width: 100%;
+    }
+    .hero-ctas .btn {
+      flex: 1;
+      min-width: 140px;
+    }
+  }
+</style>
