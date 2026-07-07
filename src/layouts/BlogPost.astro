@@ -19,6 +19,7 @@ interface Props {
 	readingTime?: string;
 	prevPost?: PostLink;
 	nextPost?: PostLink;
+	hasCustomSchema?: boolean;
 }
 
 const {
@@ -31,12 +32,13 @@ const {
 	readingTime,
 	prevPost = null,
 	nextPost = null,
+	hasCustomSchema = false,
 } = Astro.props;
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={`${title} — Danial Asghar`} description={description} type="article" />
+		<BaseHead title={`${title} — Danial Asghar`} description={description} type="article" suppressArticleSchema={hasCustomSchema} />
 	</head>
 
 	<body>
@@ -106,11 +108,15 @@ const {
 
 		<style>
 			main {
-				max-width: var(--container-prose);
+				max-width: var(--container);
 				margin-inline: auto;
 				padding: var(--s-6) var(--s-3) var(--s-4);
 			}
 			.blog-post { display: flex; flex-direction: column; gap: var(--s-4); }
+			/* Content aligns to the container's left edge (in line with the header).
+			   Text stays at a reading width; code/images/hero extend wider. */
+			.blog-post > :global(*) { max-width: var(--container-prose); width: 100%; }
+			.hero-image, .prose { max-width: var(--prose-bleed); }
 
 			/* Header */
 			.post-header { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -161,6 +167,21 @@ const {
 			}
 			.prose :global(pre) { margin: 0 0 var(--s-3); }
 			.prose :global(hr) { margin: var(--s-5) 0; }
+			/* Text wraps at a reading width; code/images/tables use the wider prose width */
+			.prose :global(p), .prose :global(h2), .prose :global(h3),
+			.prose :global(ul), .prose :global(ol), .prose :global(blockquote) {
+				max-width: var(--container-prose);
+			}
+			.prose :global(img) { display: block; max-width: 100%; }
+			.prose :global(table) {
+				width: 100%; border-collapse: collapse;
+				font-size: var(--fs-sm); margin: 0 0 var(--s-3);
+			}
+			.prose :global(th), .prose :global(td) {
+				border-bottom: 1px solid var(--border);
+				padding: var(--s-1) var(--s-2); text-align: left; vertical-align: top;
+			}
+			.prose :global(th) { font-family: var(--font-sans); font-weight: 600; }
 
 			/* Prev / next */
 			.post-nav {

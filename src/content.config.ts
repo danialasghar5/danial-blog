@@ -16,6 +16,9 @@ const blog = defineCollection({
 			heroImage: z.optional(image()),
 			tags: z.array(z.string()).default([]),
 			draft: z.boolean().default(false),
+			// When true, the post supplies its own article JSON-LD (e.g. TechArticle),
+			// so BaseHead suppresses its generic Article to avoid duplicate schema.
+			hasCustomSchema: z.boolean().default(false),
 		}),
 });
 

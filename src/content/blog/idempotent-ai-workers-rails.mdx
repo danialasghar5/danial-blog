@@ -1,0 +1,262 @@
+---
+title: "Designing Idempotent Background Workers for LLM Calls in Rails"
+seoTitle: "Idempotent Background Workers for LLM Calls in Rails"
+description: "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills."
+pubDate: 2026-07-07
+updatedDate: 2026-07-07
+canonicalURL: "https://danialasghar.com/blog/idempotent-ai-workers-rails/"
+ogImage: "/og-default.png"
+author: "Danial Asghar"
+category: "AI Backend"
+hasCustomSchema: true
+tags:
+  - "sidekiq"
+  - "idempotency"
+  - "reliability"
+  - "openai"
+  - "structured-outputs"
+  - "rails"
+draft: false
+---
+
+{/* JSON-LD structured data. It is valid in the document body and Google reads it from
+    either head or body; if you prefer, lift these two objects into your BlogPost layout. */}
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Idempotent Background Workers for LLM Calls in Rails",
+  "description": "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills.",
+  "image": "https://danialasghar.com/og-default.png",
+  "datePublished": "2026-07-07",
+  "dateModified": "2026-07-07",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/idempotent-ai-workers-rails/" },
+  "keywords": ["idempotent background jobs", "sidekiq", "llm", "rails", "reliability", "structured outputs"],
+  "articleSection": "AI Backend",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Sidekiq guarantee exactly-once execution?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Sidekiq provides at-least-once delivery, so a job can run more than once after a timeout, deploy, or lost acknowledgement. Every worker must therefore be idempotent — safe to run multiple times without duplicating side effects."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do LLM background jobs need idempotency?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because an LLM call is metered and non-deterministic. A blind retry re-bills the API for work already done, and the second response can differ from the first, overwriting a good classification. Idempotency must be enforced on the work, not the output."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do you make a Sidekiq worker idempotent for an LLM call?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Key idempotency on a stable identifier such as the record UUID and its completion state, so a retry after success is a no-op. Where concurrent duplicates are possible, replace the read-then-write check with an atomic state transition in the database so only one worker can claim the job."
+      }
+    }
+  ]
+}
+`}</script>
+
+A support ticket comes in: *"I was double-charged $49 for my subscription, please refund the duplicate."* The triage worker picks it up, calls the model, and comes back with `billing`, `high` urgency, and a refund draft — then the worker is killed, after that model call but before the write commits. Sidekiq does what it's supposed to do: it retries. Because nothing was persisted, the retry calls the model again and pays a second time; and if that ticket was enqueued twice and both jobs run at once, each can classify and each can write. Once outbound webhook dispatch ships — it's on the roadmap — the same double-run would fire the client's callback twice.
+
+A ticket about a duplicate charge, resolved by a system that duplicates its own work. That is the failure this post is about.
+
+Moving an LLM call out of the request path and behind a queue is the right call — it's the core decision in the [AI Support Ticket Triage Engine](/projects/ai-support-ticket-triage-engine), a service I built and open-sourced — and it keeps ticket ingestion fast — a `202 Accepted` in single-digit milliseconds in local measurement (the handler only inserts and enqueues), not a measured production SLA — instead of coupling it to a 1–10 second model call. But that queue changes the reliability contract in a way that's easy to miss: **the moment work runs in a background job, it runs *at least once*, not exactly once.** Every worker has to be safe to run more than one time. With an LLM in the loop, "more than once" isn't just a correctness bug — it's a billing line item and a data-consistency problem.
+
+## Why an LLM makes double-execution worse
+
+At-least-once delivery is not a Sidekiq flaw; it's the guarantee — [Sidekiq gives you at-least-once, not exactly-once, semantics](https://github.com/sidekiq/sidekiq/wiki/Best-Practices). A worker can be retried after a timeout, a deploy, an OOM kill, or a network blip between finishing the job and acknowledging it. For an ordinary job — recalculate a counter, resize an image — running twice is usually harmless or trivially fixable.
+
+An LLM call breaks both of those comforts:
+
+- **It costs money per call.** A blind retry re-bills a token-metered API for work you already paid for.
+- **It's non-deterministic at the margins.** Depending on sampling settings, a model-version change, or provider-side changes, the same ticket can come back with a *different* category, urgency, or summary. So a naive retry doesn't just duplicate a row — it can overwrite a good classification with a different one, for reasons no human reviewing the ticket would recognize.
+
+That second property is the one people underestimate. You cannot dedupe on the response, because the response isn't guaranteed stable. Idempotency has to be enforced on the *work*, not the output.
+
+## What idempotency means for an LLM worker
+
+Concretely: calling `perform(ticket_id)` any number of times must leave the system in the same state, and produce the same side effects, as calling it once. Two distinct things need that protection, and they fail differently:
+
+1. **The write** — the classification, urgency, summary, and suggested reply persisted to the ticket.
+2. **The side effects** — today, just the persisted draft; and, on the roadmap, the outbound webhook to the client's callback URL.
+
+The engine protects the write today with the completion gate. The outbound side effect arrives with the webhook roadmap, and it will need its own per-delivery idempotency key rather than leaning on that gate.
+
+{/* DIAGRAM: replace this ASCII block with a designed SVG.
+    Filename: idempotent-sidekiq-llm-worker-retry-flow.svg
+    Alt: "Idempotent Sidekiq worker flow for LLM calls in Rails, showing where a retry hits the UUID idempotency gate" */}
+
+```
+POST /tickets ──▶ persist (PostgreSQL, UUID id) ──▶ enqueue ──▶ 202 Accepted
+                                                        │
+                                          ┌─────────────┘
+                                          ▼
+                               TriageWorker (Sidekiq)
+                                          │
+                          ┌───────────────┴────────────────┐
+                          │  idempotency gate on the UUID   │◀── retry lands here
+                          └───────────────┬────────────────┘
+                                          ▼
+                        call OpenAI ▶ validate response ▶ persist result
+```
+
+## The shipped gate: status-based idempotency on the UUID
+
+The worker keys idempotency on the ticket's UUID and its completion state. A retry — or an accidental duplicate enqueue — for a ticket that's already been triaged returns immediately instead of running a second classification.
+
+```ruby
+class TriageWorker
+  include Sidekiq::Job
+
+  sidekiq_options retry: 3, queue: :triage
+
+  def perform(ticket_id)
+    ticket = Ticket.find(ticket_id)
+
+    # Idempotency gate: a retry (or duplicate enqueue) for an already-triaged
+    # ticket is a no-op, not a second classification and not a second bill.
+    return if ticket.completed?
+
+    result = Ai::TriageService.new(ticket).call   # OpenAI, Structured Outputs
+
+    ticket.update!(
+      status:          :completed,
+      category:        result.category,
+      urgency:         result.urgency,
+      summary:         result.summary,
+      suggested_reply: result.suggested_reply
+    )
+  rescue => e
+    # Don't swallow the failure to "avoid" a duplicate. Record it and let the
+    # retry happen — a failed ticket is visible and re-runnable.
+    ticket&.update(status: :failed, error_message: "#{e.class}: #{e.message}")
+    raise
+  end
+end
+```
+
+The `rescue` is deliberate: it records the failure and re-raises so the bounded retries take over. With `retry: 3`, Sidekiq re-runs the job with exponential backoff; once those attempts are exhausted the job lands in Sidekiq's Dead Set — a dead-letter queue you can inspect and replay, not a silent loss. Note the honest limitation of this MVP: the rescue is unclassified — it retries *every* error the same way. A permanent failure (a bad request, a deterministic truncation on an over-long ticket) will therefore retry and re-bill on each of the three attempts before it dies to the Dead Set. Separating transient failures from permanent ones is a later pass, not something this worker does yet.
+
+Two decisions here are worth stating explicitly, because each had an alternative I rejected:
+
+**Keying on the UUID rather than a sequential ID.** The job carries the ticket's UUID, which is generated at insert time in the request handler. Because it exists before the enqueue, there's no window where a job references a row that isn't fully written, and no racing on enqueue. (UUIDs also avoid leaking record counts through the API, which is a separate win covered in the case study.)
+
+**A status gate rather than dedup-on-response.** The obvious-seeming approach — hash the model's output and skip duplicates — is impossible here, because the output isn't deterministic. The status gate sidesteps that entirely: it asks "has this ticket already reached a terminal success state?" and only that. The other rejected alternative, "just let it re-run," is what produces the double-classification in the opening scenario.
+
+This gate makes a **sequential** retry after success a clean no-op. That covers the overwhelmingly common case — a worker that succeeds, then gets retried because the ack was lost. But it has an edge, and pretending otherwise would be the un-senior move.
+
+## Where a status gate isn't enough: the check-then-act race
+
+The shipped gate covers retries in *series*. It does not, on its own, cover duplicates in *parallel*. `return if ticket.completed?` is a read followed by a write, with a gap between them. If the *same* ticket is enqueued twice and both jobs run at once — a duplicate webhook, a double-click, a buggy client — both workers can read `completed? == false`, both call OpenAI (two bills), and both write.
+
+The next step to close that gap — *not in the current build* — is to stop asking a question and instead make an atomic claim, at the one place that can adjudicate a race: the database.
+
+```ruby
+def perform(ticket_id)
+  # Atomically claim the work. update_all returns the number of rows it changed,
+  # so exactly one worker can win the pending/failed -> processing transition.
+  # update_all bypasses enum casting, so map the value explicitly.
+  claimed = Ticket.where(id: ticket_id, status: [:pending, :failed])
+                  .update_all(status: Ticket.statuses[:processing], updated_at: Time.current)
+
+  return if claimed.zero?   # another worker already owns or finished this ticket
+
+  ticket = Ticket.find(ticket_id)
+  result = Ai::TriageService.new(ticket).call
+
+  ticket.update!(status: :completed, category: result.category, # ...
+  )
+rescue => e
+  Ticket.where(id: ticket_id).update_all(
+    status: Ticket.statuses[:failed], error_message: "#{e.class}: #{e.message}"
+  )
+  raise
+end
+```
+
+Now the guard is a single atomic `UPDATE ... WHERE status IN (...)`. Whoever flips the row to `processing` first wins; the loser sees `claimed.zero?` and returns before spending a token. A `failed` ticket is included in the claimable set so genuine retries still re-run. You can layer a unique-jobs plugin on top to dedupe at *enqueue* time, but treat that as an optimization — the durable guarantee lives in the database, not in Redis.
+
+This introduces a failure mode of its own: a worker that claims `processing` and then crashes leaves the row stuck there — the claimable set (`pending`/`failed`) won't re-select it, so nothing retries it. Closing that requires a reaper — a heartbeat or visibility timeout that returns abandoned `processing` rows to `pending`. It belongs to the same future hardening as the claim itself, not to the shipped gate.
+
+The atomic claim closes the concurrent-duplicate gap at the worker. If you need the *enqueue itself* to be exactly-once — no job lost, and none sent for a ticket whose transaction never committed — the transactional outbox pattern is the next level up: write an outbox row in the same transaction as the ticket and let a separate process enqueue from it. That's a larger change and a post of its own; for this pipeline, the status gate plus an atomic claim is enough.
+
+## A subtle case: the model succeeded, the write didn't
+
+One more case is worth naming because it's the expensive one, even though it's beyond the current build. The worker calls OpenAI successfully, then the `update!` fails — a deadlock, a connection reset, a validation error. The job raises and retries. On the retry, the classification is gone, so the engine calls the model again and pays a second time for a response it already had.
+
+The engine already persists every model call — the input, the raw response, the validation result — to a per-ticket audit trail for replay and debugging. That same audit trail is a natural foundation for closing this gap: if the raw response were recorded before the classification write is attempted, a retry after a failed write could reuse the stored response instead of re-billing. This is a future improvement, not current behavior — and not a trivial one: it depends on the ordering and transaction guarantees between the audit write and the classification write, plus a lookup-and-reuse path on retry. For the trail to be a reliable basis at all, the audit write and the result write need to share a transaction; otherwise a crash between them leaves the record incomplete for exactly the tickets that failed.
+
+## Common idempotency mistakes
+
+- **A per-attempt identity.** If the value you key on changes every run, it isn't a stable identity — it's a UUID generator. Derive it from the domain entity (the ticket) so every attempt agrees on which work this is.
+- **`find_or_create_by` without a unique index.** Under concurrency it races exactly like the check-then-act gap above. The uniqueness has to be enforced by the database, not by a Ruby conditional.
+- **Treating the LLM call as the idempotency boundary.** The call isn't the thing that must happen once; the *side effect* is. Guard the write and the reply, not the API request.
+- **Swallowing errors to avoid duplicates.** Rescuing and returning quietly hides real failures and gives you a ticket stuck in `pending` forever. Record the error to `error_message`, set `failed`, and let the retry work — a visible failure is a debuggable one.
+
+## Tradeoffs
+
+- **Eventual consistency.** Triage lands seconds after ingestion, and the UI shows a triaging state in the meantime. This is the deliberate price of a write path that doesn't depend on the model — the same tradeoff the case study accepts.
+- **An extra state and an extra write.** The atomic-claim approach adds a `processing` state and one small `UPDATE` per job. That's cheap insurance against concurrent double-billing, but it is not free, and for a strictly single-producer enqueue path the simpler status gate may be all you need.
+- **Response caching adds storage.** Reusing the audit record to dodge re-billing means retaining raw responses, which has a retention and privacy cost. Worth it when calls are metered; skip it for a free local model.
+
+## Failure modes
+
+| Failure | What happens | Result |
+|---|---|---|
+| Retry after a successful run (ack lost) | Gate sees `completed` | Returns immediately — no second call, no second write |
+| Duplicate enqueue, run in parallel | Status gate has a check-then-act gap here | Not closed by the status gate alone; the atomic claim above makes only one worker win |
+| Provider timeout or rate limit | Job raises; Sidekiq retries with backoff | Ingestion already committed, so no ticket is lost |
+| Truncated, refused, or errored response | Incomplete or absent payload is caught before the write; error recorded | Bad output is rejected, not persisted; job retries |
+| Crash after model call, before write | Job retries and re-calls the model | No ticket lost or corrupted; re-billing is the cost (response reuse is a future improvement) |
+| Crash after write, before ack | Sidekiq retries the completed job | Idempotency gate makes the retry a no-op |
+
+On that fourth row, be precise about what the model can actually do wrong: strict Structured Outputs guarantees the *shape* of the payload, so arbitrary schema-shape drift isn't a failure mode. What remains is truncation (a length-capped, incomplete response), a refusal, an API error, or output that is schema-valid but semantically wrong. Validation still runs before any write — it guards the database contract against the incomplete and absent cases, and the audit trail preserves the semantically-wrong ones for review.
+
+## Testing and monitoring idempotent workers
+
+The shipped gate is verifiable in one test: invoke `perform` twice **in series** for the same ticket and assert exactly one persisted classification/result. Because the engine stubs the OpenAI client with pure-Ruby mocks and never hits the network in tests, you can assert the client was called at most once across both invocations — which is the real contract for the sequential-retry case the completion gate exists to cover.
+
+The **concurrent**-duplicate case is a separate test, and it belongs with the atomic claim as future work: two workers racing the same ticket can't be exercised by sequential calls or by stubs alone — it needs real database concurrency (parallel connections contending on the `pending → processing` transition), so it's a heavier integration test than the sequential one. Testing non-deterministic pipelines deterministically is a topic worth its own treatment.
+
+In production, idempotency shows up in the metrics you already have. Sidekiq surfaces retry counts and queue depth; a rising retry rate or a growing count of `failed` tickets is your signal that the provider is degraded or a classification is repeatedly rejected. Because failures are auditable per ticket, you diagnose them from stored data rather than by re-hitting the model.
+
+## What's shipped vs. what's planned
+
+To keep the boundary honest, here's the split.
+
+**Shipped in the engine today:** the async boundary that keeps ingestion to single-digit milliseconds in local measurement, Structured Outputs validated against a JSON schema before any write, the UUID-plus-completion-state idempotency gate, bounded retries (`retry: 3`) with exponential backoff into Sidekiq's Dead Set, and a per-ticket audit trail of every model call.
+
+**On the project roadmap:** outbound webhook dispatch to client callback URLs, and automatic provider fallback to Anthropic Claude when OpenAI rate-limits or times out.
+
+**Hardening I'd add next (not yet built):** the atomic `pending → processing` claim for concurrent duplicates, reusing the audit trail to skip re-billing after a failed write, and a transactional outbox for exactly-once enqueue.
+
+## The lesson
+
+The hard part of an AI feature isn't the prompt — it's the contract around a model you don't control. Treat it as an unreliable external dependency, put it behind a queue, and then accept the consequence of that queue: **every worker will run more than once, so every worker must be safe to.** Key idempotency on a stable identifier, make the state transition atomic where concurrency is possible, and treat your audit trail as the foundation for making retries cheaper. Do that, and non-determinism stays contained instead of leaking into your data.
+
+The full architecture — ingestion, the structured-output contract, scaling, and security — is in the [AI Support Ticket Triage Engine case study](/projects/ai-support-ticket-triage-engine), and the worker code is in the [repository](https://github.com/danialasghar5/ai-support-triage).
+
+*I'm a senior backend engineer working on production Rails, async systems, and AI-integrated backends, and I'm open to senior/staff and consulting work. The best way to reach me is [on the about page](/about).*

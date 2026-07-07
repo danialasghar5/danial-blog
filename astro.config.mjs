@@ -8,6 +8,8 @@ import { defineConfig, fontProviders } from 'astro/config';
 export default defineConfig({
 	site: 'https://danialasghar.com',
 	integrations: [mdx(), sitemap()],
+	// Hide the Astro dev toolbar (dev-only UI; never shipped to production anyway).
+	devToolbar: { enabled: false },
 	// Dual-theme syntax highlighting: readable light theme by default, dark theme
 	// swapped in via [data-theme="dark"] (see global.css .astro-code overrides).
 	markdown: {

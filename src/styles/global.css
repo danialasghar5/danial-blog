@@ -82,7 +82,8 @@
 
 	/* ---- Layout ---- */
 	--container: 1120px;
-	--container-prose: 720px;
+	--container-prose: 760px;   /* article reading text column */
+	--prose-bleed: 1040px;      /* code blocks / images / hero extend to this width */
 	--header-h: 64px;
 }
 
