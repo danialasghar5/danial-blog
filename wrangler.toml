@@ -1,0 +1,10 @@
+#:schema node_modules/wrangler/config-schema.json
+# Static Astro site deployed to Cloudflare Workers as static assets.
+# Its presence tells `wrangler deploy` the project is already configured, so it
+# uploads the pre-built ./dist directly and skips the `astro add cloudflare`
+# auto-setup that was crashing the deploy.
+name = "danial-blog"
+compatibility_date = "2026-07-07"
+
+[assets]
+directory = "./dist"
