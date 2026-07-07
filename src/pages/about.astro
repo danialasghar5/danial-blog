@@ -8,20 +8,22 @@ import { SITE_TITLE, ROLE, SOCIALS, EMAIL } from '../consts';
 
 // ── EDIT ME: replace the placeholders below with your real details ──────────
 const skills = [
-	{ group: 'Backend', items: ['Ruby on Rails', 'Ruby', 'PostgreSQL', 'Sidekiq', 'REST & GraphQL APIs'] },
-	{ group: 'Frontend', items: ['React', 'Hotwire / Turbo', 'TypeScript', 'Stimulus', 'Tailwind'] },
-	{ group: 'Commerce', items: ['Shopify App Dev', 'Shopify API', 'Billing / Webhooks', 'Meta Graph'] },
-	{ group: 'Cloud & Infra', items: ['AWS', 'Docker', 'Cloudflare', 'CI/CD', 'Redis'] },
+	{ group: 'Backend', items: ['Ruby on Rails', 'Ruby', 'PostgreSQL', 'REST & GraphQL APIs', 'Service design'] },
+	{ group: 'Async & Distributed', items: ['Sidekiq', 'Solid Queue', 'Redis', 'Background jobs', 'Idempotency & retries'] },
+	{ group: 'AI Integration', items: ['OpenAI API', 'OpenRouter', 'Structured Outputs', 'Async LLM pipelines'] },
+	{ group: 'Platform & Infra', items: ['AWS', 'Docker', 'Cloudflare', 'CI/CD', 'Shopify APIs'] },
 ];
 
+// NOTE: company names, dates, and specifics below are placeholders — replace with
+// real employment history. Kept metric-free (no invented production numbers).
 const experience = [
 	{
 		role: 'Senior Backend Engineer',
 		company: 'Freelance / Contract',
 		period: '2022 — Present',
 		points: [
-			'Ship production Rails & Shopify apps for founders and funded startups, from MVP to scale.',
-			'Cut background-job processing time ~60% by moving heavy Shopify webhook work to batched Sidekiq jobs.',
+			'Design and ship production Rails backends for founders and funded startups — API design, background-processing pipelines, and AI integrations.',
+			'Move slow or failure-prone work (webhooks, LLM calls, third-party syncs) off the request path into idempotent background jobs.',
 		],
 	},
 	{
@@ -29,8 +31,8 @@ const experience = [
 		company: 'SaaS Product Company',
 		period: '2020 — 2022',
 		points: [
-			'Built multi-tenant billing and team management on a Rails + Stripe SaaS platform.',
-			'Owned the API layer serving web and mobile clients across millions of monthly requests.',
+			'Built multi-tenant billing, teams, and the shared API layer on a Rails SaaS platform.',
+			'Owned data modeling and the background-processing behind web and mobile clients.',
 		],
 	},
 	{
@@ -38,8 +40,8 @@ const experience = [
 		company: 'Early-Stage Startup',
 		period: '2018 — 2020',
 		points: [
-			'Designed PostgreSQL data models and background pipelines on AWS.',
-			'Introduced automated CI/CD, cutting release time from hours to minutes.',
+			'Designed PostgreSQL data models and background pipelines running on AWS.',
+			'Set up automated CI/CD and repeatable deployments for the team.',
 		],
 	},
 ];
@@ -75,7 +77,7 @@ const experience = [
 				<aside class="intro-facts">
 					<dl>
 						<div><dt>Role</dt><dd>{ROLE}</dd></div>
-						<div><dt>Focus</dt><dd>Rails · Shopify · AWS</dd></div>
+						<div><dt>Focus</dt><dd>Rails · PostgreSQL · Async · AI backends</dd></div>
 						<div><dt>Availability</dt><dd>Open to freelance & contract</dd></div>
 						<div><dt>Email</dt><dd><a href={`mailto:${EMAIL}`}>{EMAIL}</a></dd></div>
 					</dl>

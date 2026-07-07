@@ -1,15 +1,16 @@
 ---
 title: 'Interstride'
-problem: 'International students need current career and visa data, but that data lives across slow, rate-limited third-party services.'
+problem: 'International-student career data lives across slow, rate-limited third-party services; fetching it inline would make the product slow and fragile.'
 order: 2
 featured: true
 role: 'Backend Engineer'
 timeframe: '2021–2022'
 tech: ['Ruby on Rails', 'PostgreSQL', 'Sidekiq', 'AWS']
+liveUrl: 'https://www.interstride.com/'
 highlights:
-  - 'Background integration layer syncing university career services with external job/visa data'
-  - 'Sidekiq pipelines that keep high-volume data fresh without blocking user requests'
-  - 'PostgreSQL data model designed for reliable, incremental syncs'
+  - 'Background integration layer syncing external career and job data into a local store'
+  - 'Sidekiq pipelines keep data current without upstream calls on the request path'
+  - 'PostgreSQL modeled for incremental, resumable syncs'
   - 'Runs on AWS with automated deploys'
 draft: false
 ---
@@ -17,72 +18,91 @@ draft: false
 ## Problem
 
 Interstride helps international students navigate US careers, which means surfacing
-**current** job opportunities and visa-relevant information. That data doesn't live in
-one place — it comes from external services and university career systems that are
-slow, rate-limited, and occasionally unavailable. Fetching it inline would make the
-product slow and fragile.
+current job and career information. That data originates in external services and
+university systems that are slow, rate-limited, and occasionally unavailable. Fetching
+it during a user request would tie page performance to third-party latency and make the
+app fail whenever an upstream did.
 
 ## Requirements
 
 - Aggregate career and job data from multiple third-party sources.
-- Keep it reasonably fresh without hammering rate-limited APIs.
-- Never let a slow or failing upstream degrade the user-facing experience.
-- Model the data so partial or repeated syncs stay consistent.
+- Keep it current without exceeding upstream rate limits.
+- Prevent a slow or failing source from degrading the user-facing experience.
+- Model the data so partial or repeated syncs converge rather than duplicate.
+
+## Constraints
+
+- Upstream APIs are rate-limited and give no availability guarantee, so pull frequency
+  is bounded by their limits, not by how fresh the app would like data to be.
+- Sources differ in shape and reliability, so each integration has to be isolated rather
+  than run through one shared path.
 
 ## Architecture
 
-A **background integration layer** sits between the third-party sources and the
-application. Scheduled and event-driven **Sidekiq** jobs pull upstream data, normalize
-it, and write it into **PostgreSQL**, so the request path only ever reads local,
-already-synced data.
+A background integration layer sits between the sources and the app. Scheduled and
+event-driven Sidekiq jobs pull upstream data, normalize it, and write it into
+PostgreSQL, so the request path only reads local, already-synced records.
 
 ```
 external sources ──▶ Sidekiq sync jobs ──▶ normalize ──▶ PostgreSQL ──▶ app reads
      (rate-limited)      (scheduled)                       (source of truth)
 ```
 
-The app is a Rails application deployed on **AWS**.
+The application is Rails, deployed on AWS.
 
 ## Engineering Decisions
 
-- **Read local, sync in the background.** The user experience never waits on an
-  external API; it reads from PostgreSQL, which the sync layer keeps updated.
-- **Incremental, resumable syncs.** Jobs are structured so a partial or repeated run
-  converges to a consistent state instead of duplicating or corrupting records.
-- **Isolation per source.** Each integration is its own job path, so one flaky upstream
-  doesn't stall the others.
+- **Read local, sync out of band.** The request path reads PostgreSQL, which the sync
+  layer keeps updated, so user-facing latency is independent of upstream response time.
+- **Incremental, resumable syncs.** Jobs are written so a partial or repeated run
+  reconciles to a consistent state instead of duplicating or corrupting rows.
+- **One job path per source.** Isolating integrations means a single flaky upstream
+  stalls only its own pipeline, not the others.
 
 ## Tradeoffs
 
-- **Freshness vs. load.** Data is as fresh as the last successful sync, not real-time —
-  a deliberate trade to respect upstream rate limits and keep the app fast.
-- **Operational surface.** More background jobs mean more to monitor, in exchange for a
-  resilient read path.
+- **Freshness for load.** Data is as current as the last successful sync rather than
+  real-time — a deliberate trade to stay within upstream rate limits and keep reads
+  fast.
+- **More background surface.** A set of sync pipelines is more to operate than direct
+  calls, in exchange for a read path that never blocks on a third party.
 
 ## Failure Modes
 
-- **Upstream down / throttled** → the sync job backs off and retries; stale-but-valid
-  local data continues serving users.
-- **Partial sync** → incremental design means the next run reconciles rather than
+- **Upstream throttled or down** — the sync job backs off and retries; the last valid
+  local data keeps serving users.
+- **Partial sync** — incremental design means the next run reconciles instead of
   double-writing.
 
 ## Scaling
 
-Sync throughput scales by adding workers and partitioning jobs per source. Because
-reads hit PostgreSQL rather than upstream APIs, user-facing performance is decoupled
-from third-party latency and volume.
+Sync throughput scales by adding workers and partitioning jobs per source. Because reads
+hit PostgreSQL rather than upstream APIs, user-facing performance is decoupled from
+third-party latency and volume.
+
+## Monitoring
+
+Sidekiq queue depth and retry rates per source indicate when an upstream is slow or
+failing, and the last-successful-sync timestamp per source shows data staleness
+directly. A source that stops updating surfaces as a stale timestamp rather than a user
+error.
+
+## Security
+
+Upstream credentials are stored server-side and scoped per integration. Data is fetched
+over TLS and written to PostgreSQL as the internal source of truth, so the request path
+never forwards third-party calls or credentials to the client.
 
 ## Outcome
 
-A reliable integration backbone that keeps high-volume career and visa data in sync
-across services, so students see current information without the app depending on
-external APIs at request time.
+An integration layer that keeps career and job data current across services, so students
+see up-to-date information without the app depending on external APIs at request time.
 
 ## Lessons Learned
 
-When a product is fundamentally an aggregator of unreliable third-party data, the
-architecture *is* the product: a clean sync boundary and a local source of truth are
-what make it feel fast and dependable.
+When a product is an aggregator of unreliable third-party data, the sync boundary is the
+architecture: a local source of truth and per-source isolation are what keep it fast and
+dependable.
 
-> Some specifics of scale and source integrations are generalized here — replace with
+> Specifics of scale, source list, and integrations are generalized here — replace with
 > exact figures and provider names you're comfortable sharing.

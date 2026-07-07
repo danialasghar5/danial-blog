@@ -1,41 +1,50 @@
 ---
 title: 'AI Support Ticket Triage Engine'
-problem: 'Support teams drown in unclassified tickets; LLMs are slow, non-deterministic, and fail unpredictably in a request cycle.'
+problem: 'Support queues fill with unclassified tickets, but moving triage to an LLM puts a slow, non-deterministic, failure-prone call in the request path.'
 order: 1
 featured: true
 role: 'Backend Engineer'
 timeframe: '2025'
 tech: ['Ruby on Rails', 'PostgreSQL', 'Sidekiq', 'Redis', 'OpenAI API', 'Structured Outputs']
+repoUrl: 'https://github.com/danialasghar5/ai-support-triage'
 highlights:
-  - 'Rails API-only backend with the LLM pipeline fully decoupled from web requests'
-  - 'Sidekiq + Redis workers made idempotent so retries never double-process a ticket'
-  - 'OpenAI structured JSON schema outputs validated before anything touches the database'
-  - 'Retry handling and error auditing around non-deterministic model responses'
+  - 'Rails API-only backend with the LLM pipeline decoupled from the request cycle'
+  - 'Idempotent Sidekiq workers keyed on the ticket UUID so retries never double-process'
+  - 'OpenAI Structured Outputs validated against a JSON schema before any write'
+  - 'Every model call recorded to an audit trail for replay and debugging'
 draft: false
 ---
 
 ## Problem
 
-Incoming support tickets arrive unstructured — a title, a body, and no consistent
-priority or category. Teams triage them by hand, which is slow and inconsistent, and
-the obvious fix (call an LLM) introduces three hard backend problems: LLM calls are
-**slow** (seconds, not milliseconds), **non-deterministic** (the same input can return
-different shapes), and **failure-prone** (timeouts, rate limits, malformed JSON).
-
-Putting that directly in the request path would make the API unreliable and slow.
+Support tickets arrive as unstructured text — a subject and a body, no consistent
+category or priority. Triaging by hand is slow and inconsistent. The obvious fix, an
+LLM, introduces three properties a web request can't absorb: calls take seconds, the
+same input can return different output shapes, and they fail in ways HTTP handlers
+don't (timeouts, rate limits, truncated JSON). Calling the model inside the request
+would couple ticket creation to model latency and make the write path fail whenever the
+provider does.
 
 ## Requirements
 
-- Classify each ticket's **category** and **priority**, and draft a suggested response.
-- Never block or slow the web request on LLM latency.
-- Guarantee that a retried or duplicated job never produces duplicate side effects.
+- Classify each ticket's category and priority and draft a suggested response.
+- Keep ticket creation fast and independent of model latency.
+- Guarantee a retried or duplicated job produces no duplicate side effects.
 - Reject malformed or partial model output before it reaches the database.
-- Keep an audit trail of what the model saw and returned for every ticket.
+- Retain what the model saw and returned for every ticket.
+
+## Constraints
+
+- The LLM is a third-party service with rate limits and no latency SLA — it must be
+  treated as an unreliable dependency, not an in-process function call.
+- Responses are non-deterministic, so the system cannot assume a stable output shape.
+- Support agents act on triage output, so a wrong-but-confident classification is worse
+  than a delayed one — correctness is prioritized over immediacy.
 
 ## Architecture
 
-The system is a **Rails API-only** backend. The web layer does one thing: persist the
-ticket and enqueue a job. Everything AI-related happens asynchronously.
+Rails API-only. The request handler does two things and returns: persist the ticket and
+enqueue a job. All model work happens behind Sidekiq.
 
 ```
 POST /tickets ──▶ persist (PostgreSQL, UUID id) ──▶ enqueue Sidekiq job ──▶ 202
@@ -44,56 +53,72 @@ POST /tickets ──▶ persist (PostgreSQL, UUID id) ──▶ enqueue Sidekiq 
                                           ▼
                              TriageWorker (Sidekiq + Redis)
                              1. load ticket by UUID
-                             2. call OpenAI (structured output schema)
-                             3. validate JSON against schema
+                             2. call OpenAI (Structured Outputs schema)
+                             3. validate JSON against the schema
                              4. persist result + audit record
 ```
 
-PostgreSQL uses **UUID identifiers** so jobs can reference records safely across
-retries and enqueues without leaking sequential IDs.
+PostgreSQL rows use UUID primary keys so jobs reference tickets without exposing
+sequential IDs or racing on enqueue.
 
 ## Engineering Decisions
 
-- **API-only + async by default.** The LLM lives entirely behind Sidekiq, so
-  request latency is independent of model latency. The web tier stays fast and
-  predictable.
-- **Structured Outputs over free-form parsing.** The model is constrained to a JSON
-  schema, and the response is validated against that schema before use — no brittle
-  regex or "hope it's valid JSON."
-- **Idempotent workers.** Each job keys its work on the ticket UUID and its processing
-  state, so a retry re-runs safely and never double-writes a classification or a draft.
+- **The model lives behind a queue, not in the handler.** Request latency stays a
+  function of a database insert, not of OpenAI's response time, so the write path holds
+  up when the provider is slow.
+- **Structured Outputs instead of parsing free text.** The response is constrained to a
+  JSON schema and validated before use, which removes regex parsing and makes malformed
+  output a caught error rather than corrupt data.
+- **Workers are idempotent on the ticket UUID and processing state.** A Sidekiq retry
+  re-runs the same job safely; it will not write a second classification or a second
+  draft for the same ticket.
 
 ## Tradeoffs
 
-- **Eventual consistency.** Triage results appear a few seconds after ticket creation
-  rather than synchronously. Acceptable — the UI shows a "triaging" state.
-- **Schema rigidity vs. flexibility.** Constraining the model to a strict schema
-  reduces expressiveness but buys reliability and validation, which matters far more
-  for a backend pipeline.
+- **Eventual consistency.** Triage results appear seconds after creation instead of
+  synchronously; the UI shows a "triaging" state. Accepted in exchange for a write path
+  that doesn't depend on the model.
+- **Schema rigidity.** Constraining the model to a fixed schema reduces what it can
+  express, in exchange for output that can be validated and stored deterministically.
 
 ## Failure Modes
 
-- **Model timeout / rate limit** → job raises and Sidekiq retries with backoff.
-- **Malformed / partial JSON** → schema validation fails, the job records the error to
-  the audit trail and retries rather than persisting garbage.
-- **Duplicate enqueue** → idempotency keying on the ticket UUID makes reprocessing a
-  no-op.
+- **Timeout or rate limit** — the job raises and Sidekiq retries with exponential
+  backoff; no ticket is lost because ingestion already committed.
+- **Malformed or partial JSON** — schema validation fails, the error is written to the
+  audit trail, and the job retries instead of persisting a bad classification.
+- **Duplicate enqueue** — idempotency keying on the UUID makes reprocessing a no-op.
 
 ## Scaling
 
-Throughput scales horizontally by adding Sidekiq workers; Redis is the queue backbone.
-Because the web tier only writes and enqueues, ingestion scales independently of how
-fast the model pipeline drains the queue. Slow model periods create backlog, not
-downtime.
+Ingestion and inference scale independently. The web tier only inserts and enqueues, so
+it scales with database write capacity; throughput of the AI pipeline scales by adding
+Sidekiq workers against Redis. A slow provider period produces queue backlog, which
+drains as capacity recovers, rather than request failures.
+
+## Monitoring
+
+Sidekiq exposes queue depth, retry counts, and job latency, which surface a slow or
+failing provider as growing backlog and rising retries. The per-ticket audit records
+(input, raw response, validation result) make individual failures replayable without
+re-hitting the model, so a bad classification can be diagnosed from stored data.
+
+## Security
+
+The API is key-authenticated and the OpenAI credential is held server-side only, never
+exposed to clients. Ticket content is sent to the model over TLS; audit records store
+what was sent so data flow to the third party is inspectable. UUID identifiers avoid
+leaking record counts or enabling enumeration through the API.
 
 ## Outcome
 
-A support triage pipeline where LLM latency, retries, and non-deterministic responses
-are contained safely behind an async boundary — the web API stays fast while
-classification, prioritization, and response drafting happen reliably in the background.
+A triage pipeline where model latency, retries, and non-deterministic responses are
+contained behind an async boundary. Ticket creation stays fast, and classification,
+prioritization, and response drafting complete in the background with validation and an
+audit trail rather than best-effort parsing.
 
 ## Lessons Learned
 
-The hard part of "AI features" is rarely the prompt — it's the **backend contract**
-around it: treating the model as an unreliable external dependency, enforcing a schema,
-and making every worker idempotent so non-determinism can't corrupt state.
+The difficult part of an AI feature is the contract around the model, not the prompt:
+treat it as an unreliable external dependency, constrain and validate its output, and
+make every worker idempotent so non-determinism cannot corrupt state.

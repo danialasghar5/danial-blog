@@ -1,39 +1,49 @@
 ---
 title: 'AI Lead Engine'
-problem: 'Sales teams need AI lead qualification in real time — but LLM scoring is async, and users expect instant, live-updating results without an SPA.'
+problem: 'LLM lead scoring is asynchronous, but users expect results to appear live — without adding a single-page app to get real-time UI.'
 order: 3
 featured: true
 role: 'Backend Engineer'
 timeframe: '2025'
 tech: ['Ruby on Rails', 'Rails 8', 'Solid Queue', 'Hotwire', 'Turbo Streams', 'ActionCable', 'OpenRouter']
+repoUrl: 'https://github.com/danialasghar5/ai-lead-engine'
 highlights:
-  - 'Rails 8 with Solid Queue for background processing — no external job backend'
-  - 'OpenRouter LLM integration for lead scoring with structured qualification output'
-  - 'Turbo Streams + ActionCable push results to the browser the instant a job finishes'
-  - 'Server-rendered, reactive experience without SPA complexity'
+  - 'Rails 8 with Solid Queue for database-backed jobs — no separate queue infrastructure'
+  - 'OpenRouter integration producing structured lead-qualification output'
+  - 'Turbo Streams over ActionCable push results into the page when the job completes'
+  - 'Server-rendered live updates with no client-side framework'
 draft: false
 ---
 
 ## Problem
 
-Lead qualification with an LLM is inherently asynchronous — scoring a lead takes
-seconds. But sales users expect a **real-time** experience: submit a lead, watch it get
-qualified live, no page refresh. The usual answer is a single-page app polling an API,
-which adds a whole frontend stack and its own complexity. The goal was real-time UX
-**without** that.
+Qualifying a lead with an LLM takes seconds, so scoring has to run out of band. But the
+product's value is a live experience: submit a lead and watch it get qualified without
+a refresh. The default way to get that — a single-page app polling an API — adds a
+frontend stack and a second codebase to maintain. The goal was live updates without
+that overhead.
 
 ## Requirements
 
-- Score and qualify leads with an LLM, producing structured qualification output.
-- Process scoring asynchronously so the UI never blocks on model latency.
-- Stream results to the user the moment they're ready.
-- Deliver a reactive experience without building and maintaining an SPA.
+- Score and qualify leads with an LLM and return structured qualification output.
+- Run scoring asynchronously so the UI never blocks on model latency.
+- Push results to the user the moment they are ready.
+- Deliver live updates without building or maintaining an SPA.
+
+## Constraints
+
+- LLM scoring latency is variable and outside the app's control, so the UI cannot wait
+  on it synchronously.
+- The team is Rails-first; a separate JavaScript application would add operational and
+  maintenance cost disproportionate to the interaction complexity.
+- Users keep a page open while leads process, so results have to arrive over a
+  connection that already exists rather than through repeated polling.
 
 ## Architecture
 
-Built on **Rails 8**. Lead submissions enqueue a **Solid Queue** job that calls the LLM
-via **OpenRouter**; when the job finishes, it broadcasts the result over **Turbo
-Streams / ActionCable** straight into the page.
+Built on Rails 8. A lead submission enqueues a Solid Queue job that calls the LLM
+through OpenRouter; on completion the job broadcasts the result over Turbo Streams via
+ActionCable directly into the open page.
 
 ```
 submit lead ──▶ Solid Queue job ──▶ OpenRouter (score + qualify)
@@ -42,45 +52,62 @@ submit lead ──▶ Solid Queue job ──▶ OpenRouter (score + qualify)
                        broadcast Turbo Stream ──▶ ActionCable ──▶ live DOM update
 ```
 
-No client-side framework — the server renders HTML and pushes updates over WebSockets.
+The server renders HTML and pushes fragments over WebSockets; there is no client-side
+framework rendering state.
 
 ## Engineering Decisions
 
-- **Solid Queue over an external broker.** Rails 8's built-in queue keeps the whole
-  system in one stack (DB-backed jobs) — fewer moving parts to run and monitor.
-- **Async scoring, streamed results.** The LLM call is a background job; the UI updates
-  reactively when it completes, so model latency never blocks interaction.
-- **Hotwire instead of an SPA.** Turbo Streams + ActionCable deliver live updates with
-  server-rendered HTML — real-time UX without a separate frontend application.
+- **Solid Queue rather than an external broker.** Rails 8 runs database-backed jobs, so
+  the queue is one fewer service to deploy and monitor and shares the app's Postgres
+  durability guarantees.
+- **Scoring is a background job; results stream back.** The LLM call never sits in a
+  request, and the result reaches the user through a broadcast when it finishes, so
+  variable model latency never blocks interaction.
+- **Hotwire instead of an SPA.** Turbo Streams and ActionCable deliver live updates from
+  server-rendered HTML, which keeps the whole feature in one Rails codebase.
 
 ## Tradeoffs
 
-- **WebSocket state.** Live streaming means managing ActionCable connections, in
-  exchange for eliminating an entire SPA codebase.
-- **Server-rendered reactivity** covers most interactions cleanly; extremely rich
-  client interactions would still favor a JS framework — not needed here.
+- **WebSocket connection state.** Live delivery means managing ActionCable connections
+  and broadcasts, accepted in exchange for removing an entire SPA and its build/tooling.
+- **Server-rendered reactivity** covers this interaction cleanly; a highly interactive
+  client with local state would still favor a JS framework — not the case here.
 
 ## Failure Modes
 
-- **LLM/OpenRouter error or timeout** → the job retries; the UI holds a "scoring" state
-  until a result streams in.
-- **Client disconnects mid-job** → the result is persisted, so it's present on reconnect
-  rather than lost.
+- **OpenRouter error or timeout** — the job retries; the UI holds a pending state until
+  a result streams in rather than showing a failure.
+- **Client disconnects mid-job** — the result is persisted on completion, so it is
+  present on reconnect instead of being lost with the socket.
 
 ## Scaling
 
-Scoring throughput scales by adding Solid Queue workers. Because results are pushed via
-Turbo Streams rather than polled, adding users doesn't multiply request load — updates
-are event-driven over existing WebSocket connections.
+Scoring throughput scales by adding Solid Queue workers. Because results are pushed over
+existing WebSocket connections rather than polled, more concurrent users add broadcast
+fan-out rather than multiplying inbound request load.
+
+## Monitoring
+
+Solid Queue job state lives in Postgres, so backlog, retries, and failures are queryable
+alongside application data. ActionCable connection counts and broadcast delivery
+indicate whether live updates are reaching clients; a rise in pending leads with flat
+completions points at the model integration rather than the transport.
+
+## Security
+
+The OpenRouter API key is server-side only and never reaches the browser. Lead data is
+sent to the provider over TLS. ActionCable streams are scoped per record so a client
+only receives broadcasts for leads it is authorized to see, preventing cross-tenant
+result leakage over the socket.
 
 ## Outcome
 
-A real-time AI workflow where leads are processed asynchronously and results stream
-into the browser instantly — a reactive, server-rendered experience with none of the
-overhead of a single-page application.
+A workflow where leads are scored asynchronously and results stream into the browser as
+they complete — a live, server-rendered experience delivered from a single Rails
+codebase without a separate frontend application.
 
 ## Lessons Learned
 
-Rails 8 + Hotwire makes "real-time AI" achievable with a single backend codebase:
-Solid Queue absorbs the async work and Turbo Streams delivers the live UX, so the
-architecture stays small while feeling instant.
+Rails 8 and Hotwire make live AI features achievable without a second stack: Solid
+Queue absorbs the asynchronous work and Turbo Streams delivers the update, so the
+system stays one codebase while the interaction feels immediate.
