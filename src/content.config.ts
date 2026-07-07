@@ -9,6 +9,10 @@ const blog = defineCollection({
 	schema: ({ image }) =>
 		z.object({
 			title: z.string(),
+			// Optional keyword-first title for the HTML <title>/SEO (falls back to title).
+			seoTitle: z.string().optional(),
+			// Post-specific OG image path (public/), falls back to the branded default.
+			ogImage: z.string().optional(),
 			description: z.string(),
 			// Transform string to Date object
 			pubDate: z.coerce.date(),

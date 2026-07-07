@@ -5,7 +5,7 @@ description: "An LLM call behind a Sidekiq job runs at least once, not exactly o
 pubDate: 2026-07-07
 updatedDate: 2026-07-07
 canonicalURL: "https://danialasghar.com/blog/idempotent-ai-workers-rails/"
-ogImage: "/og-default.png"
+ogImage: "/og/idempotent-ai-workers-rails.png"
 author: "Danial Asghar"
 category: "AI Backend"
 hasCustomSchema: true
@@ -28,7 +28,7 @@ draft: false
   "@type": "TechArticle",
   "headline": "Idempotent Background Workers for LLM Calls in Rails",
   "description": "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills.",
-  "image": "https://danialasghar.com/og-default.png",
+  "image": "https://danialasghar.com/og/idempotent-ai-workers-rails.png",
   "datePublished": "2026-07-07",
   "dateModified": "2026-07-07",
   "author": {
@@ -79,6 +79,18 @@ draft: false
 }
 `}</script>
 
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Idempotent Background Workers for LLM Calls in Rails", "item": "https://danialasghar.com/blog/idempotent-ai-workers-rails/" }
+  ]
+}
+`}</script>
+
 A support ticket comes in: *"I was double-charged $49 for my subscription, please refund the duplicate."* The triage worker picks it up, calls the model, and comes back with `billing`, `high` urgency, and a refund draft — then the worker is killed, after that model call but before the write commits. Sidekiq does what it's supposed to do: it retries. Because nothing was persisted, the retry calls the model again and pays a second time; and if that ticket was enqueued twice and both jobs run at once, each can classify and each can write. Once outbound webhook dispatch ships — it's on the roadmap — the same double-run would fire the client's callback twice.
 
 A ticket about a duplicate charge, resolved by a system that duplicates its own work. That is the failure this post is about.
@@ -105,23 +117,15 @@ Concretely: calling `perform(ticket_id)` any number of times must leave the syst
 
 The engine protects the write today with the completion gate. The outbound side effect arrives with the webhook roadmap, and it will need its own per-delivery idempotency key rather than leaning on that gate.
 
-{/* DIAGRAM: replace this ASCII block with a designed SVG.
-    Filename: idempotent-sidekiq-llm-worker-retry-flow.svg
-    Alt: "Idempotent Sidekiq worker flow for LLM calls in Rails, showing where a retry hits the UUID idempotency gate" */}
-
-```
-POST /tickets ──▶ persist (PostgreSQL, UUID id) ──▶ enqueue ──▶ 202 Accepted
-                                                        │
-                                          ┌─────────────┘
-                                          ▼
-                               TriageWorker (Sidekiq)
-                                          │
-                          ┌───────────────┴────────────────┐
-                          │  idempotency gate on the UUID   │◀── retry lands here
-                          └───────────────┬────────────────┘
-                                          ▼
-                        call OpenAI ▶ validate response ▶ persist result
-```
+<img
+  class="diagram"
+  src="/idempotent-sidekiq-llm-worker-retry-flow.svg"
+  alt="Idempotent Sidekiq worker flow for LLM calls in Rails showing retry handling and completion gate."
+  width="760"
+  height="716"
+  loading="lazy"
+  decoding="async"
+/>
 
 ## The shipped gate: status-based idempotency on the UUID
 
@@ -259,4 +263,4 @@ The hard part of an AI feature isn't the prompt — it's the contract around a m
 
 The full architecture — ingestion, the structured-output contract, scaling, and security — is in the [AI Support Ticket Triage Engine case study](/projects/ai-support-ticket-triage-engine), and the worker code is in the [repository](https://github.com/danialasghar5/ai-support-triage).
 
-*I'm a senior backend engineer working on production Rails, async systems, and AI-integrated backends, and I'm open to senior/staff and consulting work. The best way to reach me is [on the about page](/about).*
+*I'm a senior backend engineer working on production Rails, async systems, and AI-integrated backends, and I'm open to senior/staff and consulting work. You can browse [more of my projects](/projects) or reach me [on the about page](/about).*

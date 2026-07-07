@@ -11,6 +11,8 @@ type PostLink = { slug: string; title: string } | null;
 
 interface Props {
 	title: string;
+	seoTitle?: string;
+	ogImage?: string;
 	description: string;
 	pubDate: Date;
 	updatedDate?: Date;
@@ -24,6 +26,8 @@ interface Props {
 
 const {
 	title,
+	seoTitle,
+	ogImage,
 	description,
 	pubDate,
 	updatedDate,
@@ -34,11 +38,14 @@ const {
 	nextPost = null,
 	hasCustomSchema = false,
 } = Astro.props;
+
+// Keyword-first SEO title when provided; brand suffix kept for recognition.
+const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={`${title} — Danial Asghar`} description={description} type="article" suppressArticleSchema={hasCustomSchema} />
+		<BaseHead title={pageTitle} description={description} type="article" suppressArticleSchema={hasCustomSchema} ogImageUrl={ogImage} />
 	</head>
 
 	<body>
@@ -108,15 +115,12 @@ const {
 
 		<style>
 			main {
-				max-width: var(--container);
+				max-width: var(--container-prose);
 				margin-inline: auto;
 				padding: var(--s-6) var(--s-3) var(--s-4);
 			}
+			/* Centered reading column; text, code, images, and tables all share it. */
 			.blog-post { display: flex; flex-direction: column; gap: var(--s-4); }
-			/* Content aligns to the container's left edge (in line with the header).
-			   Text stays at a reading width; code/images/hero extend wider. */
-			.blog-post > :global(*) { max-width: var(--container-prose); width: 100%; }
-			.hero-image, .prose { max-width: var(--prose-bleed); }
 
 			/* Header */
 			.post-header { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -167,21 +171,30 @@ const {
 			}
 			.prose :global(pre) { margin: 0 0 var(--s-3); }
 			.prose :global(hr) { margin: var(--s-5) 0; }
-			/* Text wraps at a reading width; code/images/tables use the wider prose width */
-			.prose :global(p), .prose :global(h2), .prose :global(h3),
-			.prose :global(ul), .prose :global(ol), .prose :global(blockquote) {
-				max-width: var(--container-prose);
-			}
-			.prose :global(img) { display: block; max-width: 100%; }
+			.prose :global(img) { display: block; max-width: 100%; margin-inline: auto; }
+			/* Figures/diagrams fill the reading column so they align with the text edges */
+			.prose :global(img.diagram) { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+			/* Tables: clean editorial style (sans, zebra rows, header rule) */
 			.prose :global(table) {
 				width: 100%; border-collapse: collapse;
-				font-size: var(--fs-sm); margin: 0 0 var(--s-3);
+				font-family: var(--font-sans); font-size: var(--fs-sm);
+				line-height: var(--lh-snug);
+				border: 1px solid var(--border); border-radius: var(--radius);
+				overflow: hidden; margin: var(--s-2) 0 var(--s-3);
 			}
-			.prose :global(th), .prose :global(td) {
-				border-bottom: 1px solid var(--border);
-				padding: var(--s-1) var(--s-2); text-align: left; vertical-align: top;
+			.prose :global(thead th) {
+				text-align: left; font-weight: 600; color: var(--text);
+				background: var(--bg-subtle);
+				padding: var(--s-2) var(--s-3);
+				border-bottom: 1px solid var(--border-strong);
+				white-space: nowrap;
 			}
-			.prose :global(th) { font-family: var(--font-sans); font-weight: 600; }
+			.prose :global(tbody td) {
+				padding: var(--s-2) var(--s-3); vertical-align: top;
+				color: var(--text-muted); border-top: 1px solid var(--border);
+			}
+			.prose :global(tbody tr:nth-child(even)) { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
+			.prose :global(td code), .prose :global(th code) { white-space: nowrap; }
 
 			/* Prev / next */
 			.post-nav {

@@ -15,13 +15,19 @@ interface Props {
 	// When the page supplies its own article schema (e.g. TechArticle in MDX),
 	// suppress the generic Article here to avoid duplicate article-type schema.
 	suppressArticleSchema?: boolean;
+	// Post-specific OG image (public/ path). Takes precedence over `image`/default.
+	ogImageUrl?: string;
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-const { title, description, image, type = 'website', suppressArticleSchema = false } = Astro.props;
-// Branded OpenGraph card by default; pages may pass a specific image (e.g. post hero).
-const ogImage = image ? new URL(image.src, Astro.url) : new URL('/og-default.png', Astro.site);
+const { title, description, image, type = 'website', suppressArticleSchema = false, ogImageUrl } = Astro.props;
+// Post-specific OG image first, then an imported hero, then the branded default.
+const ogImage = ogImageUrl
+	? new URL(ogImageUrl, Astro.site)
+	: image
+		? new URL(image.src, Astro.url)
+		: new URL('/og-default.png', Astro.site);
 
 // Structured data: Person + WebSite on every page; Article on articles/case studies.
 const site = Astro.site?.toString() ?? 'https://danialasghar.com/';

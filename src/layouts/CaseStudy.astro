@@ -93,14 +93,12 @@ const meta = [role, timeframe].filter(Boolean);
 
 		<style>
 			main {
-				max-width: var(--container);
+				max-width: var(--container-prose);
 				margin-inline: auto;
 				padding: var(--s-6) var(--s-3) var(--s-4);
 			}
+			/* Centered reading column; text, code, images, and tables all share it. */
 			.case-study { display: flex; flex-direction: column; gap: var(--s-4); }
-			/* Content aligns to the container's left edge (in line with the header). */
-			.case-study > :global(*) { max-width: var(--container-prose); width: 100%; }
-			.prose { max-width: var(--prose-bleed); }
 
 			/* Header */
 			.cs-header { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -161,21 +159,29 @@ const meta = [role, timeframe].filter(Boolean);
 			}
 			.prose :global(pre) { margin: 0 0 var(--s-3); }
 			.prose :global(hr) { margin: var(--s-5) 0; }
-			/* Text wraps at a reading width; code/images/tables use the wider prose width */
-			.prose :global(p), .prose :global(h2), .prose :global(h3),
-			.prose :global(ul), .prose :global(ol), .prose :global(blockquote) {
-				max-width: var(--container-prose);
-			}
-			.prose :global(img) { display: block; max-width: 100%; }
+			.prose :global(img) { display: block; max-width: 100%; margin-inline: auto; }
+			/* Figures/diagrams fill the reading column so they align with the text edges */
+			.prose :global(img.diagram) { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
 			.prose :global(table) {
 				width: 100%; border-collapse: collapse;
-				font-size: var(--fs-sm); margin: 0 0 var(--s-3);
+				font-family: var(--font-sans); font-size: var(--fs-sm);
+				line-height: var(--lh-snug);
+				border: 1px solid var(--border); border-radius: var(--radius);
+				overflow: hidden; margin: var(--s-2) 0 var(--s-3);
 			}
-			.prose :global(th), .prose :global(td) {
-				border-bottom: 1px solid var(--border);
-				padding: var(--s-1) var(--s-2); text-align: left; vertical-align: top;
+			.prose :global(thead th) {
+				text-align: left; font-weight: 600; color: var(--text);
+				background: var(--bg-subtle);
+				padding: var(--s-2) var(--s-3);
+				border-bottom: 1px solid var(--border-strong);
+				white-space: nowrap;
 			}
-			.prose :global(th) { font-family: var(--font-sans); font-weight: 600; }
+			.prose :global(tbody td) {
+				padding: var(--s-2) var(--s-3); vertical-align: top;
+				color: var(--text-muted); border-top: 1px solid var(--border);
+			}
+			.prose :global(tbody tr:nth-child(even)) { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
+			.prose :global(td code), .prose :global(th code) { white-space: nowrap; }
 
 			.back-row { margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); }
 			.back-link { font-weight: 600; font-size: var(--fs-sm); color: var(--text-muted); }
