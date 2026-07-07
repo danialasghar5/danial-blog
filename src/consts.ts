@@ -2,7 +2,7 @@
 
 export const SITE_TITLE = 'Danial Asghar';
 export const SITE_DESCRIPTION =
-	'Senior full-stack engineer building and scaling production Rails, Shopify, and AWS applications — and writing about the engineering decisions behind them.';
+	'Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.';
 
 // Personal brand + contact
 export const NAME = 'Danial Asghar';
