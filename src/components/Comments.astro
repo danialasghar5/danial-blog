@@ -1,0 +1,40 @@
+---
+// Giscus comments — PREPARED but intentionally NOT wired into any page yet
+// (blog posts are unpublished). To enable later:
+//   1. Make the repo public and install the giscus GitHub App on it.
+//   2. Enable the "Discussions" feature on the repo.
+//   3. Get repo-id / category-id from https://giscus.app.
+//   4. Set env vars:
+//        PUBLIC_GISCUS_ENABLED=true
+//        PUBLIC_GISCUS_REPO=danialasghar5/danial-blog
+//        PUBLIC_GISCUS_REPO_ID=...
+//        PUBLIC_GISCUS_CATEGORY=Announcements
+//        PUBLIC_GISCUS_CATEGORY_ID=...
+//   5. Render <Comments /> at the bottom of BlogPost.astro (post body).
+// Renders nothing until fully configured, so importing it early is safe.
+const enabled = import.meta.env.PUBLIC_GISCUS_ENABLED === 'true';
+const repo = import.meta.env.PUBLIC_GISCUS_REPO;
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID;
+const category = import.meta.env.PUBLIC_GISCUS_CATEGORY ?? 'Announcements';
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID;
+const ready = enabled && repo && repoId && categoryId;
+---
+{ready && (
+  <section class="comments" aria-label="Comments">
+    <script
+      src="https://giscus.app/client.js"
+      data-repo={repo}
+      data-repo-id={repoId}
+      data-category={category}
+      data-category-id={categoryId}
+      data-mapping="pathname"
+      data-strict="1"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-theme="preferred_color_scheme"
+      data-lang="en"
+      crossorigin="anonymous"
+      defer
+    ></script>
+  </section>
+)}

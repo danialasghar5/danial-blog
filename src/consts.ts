@@ -15,3 +15,8 @@ export const SOCIALS = {
 	twitter: 'https://x.com/Danialasghar2',
 	twitterHandle: '@Danialasghar2',
 };
+
+// Résumé download. Empty string = no résumé available yet → the About button is
+// hidden (prevents a broken /resume.pdf link). Set to '/resume.pdf' once the file
+// is added to public/, or to an external URL.
+export const RESUME_URL = '';

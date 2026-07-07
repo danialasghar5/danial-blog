@@ -1,0 +1,14 @@
+---
+// Cloudflare Web Analytics — optional and configurable via environment variable.
+// Renders nothing unless PUBLIC_CF_BEACON_TOKEN is set at build time.
+// The beacon token is a public site token (not a secret); set it in Cloudflare
+// Pages/Workers env or a local .env:  PUBLIC_CF_BEACON_TOKEN=xxxxxxxx
+const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+---
+{token && (
+  <script
+    defer
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon={`{"token": "${token}"}`}
+  ></script>
+)}

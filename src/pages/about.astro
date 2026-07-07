@@ -4,7 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Projects from '../components/Projects.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { SITE_TITLE, ROLE, SOCIALS, EMAIL } from '../consts';
+import { SITE_TITLE, ROLE, SOCIALS, EMAIL, RESUME_URL } from '../consts';
 
 // ── EDIT ME: replace the placeholders below with your real details ──────────
 const skills = [
@@ -55,7 +55,7 @@ const experience = [
 	</head>
 	<body>
 		<Header />
-		<main class="container">
+		<main id="main-content" class="container">
 			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
 			<!-- Intro -->
 			<section class="intro">
@@ -70,7 +70,7 @@ const experience = [
 					</p>
 					<div class="intro-cta">
 						<a class="btn btn-primary" href="/contact">Work with me</a>
-						<a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">Download résumé</a>
+						{RESUME_URL && <a class="btn btn-ghost" href={RESUME_URL} target="_blank" rel="noopener">Download résumé</a>}
 						<a class="btn btn-ghost" href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
 					</div>
 				</div>

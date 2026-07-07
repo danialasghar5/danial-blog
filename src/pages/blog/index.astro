@@ -21,7 +21,7 @@ const tags = [...new Set(posts.flatMap((p) => p.data.tags ?? []))].sort();
 	</head>
 	<body>
 		<Header />
-		<main class="container">
+		<main id="main-content" class="container">
 			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Blog' }]} />
 			<div class="blog-header">
 				<p class="eyebrow">Writing</p>
