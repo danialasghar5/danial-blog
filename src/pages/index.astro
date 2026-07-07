@@ -3,6 +3,7 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Hero from '../components/Hero.astro';
+import Metrics from '../components/Metrics.astro';
 import PostCard from '../components/PostCard.astro';
 import Projects from '../components/Projects.astro';
 import Newsletter from '../components/Newsletter.astro';
@@ -20,6 +21,7 @@ const posts = (await getCollection('blog'))
     <Header />
     <main>
       <Hero />
+      <Metrics />
 
       {posts.length > 0 && (
         <section class="container block">

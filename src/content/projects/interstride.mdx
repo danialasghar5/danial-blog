@@ -1,0 +1,88 @@
+---
+title: 'Interstride'
+problem: 'International students need current career and visa data, but that data lives across slow, rate-limited third-party services.'
+order: 2
+featured: true
+role: 'Backend Engineer'
+timeframe: '2021–2022'
+tech: ['Ruby on Rails', 'PostgreSQL', 'Sidekiq', 'AWS']
+highlights:
+  - 'Background integration layer syncing university career services with external job/visa data'
+  - 'Sidekiq pipelines that keep high-volume data fresh without blocking user requests'
+  - 'PostgreSQL data model designed for reliable, incremental syncs'
+  - 'Runs on AWS with automated deploys'
+draft: false
+---
+
+## Problem
+
+Interstride helps international students navigate US careers, which means surfacing
+**current** job opportunities and visa-relevant information. That data doesn't live in
+one place — it comes from external services and university career systems that are
+slow, rate-limited, and occasionally unavailable. Fetching it inline would make the
+product slow and fragile.
+
+## Requirements
+
+- Aggregate career and job data from multiple third-party sources.
+- Keep it reasonably fresh without hammering rate-limited APIs.
+- Never let a slow or failing upstream degrade the user-facing experience.
+- Model the data so partial or repeated syncs stay consistent.
+
+## Architecture
+
+A **background integration layer** sits between the third-party sources and the
+application. Scheduled and event-driven **Sidekiq** jobs pull upstream data, normalize
+it, and write it into **PostgreSQL**, so the request path only ever reads local,
+already-synced data.
+
+```
+external sources ──▶ Sidekiq sync jobs ──▶ normalize ──▶ PostgreSQL ──▶ app reads
+     (rate-limited)      (scheduled)                       (source of truth)
+```
+
+The app is a Rails application deployed on **AWS**.
+
+## Engineering Decisions
+
+- **Read local, sync in the background.** The user experience never waits on an
+  external API; it reads from PostgreSQL, which the sync layer keeps updated.
+- **Incremental, resumable syncs.** Jobs are structured so a partial or repeated run
+  converges to a consistent state instead of duplicating or corrupting records.
+- **Isolation per source.** Each integration is its own job path, so one flaky upstream
+  doesn't stall the others.
+
+## Tradeoffs
+
+- **Freshness vs. load.** Data is as fresh as the last successful sync, not real-time —
+  a deliberate trade to respect upstream rate limits and keep the app fast.
+- **Operational surface.** More background jobs mean more to monitor, in exchange for a
+  resilient read path.
+
+## Failure Modes
+
+- **Upstream down / throttled** → the sync job backs off and retries; stale-but-valid
+  local data continues serving users.
+- **Partial sync** → incremental design means the next run reconciles rather than
+  double-writing.
+
+## Scaling
+
+Sync throughput scales by adding workers and partitioning jobs per source. Because
+reads hit PostgreSQL rather than upstream APIs, user-facing performance is decoupled
+from third-party latency and volume.
+
+## Outcome
+
+A reliable integration backbone that keeps high-volume career and visa data in sync
+across services, so students see current information without the app depending on
+external APIs at request time.
+
+## Lessons Learned
+
+When a product is fundamentally an aggregator of unreliable third-party data, the
+architecture *is* the product: a clean sync boundary and a local source of truth are
+what make it feel fast and dependable.
+
+> Some specifics of scale and source integrations are generalized here — replace with
+> exact figures and provider names you're comfortable sharing.

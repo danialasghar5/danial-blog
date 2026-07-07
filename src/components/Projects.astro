@@ -1,12 +1,17 @@
 ---
-import { projects } from '../data/projects';
+import { getCollection } from 'astro:content';
+
 interface Props {
   showAll?: boolean;
   heading?: string;
   withHeader?: boolean;
 }
 const { showAll = false, heading, withHeader = true } = Astro.props;
-const displayProjects = showAll ? projects : projects.filter((p) => p.featured);
+
+const all = (await getCollection('projects'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => a.data.order - b.data.order);
+const displayProjects = showAll ? all : all.filter((p) => p.data.featured);
 const title = heading ?? (showAll ? 'All projects' : 'Featured work');
 ---
 <section class="projects container block">
@@ -17,23 +22,16 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
     </div>
   )}
   <div class="grid-cards">
-    {displayProjects.map((p) => {
-      const href = p.link || p.repo;
-      const Tag = href ? 'a' : 'div';
-      return (
-        <Tag class="proj" href={href} {...(href ? { target: '_blank', rel: 'noopener' } : {})}>
-          <div class="proj-top">
-            <h3>{p.title}</h3>
-            {href && (
-              <svg class="ext" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
-            )}
-          </div>
-          <p class="desc">{p.description}</p>
-          {p.outcome && <p class="outcome">{p.outcome}</p>}
-          <ul class="tech">{p.tech.map((t) => <li>{t}</li>)}</ul>
-        </Tag>
-      );
-    })}
+    {displayProjects.map((p) => (
+      <a class="proj" href={`/projects/${p.id}/`}>
+        <div class="proj-top">
+          <h3>{p.data.title}</h3>
+          <svg class="arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <p class="desc">{p.data.problem}</p>
+        <ul class="tech">{p.data.tech.map((t) => <li>{t}</li>)}</ul>
+      </a>
+    ))}
   </div>
 </section>
 
@@ -46,14 +44,13 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
     background: var(--card-bg); color: var(--text); text-decoration: none;
     transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   }
-  a.proj:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
+  .proj:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
   .proj-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
   .proj h3 { margin: 0; font-size: var(--fs-lg); font-weight: 700; }
-  a.proj:hover h3 { color: var(--brand); }
-  .ext { color: var(--text-faint); flex-shrink: 0; }
-  a.proj:hover .ext { color: var(--brand); }
+  .proj:hover h3 { color: var(--brand); }
+  .arrow { color: var(--text-faint); flex-shrink: 0; transition: transform .2s ease, color .2s ease; }
+  .proj:hover .arrow { color: var(--brand); transform: translateX(2px); }
   .desc { color: var(--text-muted); font-size: var(--fs-sm); line-height: var(--lh-normal); margin: 0; }
-  .outcome { color: var(--text); font-size: var(--fs-sm); line-height: var(--lh-normal); margin: 0; font-weight: 500; }
   .tech { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem; }
   .tech li { font-size: var(--fs-xs); padding: .2rem .55rem; border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); background: var(--bg-subtle); }
 </style>

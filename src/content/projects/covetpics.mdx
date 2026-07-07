@@ -1,0 +1,85 @@
+---
+title: 'CovetPics — Shopify UGC Platform'
+problem: 'Merchants want to showcase user-generated content on their storefronts, but that means operating reliably around external APIs, webhooks, and platform limits.'
+order: 4
+featured: false
+role: 'Backend Engineer'
+timeframe: '2019–2021'
+tech: ['Ruby on Rails', 'Shopify', 'Graph API', 'Webhooks', 'SaaS', 'E-commerce']
+highlights:
+  - 'Production Shopify app for collecting, managing, and displaying user-generated content'
+  - 'Shopify Graph API + product integrations tied to real merchant catalogs'
+  - 'Webhook-driven sync to stay consistent with store changes'
+  - 'Merchant-facing SaaS features within Shopify platform constraints'
+draft: false
+---
+
+## Problem
+
+CovetPics lets Shopify merchants collect user-generated content (photos, social posts)
+and showcase it on their storefronts, tied to real products. The hard part isn't the
+gallery — it's operating **reliably inside someone else's platform**: Shopify's APIs,
+rate limits, webhook delivery, and product data that changes out from under you.
+
+## Requirements
+
+- Collect and manage UGC and associate it with the merchant's products.
+- Stay in sync with Shopify catalog and store changes.
+- Respect Shopify API rate limits and platform constraints.
+- Deliver merchant-facing SaaS features (management, display) dependably.
+
+## Architecture
+
+A **Rails** application integrated into the **Shopify** ecosystem. It reads catalog and
+store data through the **Shopify Graph API**, and stays consistent with the store via
+**webhooks** — reacting to product and shop events rather than polling.
+
+```
+Shopify store ──▶ webhooks ──▶ Rails app ──▶ sync product/UGC associations
+      ▲                                          │
+      └────────── Graph API reads ◀──────────────┘
+```
+
+## Engineering Decisions
+
+- **Webhook-driven sync.** React to Shopify events to stay current, instead of polling
+  the API and burning rate limit.
+- **Graph API for product integration.** UGC is tied to real products via the Shopify
+  Graph API so galleries reflect the merchant's actual catalog.
+- **Defensive external-API handling.** Treat Shopify as an unreliable dependency —
+  retries and backoff around rate limits and transient failures.
+
+## Tradeoffs
+
+- **Webhook reliability.** Webhooks can be missed or delivered out of order, so the
+  system reconciles rather than trusting a single event — more logic for more
+  correctness.
+- **Platform constraints.** Operating inside Shopify limits some choices, in exchange
+  for direct access to a large merchant ecosystem.
+
+## Failure Modes
+
+- **Missed / duplicate webhook** → reconciliation via Graph API reads brings state back
+  in line.
+- **Rate-limited API call** → backoff and retry rather than failing the merchant-facing
+  action.
+
+## Scaling
+
+The app serves many merchants concurrently; per-store isolation and webhook-driven
+updates keep load proportional to actual store activity rather than constant polling.
+
+## Outcome
+
+A production Shopify application that helps merchants collect, manage, and showcase
+user-generated content — operating reliably around external APIs, merchant workflows,
+and platform constraints.
+
+## Lessons Learned
+
+Building on a platform like Shopify is an exercise in defensive integration: assume
+webhooks are lossy, assume the API will rate-limit you, and design sync to reconcile
+toward correctness rather than trust any single call.
+
+> Serving scale and merchant counts are described qualitatively here — add exact,
+> shareable figures where you have them.

@@ -1,0 +1,167 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+type Data = CollectionEntry<'projects'>['data'];
+interface Props extends Data {}
+
+const {
+	title,
+	problem,
+	role,
+	timeframe,
+	tech = [],
+	liveUrl,
+	repoUrl,
+	highlights = [],
+	metrics = [],
+} = Astro.props;
+
+const meta = [role, timeframe].filter(Boolean);
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${title} — ${SITE_TITLE}`} description={problem} type="article" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<article class="case-study">
+				<Breadcrumbs items={[
+					{ label: 'Home', href: '/' },
+					{ label: 'Projects', href: '/projects' },
+					{ label: title },
+				]} />
+
+				<header class="cs-header">
+					<h1 class="cs-title">{title}</h1>
+					<p class="cs-problem">{problem}</p>
+
+					{meta.length > 0 && (
+						<div class="cs-meta">
+							{meta.map((m) => <span class="meta-item">{m}</span>)}
+						</div>
+					)}
+
+					{tech.length > 0 && (
+						<ul class="cs-tech">
+							{tech.map((t) => <li class="chip">{t}</li>)}
+						</ul>
+					)}
+
+					{(liveUrl || repoUrl) && (
+						<div class="cs-links">
+							{liveUrl && <a class="btn btn-primary btn-sm" href={liveUrl} target="_blank" rel="noopener">View live ↗</a>}
+							{repoUrl && <a class="btn btn-secondary btn-sm" href={repoUrl} target="_blank" rel="noopener">Source ↗</a>}
+						</div>
+					)}
+				</header>
+
+				{metrics.length > 0 && (
+					<ul class="cs-metrics">
+						{metrics.map((m) => (
+							<li>
+								<span class="m-value">{m.value}</span>
+								<span class="m-label">{m.label}</span>
+							</li>
+						))}
+					</ul>
+				)}
+
+				{highlights.length > 0 && (
+					<section class="cs-highlights" aria-label="Highlights">
+						<h2>Highlights</h2>
+						<ul>{highlights.map((h) => <li>{h}</li>)}</ul>
+					</section>
+				)}
+
+				<div class="prose">
+					<slot />
+				</div>
+
+				<div class="back-row">
+					<a href="/projects" class="back-link">← Back to Projects</a>
+				</div>
+			</article>
+		</main>
+		<Footer />
+
+		<style>
+			main {
+				max-width: var(--container-prose);
+				margin-inline: auto;
+				padding: var(--s-6) var(--s-3) var(--s-4);
+			}
+			.case-study { display: flex; flex-direction: column; gap: var(--s-4); }
+
+			/* Header */
+			.cs-header { display: flex; flex-direction: column; gap: var(--s-2); }
+			.cs-title {
+				font-size: var(--fs-4xl); font-weight: 800;
+				letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight); margin: 0;
+			}
+			.cs-problem { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; }
+			.cs-meta {
+				display: flex; flex-wrap: wrap; align-items: center; gap: .5rem var(--s-2);
+				font-size: var(--fs-sm); color: var(--text-muted); padding-top: var(--s-1);
+			}
+			.meta-item { display: inline-flex; align-items: center; }
+			.meta-item + .meta-item::before { content: '·'; margin-right: var(--s-2); color: var(--text-faint); }
+			.cs-tech { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: var(--s-1) 0 0; padding: 0; }
+			.cs-links { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: var(--s-2); }
+
+			/* Metrics (only when real numbers are provided) */
+			.cs-metrics {
+				display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+				gap: var(--s-2); list-style: none; margin: var(--s-1) 0 0; padding: 0;
+			}
+			.cs-metrics li {
+				display: flex; flex-direction: column; gap: .15rem;
+				padding: var(--s-3);
+				border: 1px solid var(--border); border-radius: var(--radius-lg);
+				background: var(--card-bg);
+			}
+			.m-value { font-family: var(--font-sans); font-size: var(--fs-2xl); font-weight: 700; letter-spacing: var(--tracking-tight); }
+			.m-label { font-size: var(--fs-sm); color: var(--text-muted); }
+
+			/* Highlights box */
+			.cs-highlights {
+				border: 1px solid var(--border); border-radius: var(--radius-lg);
+				background: var(--bg-subtle); padding: var(--s-3) var(--s-4);
+			}
+			.cs-highlights h2 {
+				font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em;
+				color: var(--text-muted); margin: 0 0 var(--s-2);
+			}
+			.cs-highlights ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .4rem; }
+			.cs-highlights li { color: var(--text); font-size: var(--fs-sm); line-height: var(--lh-normal); }
+
+			/* Prose (reused from the article reading styles) */
+			.prose { font-family: var(--font-prose); color: var(--text); font-size: var(--fs-lg); line-height: var(--lh-prose); }
+			.prose :global(p) { margin: 0 0 var(--s-3); }
+			.prose :global(h2) { font-size: var(--fs-2xl); font-weight: 700; margin: var(--s-6) 0 var(--s-2); letter-spacing: var(--tracking-tight); }
+			.prose :global(h3) { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-5) 0 var(--s-2); }
+			.prose :global(ul), .prose :global(ol) { margin: 0 0 var(--s-3); padding-left: var(--s-3); }
+			.prose :global(li) { margin-bottom: .5rem; }
+			.prose :global(img) { border-radius: var(--radius); margin: var(--s-2) 0; }
+			.prose :global(a) { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+			.prose :global(a:hover) { text-decoration-color: var(--brand); }
+			.prose :global(blockquote) {
+				border-left: 3px solid var(--brand); padding: var(--s-1) var(--s-3); margin: var(--s-3) 0;
+				color: var(--text-muted); font-style: italic; background: var(--bg-subtle);
+				border-radius: 0 var(--radius) var(--radius) 0;
+			}
+			.prose :global(pre) { margin: 0 0 var(--s-3); }
+			.prose :global(hr) { margin: var(--s-5) 0; }
+
+			.back-row { margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); }
+			.back-link { font-weight: 600; font-size: var(--fs-sm); color: var(--text-muted); }
+			.back-link:hover { color: var(--brand); }
+		</style>
+	</body>
+</html>
