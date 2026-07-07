@@ -36,7 +36,7 @@ const ogImage = image ? new URL(image.src, Astro.url) : new URL('/og-default.png
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
-<meta name="theme-color" content="#2f5cff" />
+<meta name="theme-color" content="#2F5E4E" />
 <link rel="sitemap" href="/sitemap-index.xml" />
 <link
 	rel="alternate"
@@ -46,7 +46,9 @@ const ogImage = image ? new URL(image.src, Astro.url) : new URL('/og-default.png
 />
 <meta name="generator" content={Astro.generator} />
 
-<Font cssVariable="--font-atkinson" preload />
+<Font cssVariable="--font-plex" preload />
+<Font cssVariable="--font-serif" preload />
+<Font cssVariable="--font-jbmono" />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />

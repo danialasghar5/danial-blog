@@ -31,12 +31,12 @@ const minutes = readingTime(post.body);
   .post-card-wrapper { height: 100%; }
   .post-card {
     display: flex; flex-direction: column; height: 100%;
-    border: 1px solid var(--border); border-radius: var(--radius);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
     background: var(--card-bg); text-decoration: none; color: var(--text);
     overflow: hidden;
-    transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s cubic-bezier(.4,0,.2,1), border-color .2s cubic-bezier(.4,0,.2,1);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   }
-  .post-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--brand); }
+  .post-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
   .card-image {
     width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
     border-bottom: 1px solid var(--border); background: var(--bg-subtle);
@@ -46,7 +46,7 @@ const minutes = readingTime(post.body);
   .card-body { padding: var(--s-3); display: flex; flex-direction: column; flex-grow: 1; gap: .5rem; }
   .card-tag {
     align-self: flex-start; font-size: var(--fs-xs); font-weight: 600;
-    color: var(--brand); text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em;
   }
   .post-card h3 { margin: 0; font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-snug); transition: color .15s ease; }
   .post-card:hover h3 { color: var(--brand); }

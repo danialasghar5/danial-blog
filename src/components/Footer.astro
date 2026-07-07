@@ -66,9 +66,9 @@ const nav = [
 	}
 	.brand-mark {
 		display: inline-grid; place-items: center;
-		width: 28px; height: 28px; border-radius: 8px;
-		background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, #a855f7));
-		color: #fff; font-weight: 800; font-size: .68rem;
+		width: 28px; height: 28px; border-radius: var(--radius-sm);
+		background: var(--brand);
+		color: var(--brand-contrast); font-weight: 700; font-size: .68rem;
 	}
 	.footer-nav { display: flex; flex-wrap: wrap; gap: var(--s-3); }
 	.footer-nav a { color: var(--text-muted); font-size: var(--fs-sm); font-weight: 500; }

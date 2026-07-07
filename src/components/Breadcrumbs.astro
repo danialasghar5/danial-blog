@@ -7,6 +7,9 @@ const { items } = Astro.props;
 const parent = items.length > 1 ? items[items.length - 2] : { label: 'Home', href: '/' };
 ---
 <div class="crumbs-row">
+  {parent.href && (
+    <a class="back-link" href={parent.href}>← Back to {parent.label}</a>
+  )}
   <nav class="breadcrumbs" aria-label="Breadcrumb">
     <ol>
       {items.map((c, i) => (
@@ -19,17 +22,21 @@ const parent = items.length > 1 ? items[items.length - 2] : { label: 'Home', hre
       ))}
     </ol>
   </nav>
-  {parent.href && (
-    <a class="back-link" href={parent.href}>← Back to {parent.label}</a>
-  )}
 </div>
 
 <style>
+  /* Left-aligned: back button first, breadcrumb trail beneath — both flush left,
+     inheriting the surrounding content width. */
   .crumbs-row {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: var(--s-1) var(--s-3);
-    margin-bottom: var(--s-4);
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
   }
+  .back-link {
+    font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .back-link:hover { color: var(--brand); }
   .breadcrumbs ol {
     display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
     list-style: none; margin: 0; padding: 0;
@@ -42,6 +49,4 @@ const parent = items.length > 1 ? items[items.length - 2] : { label: 'Home', hre
     color: var(--text); max-width: 32ch;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .back-link { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-  .back-link:hover { color: var(--brand); }
 </style>

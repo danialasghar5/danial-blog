@@ -6,7 +6,7 @@ export const SITE_DESCRIPTION =
 
 // Personal brand + contact
 export const NAME = 'Danial Asghar';
-export const ROLE = 'Senior Full-Stack Engineer';
+export const ROLE = 'Senior Backend Engineer';
 export const EMAIL = 'hello@danialasghar.com';
 
 export const SOCIALS = {

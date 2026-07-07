@@ -1,108 +1,109 @@
 /*
-  Design system for danialasghar.dev
-  Single source of truth: color tokens, 8px spacing scale, type scale, container widths.
-  Long-form prose uses the local Atkinson font; UI/headings use a system geometric stack
-  (renders as San Francisco / Segoe / Roboto — premium, zero network cost).
+  Design system — danialasghar.com  (Phase 2A/2B)
+  One source of truth: editorial color palette, 4px-based spacing, type scale, layout.
+  Headings/UI: IBM Plex Sans · Body/articles: Source Serif 4 · Code: JetBrains Mono.
 */
 
 :root {
-	/* ---- Color: light ---- */
-	--bg: #ffffff;
-	--bg-subtle: #f6f7f9;
-	--bg-elevated: #ffffff;
-	--text: #0f141a;
-	--text-muted: #56606e;
-	--text-faint: #8b94a1;
-	--border: #e7e9ec;
-	--border-strong: #d6dae0;
-	--card-bg: #ffffff;
+	/* ---- Color: light (editorial) ---- */
+	--bg: #FBFBFA;
+	--card-bg: #FFFFFF;       /* surface */
+	--bg-subtle: #F4F4F2;
+	--bg-elevated: #FFFFFF;
+	--text: #1A1A18;          /* primary */
+	--text-muted: #5C5C57;    /* secondary */
+	--text-faint: #8A8A83;    /* muted */
+	--border: #E6E6E1;
+	--border-strong: #D8D8D2;
 
-	--brand: #2f5cff;
-	--brand-hover: #1f47e0;
-	--brand-contrast: #ffffff;
-	--brand-soft: color-mix(in srgb, var(--brand) 12%, transparent);
-	--brand-ring: color-mix(in srgb, var(--brand) 30%, transparent);
+	--brand: #2F5E4E;         /* accent */
+	--brand-hover: #274F42;
+	--brand-contrast: #FFFFFF;
+	--brand-soft: color-mix(in srgb, var(--brand) 10%, transparent);
+	--brand-ring: color-mix(in srgb, var(--brand) 28%, transparent);
 
-	/* ---- Spacing: 8px grid ---- */
-	--s-1: 0.5rem;   /*  8 */
-	--s-2: 1rem;     /* 16 */
-	--s-3: 1.5rem;   /* 24 */
-	--s-4: 2rem;     /* 32 */
-	--s-5: 2.5rem;   /* 40 */
-	--s-6: 3rem;     /* 48 */
-	--s-8: 4rem;     /* 64 */
-	--s-10: 5rem;    /* 80 */
-	--s-12: 6rem;    /* 96 */
+	/* ---- Spacing: 4px base (canonical) ---- */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 24px;
+	--space-6: 32px;
+	--space-7: 48px;
+	--space-8: 64px;
+	--space-9: 96px;
+	--space-10: 128px;
+
+	/* Back-compat aliases → mapped onto the canonical scale (existing components use --s-*) */
+	--s-1: var(--space-2);   /*  8 */
+	--s-2: var(--space-4);   /* 16 */
+	--s-3: var(--space-5);   /* 24 */
+	--s-4: var(--space-6);   /* 32 */
+	--s-5: 40px;             /* 40 (between grid steps) */
+	--s-6: var(--space-7);   /* 48 */
+	--s-8: var(--space-8);   /* 64 */
+	--s-10: 80px;            /* 80 (between grid steps) */
+	--s-12: var(--space-9);  /* 96 */
 
 	/* ---- Type scale ---- */
 	--fs-xs: 0.8125rem;
 	--fs-sm: 0.9375rem;
 	--fs-base: 1rem;
-	--fs-lg: 1.125rem;
+	--fs-lg: 1.1875rem;      /* 19px — article body */
 	--fs-xl: 1.375rem;
 	--fs-2xl: clamp(1.6rem, 1.1rem + 2vw, 2rem);
-	--fs-3xl: clamp(2rem, 1.4rem + 2.6vw, 2.75rem);
-	--fs-4xl: clamp(2.5rem, 1.6rem + 3.8vw, 3.75rem);
+	--fs-3xl: clamp(2rem, 1.4rem + 2.6vw, 2.6rem);
+	--fs-4xl: clamp(2.4rem, 1.6rem + 3.4vw, 3.4rem);
 
 	--lh-tight: 1.15;
 	--lh-snug: 1.35;
 	--lh-normal: 1.6;
-	--lh-prose: 1.75;
+	--lh-prose: 1.7;
 
-	--tracking-tight: -0.02em;
-	--tracking-tighter: -0.03em;
-	--tracking-wide: 0.08em;
+	--tracking-tight: -0.011em;
+	--tracking-tighter: -0.02em;
+	--tracking-wide: 0.06em;
 
-	/* ---- Fonts ---- */
-	--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
-	--font-prose: var(--font-atkinson), var(--font-sans);
-	--font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
+	/* ---- Fonts (self-hosted via astro.config; vars carry their own fallbacks) ---- */
+	--font-sans: var(--font-plex), system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-prose: var(--font-serif), Georgia, Cambria, "Times New Roman", serif;
+	--font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-	/* ---- Radius / shadow / layout ---- */
-	--radius-sm: 8px;
-	--radius: 12px;
+	/* ---- Radius ---- */
+	--radius-sm: 6px;
+	--radius: 10px;
 	--radius-lg: 16px;
-	--shadow-sm: 0 1px 2px rgba(15, 20, 26, .05);
-	--shadow: 0 1px 2px rgba(15, 20, 26, .04), 0 8px 24px rgba(15, 20, 26, .08);
-	--shadow-lg: 0 12px 40px rgba(15, 20, 26, .12);
+	--radius-full: 999px;
 
-	--container: 1080px;
+	/* ---- Shadows: subtle, editorial ---- */
+	--shadow-sm: 0 1px 2px rgba(26, 26, 24, .04);
+	--shadow: 0 1px 3px rgba(26, 26, 24, .05), 0 4px 14px rgba(26, 26, 24, .06);
+	--shadow-lg: 0 8px 30px rgba(26, 26, 24, .09);
+
+	/* ---- Layout ---- */
+	--container: 1120px;
 	--container-prose: 720px;
-	--container-width: var(--container); /* legacy alias */
 	--header-h: 64px;
-
-	/* ---- Legacy aliases (kept so existing markdown/code styles don't break) ---- */
-	--accent: var(--brand);
-	--box-shadow: var(--shadow);
-	--gray: 86, 96, 110;
-	--gray-light: 231, 233, 236;
-	--gray-dark: 15, 20, 26;
-	--black: 15, 20, 26;
 }
 
 [data-theme="dark"] {
-	--bg: #0b0e14;
-	--bg-subtle: #12161f;
-	--bg-elevated: #141a24;
-	--text: #e8ebef;
-	--text-muted: #9aa4b2;
-	--text-faint: #6b7482;
-	--border: #222834;
-	--border-strong: #2e3644;
-	--card-bg: #11151d;
+	--bg: #0E0F0D;
+	--card-bg: #161714;       /* surface */
+	--bg-subtle: #1A1B17;
+	--bg-elevated: #161714;
+	--text: #ECECE6;
+	--text-muted: #A6A69E;
+	--text-faint: #71716A;
+	--border: #262723;
+	--border-strong: #33342E;
 
-	--brand: #6f8dff;
-	--brand-hover: #8aa1ff;
-	--brand-contrast: #0b0e14;
+	--brand: #6FB39A;
+	--brand-hover: #86C3AC;
+	--brand-contrast: #0E0F0D;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
-	--shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 28px rgba(0, 0, 0, .5);
-	--shadow-lg: 0 16px 48px rgba(0, 0, 0, .6);
-
-	--gray: 154, 164, 178;
-	--gray-light: 34, 40, 52;
-	--gray-dark: 232, 235, 239;
-	--black: 232, 235, 239;
+	--shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .45);
+	--shadow-lg: 0 10px 34px rgba(0, 0, 0, .55);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -131,13 +132,14 @@ body {
 
 /* ---- Headings ---- */
 h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-sans);
 	margin: 0 0 var(--s-2) 0;
 	color: var(--text);
 	line-height: var(--lh-tight);
 	letter-spacing: var(--tracking-tight);
-	font-weight: 700;
+	font-weight: 600;
 }
-h1 { font-size: var(--fs-4xl); letter-spacing: var(--tracking-tighter); font-weight: 800; }
+h1 { font-size: var(--fs-4xl); letter-spacing: var(--tracking-tighter); font-weight: 700; }
 h2 { font-size: var(--fs-3xl); }
 h3 { font-size: var(--fs-2xl); }
 h4 { font-size: var(--fs-xl); }
@@ -175,21 +177,32 @@ main { display: block; }
 /* ---- Buttons ---- */
 .btn {
 	display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-	padding: .65rem 1.15rem;
-	border-radius: var(--radius-sm);
+	padding: 10px 18px;
+	border-radius: var(--radius);
 	font-family: var(--font-sans);
 	font-weight: 600; font-size: var(--fs-sm);
 	line-height: 1;
 	text-decoration: none;
 	border: 1px solid transparent;
 	cursor: pointer;
-	transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease, color .15s ease;
+	transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease;
 }
 .btn-primary { background: var(--brand); color: var(--brand-contrast) !important; }
-.btn-primary:hover { background: var(--brand-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
-.btn-ghost { border-color: var(--border-strong); color: var(--text); }
-.btn-ghost:hover { background: var(--bg-subtle); border-color: var(--text-faint); }
-.btn-sm { padding: .5rem .85rem; font-size: var(--fs-xs); }
+.btn-primary:hover { background: var(--brand-hover); box-shadow: var(--shadow-sm); }
+/* .btn-secondary and legacy .btn-ghost are the same outline style */
+.btn-secondary, .btn-ghost { border-color: var(--border-strong); color: var(--text); background: transparent; }
+.btn-secondary:hover, .btn-ghost:hover { background: var(--bg-subtle); border-color: var(--text-faint); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.btn-sm { padding: 7px 13px; font-size: var(--fs-xs); }
+
+/* ---- Card ---- */
+.card {
+	background: var(--card-bg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
 
 /* ---- Eyebrow / labels ---- */
 .eyebrow {
@@ -235,24 +248,41 @@ main { display: block; }
 @media (min-width: 960px) { .grid-cards { grid-template-columns: repeat(3, 1fr); } }
 
 /* ---- Code / prose primitives ---- */
+/* Inline code: neutral (not accent-colored) for a calm editorial feel */
 code {
 	font-family: var(--font-mono);
-	font-size: .9em;
+	font-size: .875em;
 	background: var(--bg-subtle);
-	color: var(--brand);
+	color: var(--text);
 	border: 1px solid var(--border);
-	padding: .15em .4em;
-	border-radius: 4px;
+	padding: .12em .38em;
+	border-radius: var(--radius-sm);
 }
+/* Code blocks (Shiki dual-theme). Container styling is ours; syntax colors are
+   the light theme by default, swapped to dark tokens under [data-theme="dark"]. */
 pre {
 	font-family: var(--font-mono);
-	padding: var(--s-3);
+	padding: var(--space-5);
 	border-radius: var(--radius);
 	border: 1px solid var(--border);
 	background: var(--bg-subtle) !important;
 	overflow-x: auto;
+	font-size: .9rem;
+	line-height: 1.65;
 }
-pre > code { all: unset; font-family: var(--font-mono); }
+pre code {
+	all: unset;
+	font-family: var(--font-mono);
+	background: transparent;
+	border: 0;
+}
+[data-theme="dark"] pre.astro-code,
+[data-theme="dark"] pre.astro-code span {
+	color: var(--shiki-dark) !important;
+	font-style: var(--shiki-dark-font-style) !important;
+	font-weight: var(--shiki-dark-font-weight) !important;
+	text-decoration: var(--shiki-dark-text-decoration) !important;
+}
 
 blockquote {
 	border-left: 3px solid var(--brand);

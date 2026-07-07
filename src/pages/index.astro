@@ -7,7 +7,7 @@ import PostCard from '../components/PostCard.astro';
 import Projects from '../components/Projects.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { getCollection } from 'astro:content';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import { SITE_TITLE, SITE_DESCRIPTION, ROLE } from '../consts';
 
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.draft)
@@ -15,7 +15,7 @@ const posts = (await getCollection('blog'))
   .slice(0, 3);
 ---
 <html lang="en">
-  <head><BaseHead title={`${SITE_TITLE} — Senior Full-Stack Engineer`} description={SITE_DESCRIPTION} /></head>
+  <head><BaseHead title={`${SITE_TITLE} — ${ROLE}`} description={SITE_DESCRIPTION} /></head>
   <body>
     <Header />
     <main>

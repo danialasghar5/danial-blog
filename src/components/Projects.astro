@@ -42,11 +42,11 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
   .proj {
     display: flex; flex-direction: column; gap: .5rem;
     padding: var(--s-3);
-    border: 1px solid var(--border); border-radius: var(--radius);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
     background: var(--card-bg); color: var(--text); text-decoration: none;
-    transition: transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s cubic-bezier(.4,0,.2,1), border-color .2s cubic-bezier(.4,0,.2,1);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   }
-  a.proj:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--brand); }
+  a.proj:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
   .proj-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
   .proj h3 { margin: 0; font-size: var(--fs-lg); font-weight: 700; }
   a.proj:hover h3 { color: var(--brand); }

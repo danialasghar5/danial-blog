@@ -34,11 +34,8 @@ const stack = ['Ruby on Rails', 'Shopify', 'React', 'AWS', 'PostgreSQL'];
     margin: 0; letter-spacing: var(--tracking-tighter); font-weight: 800;
     max-width: 15ch;
   }
-  .highlight {
-    background: linear-gradient(120deg, var(--brand) 0%, #a855f7 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: transparent;
-  }
+  /* Name stays neutral — typography carries the identity, not the accent color */
+  .highlight { color: var(--text); }
   .role { font-size: var(--fs-xl); font-weight: 600; color: var(--text); margin: var(--s-2) 0 var(--s-2); }
   .tagline { font-size: var(--fs-lg); line-height: var(--lh-normal); color: var(--text-muted); max-width: 60ch; margin: 0 0 var(--s-4); }
   .cta { display: flex; gap: .75rem; flex-wrap: wrap; }

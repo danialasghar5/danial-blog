@@ -15,13 +15,11 @@ const mark = `
     <path d="M74 69 L90 69"/>
   </g>`;
 
-const grad = `<linearGradient id="da" x1="0" y1="0" x2="1" y2="1">
-  <stop offset="0" stop-color="#2f5cff"/><stop offset="1" stop-color="#a855f7"/>
-</linearGradient>`;
+const ACCENT = '#2F5E4E'; // editorial green (solid — no gradients)
 
 // Rounded (browser tab / PNG fallbacks) and full-bleed (Apple, which rounds it itself)
-const rounded = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs>${grad}</defs><rect width="128" height="128" rx="28" fill="url(#da)"/>${mark}</svg>`;
-const fullBleed = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs>${grad}</defs><rect width="128" height="128" fill="url(#da)"/>${mark}</svg>`;
+const rounded = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="${ACCENT}"/>${mark}</svg>`;
+const fullBleed = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="${ACCENT}"/>${mark}</svg>`;
 
 const png = (svg, size) => sharp(Buffer.from(svg)).resize(size, size).png().toBuffer();
 
@@ -43,19 +41,14 @@ writeFileSync(join(pub, 'favicon-32x32.png'), await png(rounded, 32));
 writeFileSync(join(pub, 'favicon-16x16.png'), await png(rounded, 16));
 writeFileSync(join(pub, 'favicon.ico'), pngToIco(await png(rounded, 32), 32));
 
-// 1200x630 OpenGraph card
+// 1200x630 OpenGraph card (editorial, solid colors)
 const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>${grad}
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b0e14"/><stop offset="1" stop-color="#141a24"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <g transform="translate(96 210) scale(1.4)"><rect width="128" height="128" rx="28" fill="url(#da)"/>${mark}</g>
-  <text x="290" y="300" fill="#e8ebef" font-family="Helvetica, Arial, sans-serif" font-size="76" font-weight="700">Danial Asghar</text>
-  <text x="292" y="360" fill="#9aa4b2" font-family="Helvetica, Arial, sans-serif" font-size="34" font-weight="500">Senior Full-Stack Engineer &#183; Rails &#183; Shopify &#183; AWS</text>
-  <rect x="96" y="470" width="1008" height="2" fill="#222834"/>
-  <text x="96" y="530" fill="#6f8dff" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="600">danialasghar.com</text>
+  <rect width="1200" height="630" fill="#0E0F0D"/>
+  <g transform="translate(96 210) scale(1.4)"><rect width="128" height="128" rx="28" fill="${ACCENT}"/>${mark}</g>
+  <text x="290" y="300" fill="#ECECE6" font-family="Helvetica, Arial, sans-serif" font-size="76" font-weight="700">Danial Asghar</text>
+  <text x="292" y="360" fill="#A6A69E" font-family="Helvetica, Arial, sans-serif" font-size="34" font-weight="500">Senior Backend Engineer &#183; Rails &#183; AWS &#183; SaaS</text>
+  <rect x="96" y="470" width="1008" height="2" fill="#262723"/>
+  <text x="96" y="530" fill="#6FB39A" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="600">danialasghar.com</text>
 </svg>`;
 writeFileSync(join(pub, 'og-default.png'), await sharp(Buffer.from(og)).png().toBuffer());
 
