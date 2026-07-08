@@ -74,6 +74,14 @@ draft: false
         "@type": "Answer",
         "text": "Key idempotency on a stable identifier such as the record UUID and its completion state, so a retry after success is a no-op. Where concurrent duplicates are possible, replace the read-then-write check with an atomic state transition in the database so only one worker can claim the job."
       }
+    },
+    {
+      "@type": "Question",
+      "name": "Does retrying a failed Sidekiq job re-bill the OpenAI API?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A blind retry does: if the model call succeeded but the job crashed before persisting, the retry calls the model again and pays a second time. A completion-state gate stops re-billing after a successful run, since an already-completed ticket returns immediately. Re-billing after a failed write is only avoided by reusing a stored response — a future improvement, not a default."
+      }
     }
   ]
 }
@@ -93,7 +101,7 @@ draft: false
 
 A support ticket comes in: *"I was double-charged $49 for my subscription, please refund the duplicate."* The triage worker picks it up, calls the model, and comes back with `billing`, `high` urgency, and a refund draft — then the worker is killed, after that model call but before the write commits. Sidekiq does what it's supposed to do: it retries. Because nothing was persisted, the retry calls the model again and pays a second time; and if that ticket was enqueued twice and both jobs run at once, each can classify and each can write. Once outbound webhook dispatch ships — it's on the roadmap — the same double-run would fire the client's callback twice.
 
-A ticket about a duplicate charge, resolved by a system that duplicates its own work. That is the failure this post is about.
+The fix is **idempotency**: making a background worker safe to run more than once, so that a repeat run produces the same result and the same side effects as a single run — not a second OpenAI charge and not a different classification. A ticket about a duplicate charge, resolved by a system that duplicates its own work: that is the failure this post is about.
 
 Moving an LLM call out of the request path and behind a queue is the right call — it's the core decision in the [AI Support Ticket Triage Engine](/projects/ai-support-ticket-triage-engine), a service I built and open-sourced — and it keeps ticket ingestion fast — a `202 Accepted` in single-digit milliseconds in local measurement (the handler only inserts and enqueues), not a measured production SLA — instead of coupling it to a 1–10 second model call. But that queue changes the reliability contract in a way that's easy to miss: **the moment work runs in a background job, it runs *at least once*, not exactly once.** Every worker has to be safe to run more than one time. With an LLM in the loop, "more than once" isn't just a correctness bug — it's a billing line item and a data-consistency problem.
 
@@ -201,11 +209,11 @@ rescue => e
 end
 ```
 
-Now the guard is a single atomic `UPDATE ... WHERE status IN (...)`. Whoever flips the row to `processing` first wins; the loser sees `claimed.zero?` and returns before spending a token. A `failed` ticket is included in the claimable set so genuine retries still re-run. You can layer a unique-jobs plugin on top to dedupe at *enqueue* time, but treat that as an optimization — the durable guarantee lives in the database, not in Redis.
+Now the guard is a single [atomic](https://www.postgresql.org/docs/current/mvcc.html) `UPDATE ... WHERE status IN (...)`. Whoever flips the row to `processing` first wins; the loser sees `claimed.zero?` and returns before spending a token. A `failed` ticket is included in the claimable set so genuine retries still re-run. You can layer a unique-jobs plugin on top to dedupe at *enqueue* time, but treat that as an optimization — the durable guarantee lives in the database, not in Redis.
 
 This introduces a failure mode of its own: a worker that claims `processing` and then crashes leaves the row stuck there — the claimable set (`pending`/`failed`) won't re-select it, so nothing retries it. Closing that requires a reaper — a heartbeat or visibility timeout that returns abandoned `processing` rows to `pending`. It belongs to the same future hardening as the claim itself, not to the shipped gate.
 
-The atomic claim closes the concurrent-duplicate gap at the worker. If you need the *enqueue itself* to be exactly-once — no job lost, and none sent for a ticket whose transaction never committed — the transactional outbox pattern is the next level up: write an outbox row in the same transaction as the ticket and let a separate process enqueue from it. That's a larger change and a post of its own; for this pipeline, the status gate plus an atomic claim is enough.
+The atomic claim closes the concurrent-duplicate gap at the worker. If you need the *enqueue itself* to be exactly-once — no job lost, and none sent for a ticket whose transaction never committed — the [transactional outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html) is the next level up: write an outbox row in the same transaction as the ticket and let a separate process enqueue from it. That's a larger change and a post of its own; for this pipeline, the status gate plus an atomic claim is enough.
 
 ## A subtle case: the model succeeded, the write didn't
 
@@ -237,7 +245,7 @@ The engine already persists every model call — the input, the raw response, th
 | Crash after model call, before write | Job retries and re-calls the model | No ticket lost or corrupted; re-billing is the cost (response reuse is a future improvement) |
 | Crash after write, before ack | Sidekiq retries the completed job | Idempotency gate makes the retry a no-op |
 
-On that fourth row, be precise about what the model can actually do wrong: strict Structured Outputs guarantees the *shape* of the payload, so arbitrary schema-shape drift isn't a failure mode. What remains is truncation (a length-capped, incomplete response), a refusal, an API error, or output that is schema-valid but semantically wrong. Validation still runs before any write — it guards the database contract against the incomplete and absent cases, and the audit trail preserves the semantically-wrong ones for review.
+On that fourth row, be precise about what the model can actually do wrong: strict [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs) guarantees the *shape* of the payload, so arbitrary schema-shape drift isn't a failure mode. What remains is truncation (a length-capped, incomplete response), a refusal, an API error, or output that is schema-valid but semantically wrong. Validation still runs before any write — it guards the database contract against the incomplete and absent cases, and the audit trail preserves the semantically-wrong ones for review.
 
 ## Testing and monitoring idempotent workers
 
