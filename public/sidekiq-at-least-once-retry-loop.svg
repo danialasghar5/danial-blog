@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" role="img"
+  aria-label="At-least-once delivery retry loop. A job is enqueued, a worker picks it up and runs perform, which charges the card. Then a check asks whether the run was confirmed complete. If yes and recorded, the job is done and ran once. If a crash, deploy timeout, or Redis blip prevents confirmation, the job is returned to the queue and picked up again, so it can run more than once.">
+  <defs>
+    <marker id="al-arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6E6E67"/>
+    </marker>
+    <marker id="al-arwR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B5675C"/>
+    </marker>
+    <style>
+      .box{fill:#161714;stroke:#2E332C;stroke-width:1.5;}
+      .lbl{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ECECE6;font-size:15px;font-weight:600;}
+      .sub{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;fill:#A6A69E;font-size:12.5px;font-weight:400;}
+      .flow{stroke:#6E6E67;stroke-width:1.6;fill:none;}
+      .loop{stroke:#B5675C;stroke-width:1.6;fill:none;}
+      .badge{font-family:ui-sans-serif,system-ui,sans-serif;fill:#0E0F0D;font-size:10px;font-weight:700;letter-spacing:.04em;}
+    </style>
+  </defs>
+
+  <rect width="760" height="520" fill="#0E0F0D"/>
+  <text x="32" y="34" class="lbl" font-size="13" fill="#6FB39A" letter-spacing=".08em">AT-LEAST-ONCE DELIVERY · THE RETRY LOOP</text>
+
+  <!-- A: enqueued -->
+  <rect class="box" x="250" y="56" width="260" height="46" rx="10"/>
+  <text x="380" y="84" text-anchor="middle" class="lbl">Job enqueued</text>
+  <path class="flow" d="M380 102 V126" marker-end="url(#al-arw)"/>
+
+  <!-- B: worker picks up (loop re-enters here) -->
+  <rect class="box" x="250" y="128" width="260" height="46" rx="10"/>
+  <text x="380" y="156" text-anchor="middle" class="lbl">Worker picks up job</text>
+  <path class="flow" d="M380 174 V198" marker-end="url(#al-arw)"/>
+
+  <!-- C: perform runs -->
+  <rect class="box" x="250" y="200" width="260" height="46" rx="10"/>
+  <text x="380" y="222" text-anchor="middle" class="lbl">perform runs</text>
+  <text x="380" y="239" text-anchor="middle" class="sub">charges the card · the side effect</text>
+  <path class="flow" d="M380 246 V264" marker-end="url(#al-arw)"/>
+
+  <!-- D: decision diamond -->
+  <path class="box" d="M380 266 L500 316 L380 366 L260 316 Z" fill="#15130E" stroke="#4A4E45"/>
+  <text x="380" y="312" text-anchor="middle" class="lbl" font-size="14">Run confirmed</text>
+  <text x="380" y="330" text-anchor="middle" class="lbl" font-size="14">complete?</text>
+
+  <!-- D -> E (yes) -->
+  <path class="flow" d="M500 316 H566" marker-end="url(#al-arw)"/>
+  <text x="530" y="308" text-anchor="middle" class="sub" fill="#8FBFAD">yes</text>
+
+  <!-- E: done (green, terminal) -->
+  <rect x="566" y="293" width="168" height="46" rx="10" fill="#182420" stroke="#6FB39A" stroke-width="1.6"/>
+  <rect x="646" y="299" width="80" height="18" rx="9" fill="#6FB39A"/>
+  <text x="686" y="312" text-anchor="middle" class="badge">RAN ONCE</text>
+  <text x="650" y="333" text-anchor="middle" class="lbl" font-size="14">Done</text>
+
+  <!-- D -> F (no) -->
+  <path class="flow loop" d="M380 366 V404" marker-end="url(#al-arwR)"/>
+  <text x="396" y="386" class="sub" fill="#C58A82">crash · deploy timeout · Redis blip</text>
+
+  <!-- F: returned to queue (loop back to B) -->
+  <rect class="box" x="250" y="406" width="260" height="50" rx="10" fill="#2A1A18" stroke="#B5675C"/>
+  <text x="380" y="428" text-anchor="middle" class="lbl">Job returned to the queue</text>
+  <text x="380" y="446" text-anchor="middle" class="sub" fill="#C58A82">the run was never confirmed — not "it didn't happen"</text>
+
+  <!-- loop arrow F -> B -->
+  <path class="loop" d="M250 431 H132 V151 H248" marker-end="url(#al-arwR)"/>
+  <text x="120" y="291" text-anchor="middle" class="sub" fill="#B5675C" transform="rotate(-90 120 291)">runs again — at least once</text>
+
+  <!-- caption -->
+  <text x="32" y="500" class="sub" fill="#71716A">The loop closes on “the system couldn’t confirm the work,” not “the work didn’t happen.”</text>
+</svg>

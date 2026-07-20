@@ -1,0 +1,230 @@
+---
+title: "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
+seoTitle: "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
+description: "Sidekiq runs jobs at least once, not exactly once. Here's why background jobs execute twice — deploys, retries, timeouts, lost acks — and where the fix actually lives."
+pubDate: 2026-07-20
+updatedDate: 2026-07-20
+canonicalURL: "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/"
+author: "Danial Asghar"
+category: "Background Jobs & Async"
+hasCustomSchema: true
+tags:
+  - "sidekiq"
+  - "background-jobs"
+  - "reliability"
+  - "idempotency"
+  - "distributed-systems"
+  - "rails"
+draft: false
+---
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)",
+  "description": "Sidekiq runs jobs at least once, not exactly once. Here's why background jobs execute twice — deploys, retries, timeouts, lost acks — and where the fix actually lives.",
+  "image": "https://danialasghar.com/og-default.png",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/" },
+  "keywords": ["sidekiq job runs twice", "sidekiq at least once delivery", "does sidekiq guarantee exactly once", "sidekiq duplicate jobs", "background jobs run multiple times", "idempotency"],
+  "articleSection": "Background Jobs & Async",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Sidekiq guarantee exactly-once execution?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Sidekiq guarantees at-least-once delivery, not exactly-once execution. A job can run more than once — after a deploy, a retry, a timeout, or a completion that Redis never recorded — so every worker must be idempotent, meaning safe to run multiple times without duplicating its side effects."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why did my Sidekiq job run twice?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because the job ran at a point where the system could not confirm success: a worker killed mid-job on a deploy, an error that triggered a retry, a successful completion whose acknowledgement was lost to a Redis blip, or a timeout on a long-running job. In each case Sidekiq's safe move is to run the job again rather than risk losing the work."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is at-least-once delivery?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It is a delivery guarantee that a job is handed to a worker one or more times, and never silently zero times. Faced with possibly running a job twice or possibly never running it, an at-least-once system chooses twice: a duplicate is visible and, if your code is idempotent, harmless, while a lost job is silent and often unrecoverable."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I stop Sidekiq jobs running multiple times?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You do not stop the re-runs — you make them harmless. Assume the job runs more than once and make its effect idempotent, enforced in the database: a unique index makes a duplicate impossible to persist, and an atomic state transition (for example pending to processing) lets exactly one worker win a race. A guard clause alone still races under concurrent duplicates."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does a re-run job keep the same JID?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. A re-run is a fresh execution with a new job ID (JID), so you cannot deduplicate on the JID. The identity you key idempotency on has to come from your domain — the order or the user — not from Sidekiq's job ID."
+      }
+    }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)", "item": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/" }
+  ]
+}
+`}</script>
+
+It's 9:14 a.m. and three support tickets say the same thing: *"Why was I charged twice?"* You open the logs. `ChargeCustomerJob` for order `48213` ran at 03:02:11, and again at 03:02:44. Same order, same job, thirty-three seconds apart. Nobody deployed. Nobody double-clicked. There's no loop in the code.
+
+You don't have the bug you think you have. **Sidekiq does not guarantee that a job runs exactly once — it guarantees at least once.** That's not a defect or a misconfiguration; it's the documented contract ([Sidekiq Best Practices wiki](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)), and every background system built on the same principle behaves the same way. The gap between "at least once" and "exactly once" is where duplicate charges, duplicate emails, and duplicate API calls come from — and it tells you exactly where the fix belongs. It isn't a queue setting.
+
+This article covers what at-least-once actually means, the specific windows where a job re-runs, why exactly-once is nearly impossible in a distributed system, and where correctness has to live once you accept the guarantee you're really operating under.
+
+<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
+  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
+  <ul style="margin:0; padding-left:1.1rem;">
+    <li><a href="#does-sidekiq-guarantee-exactly-once-execution">Does Sidekiq guarantee exactly-once execution?</a></li>
+    <li><a href="#delivery-vs-execution-vs-side-effects">Delivery vs. execution vs. side effects</a></li>
+    <li><a href="#why-did-my-sidekiq-job-run-twice-the-five-windows">Why did my Sidekiq job run twice? The five windows</a></li>
+    <li><a href="#why-cant-sidekiq-just-guarantee-exactly-once">Why can't Sidekiq just guarantee exactly-once?</a></li>
+    <li><a href="#where-correctness-actually-lives">Where correctness actually lives</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
+  </ul>
+</nav>
+
+## Does Sidekiq guarantee exactly-once execution?
+
+No. The Best Practices wiki states it plainly: Sidekiq will execute your job at least once, not exactly once ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)).
+
+The common assumption is that this only applies to *failed* jobs — that a job which completes successfully surely runs once. It doesn't, and the maintainer has answered this directly: even a completed job can be re-run, because Redis can go down between the point where the job finished and the point where Sidekiq acknowledged it, and Sidekiq makes no exactly-once guarantee at all ([sidekiq/sidekiq Discussion #5775](https://github.com/sidekiq/sidekiq/discussions/5775)).
+
+So the dangerous window isn't only "the job failed and retried." It's also "the job succeeded, but the system never recorded the success." Those are different failures, and the second is the one that surprises people.
+
+The model to carry through the rest of this piece: a background job system is a delivery mechanism, and delivery is a weaker promise than exactly-once execution. Everything below follows from that.
+
+## Delivery vs. execution vs. side effects
+
+One distinction makes every failure case click. Three separate things happen when a job runs, and it's easy to collapse them into one:
+
+| Layer | What it means | Who's responsible |
+|---|---|---|
+| **Delivery** | The job is handed to a worker to run | The queue (Sidekiq / Redis) |
+| **Execution** | Your `perform` method runs to completion | The worker process |
+| **Side effect** | The real-world consequence — a charge, an email, a row | **Your code** |
+
+Sidekiq guarantees *delivery* at least once. It cannot guarantee the *side effect* happens once, because it has no idea what your side effect is. Charging a card, sending mail, calling an API — those are opaque to the queue. Its job is to ensure your code gets a chance to run, and to keep giving it chances until it's certain a run succeeded. When it can't be certain — the process died, Redis blipped, the completion wasn't recorded — its only safe move is to hand the job out again.
+
+That's the trade at the heart of every at-least-once system: offered a choice between possibly running your job twice and possibly never running it at all, it chooses twice. A lost job is silent and often unrecoverable; a duplicate is visible and, if your code is idempotent, harmless. The safe default pushes the duplicate onto you — workable only once you know it's coming.
+
+## Why did my Sidekiq job run twice? The five windows
+
+Duplicates aren't random. They occur at specific, nameable points — each one a place where the work may have happened but the system couldn't confirm it.
+
+### 1. A worker is killed mid-job (deploys and restarts)
+
+The most common cause, and it happens on every deploy. When Sidekiq shuts down it can't always finish what's in flight. Sidekiq 6+ gives workers 25 seconds to shut down — chosen because Heroku and AWS ECS allow 30 seconds before a hard kill — and after 25 seconds, any jobs still in progress are pushed back onto Redis to be restarted when Sidekiq comes back up ([Sidekiq FAQ](https://github.com/sidekiq/sidekiq/wiki/FAQ)).
+
+The job that was still running at the deadline restarts from the top on the new process. If it charged the card in its first 20 seconds and was on the email step when the timer fired, the restart charges again — the FAQ notes this is one concrete way a job runs twice ([Sidekiq FAQ](https://github.com/sidekiq/sidekiq/wiki/FAQ)). Only jobs *still executing* when the window closes are affected, but on a busy system during a deploy that's a meaningful set, and long jobs are the most exposed.
+
+### 2. The job raises and retries
+
+The familiar case. Sidekiq's retry system re-runs failed jobs, and the wiki is explicit: with error retries, a job might be half-processed, throw an error, and then be re-executed until it completes ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). "Half-processed" is the operative word — if `perform` charges on line 2 and raises on line 4, the retry begins again at line 1 with the charge already made. This applies whether you use Sidekiq's native retries or ActiveJob's `retry_on`; they're different layers over the same at-least-once reality.
+
+A related trap: a *permanently* failing job — say one that raises `ActiveRecord::RecordNotFound` because the record was deleted — still retries the full count, repeating any side effects that precede the failure on every attempt, for a run that can never succeed.
+
+### 3. A completion that's never recorded
+
+The subtle case, and the reason "successful jobs run once" is false. The job finishes cleanly; before its completion is recorded, Redis briefly becomes unreachable — a failover or partition — so the run is never confirmed and the job becomes eligible to run again. This is the maintainer's point: Redis can go down after the job finished but before Sidekiq acknowledged it ([Discussion #5775](https://github.com/sidekiq/sidekiq/discussions/5775)).
+
+One precision worth stating, because a Sidekiq-literate reader will check: this window is most exact for Sidekiq's **reliability fetch** (Pro's `super_fetch`), where a job stays in a private in-progress list until it's acknowledged. The open-source default, `basic_fetch`, removes the job from Redis the moment a worker picks it up ([Sidekiq Reliability wiki](https://github.com/sidekiq/sidekiq/wiki/Reliability)), so there's no per-job acknowledgement to lose — which trades this duplication window for a small risk of *loss* instead (see window 5).
+
+### 4. Timeouts and long-running jobs
+
+Slowness widens every window above. A job calling a third-party API that hangs is likelier to still be running at a deploy's deadline, likelier to trip a timeout into a retry, and likelier to straddle a Redis blip. The FAQ flags jobs over 30 seconds as "long-running" and needing special handling ([Sidekiq FAQ](https://github.com/sidekiq/sidekiq/wiki/FAQ)). Duration multiplies duplication risk — a strong argument for never making a slow network call inside a job without a timeout.
+
+### 5. Infrastructure failure — the asterisk in the other direction
+
+An honest counter-case. The open-source `basic_fetch` optimizes for simplicity by not polling Redis with extra bookkeeping, and that has a cost: there's a small chance of job *loss* with open-source Sidekiq, because at-least-once delivery does not by itself guarantee reliability — a job popped by a worker that then dies can simply vanish ([Thoughtbot, citing the Sidekiq wiki](https://thoughtbot.com/blog/enhancing-job-reliability-with-sidekiq-pros-super-fetch-strategy)). Sidekiq Pro's reliability fetch exists to close that window ([Sidekiq Reliability wiki](https://github.com/sidekiq/sidekiq/wiki/Reliability)). So the guarantee carries an asterisk in both directions: the OSS default can, rarely, run a job *zero* times, while the reliability model is the one that most cleanly produces the duplicate in window 3. Either way, the instruction to your code is identical — don't rely on the queue for correctness.
+
+<img
+  class="diagram"
+  src="/sidekiq-at-least-once-retry-loop.svg"
+  alt="At-least-once delivery retry loop: a job is enqueued, a worker runs perform and charges the card, and if the run cannot be confirmed complete — a crash, deploy timeout, or Redis blip — the job returns to the queue and runs again."
+  width="760"
+  height="520"
+  loading="lazy"
+  decoding="async"
+/>
+
+Every path back to the top shares one property: the loop closes on "the system couldn't *confirm* the work," not on "the work didn't happen." That uncertainty is irreducible.
+
+## Why can't Sidekiq just guarantee exactly-once?
+
+Because exactly-once *delivery* is essentially impossible in a distributed system — and this isn't a Sidekiq limitation, it's a property of distributed systems generally. It's the punchline of a well-worn joke among distributed-systems engineers, usually credited to Mathias Verraes: *"There are only two hard problems in distributed systems: 2. Exactly-once delivery, 1. Guaranteed order of messages, 2. Exactly-once delivery"* ([Mathias Verraes on X](https://x.com/mathiasverraes/status/632260618599403520)). The reason it's hard is the same gap as window 3, and it reduces to the classic **Two Generals Problem**: two parties communicating over a channel that can drop messages can never be *certain* the other received a given message ([Tyler Treat, "You Cannot Have Exactly-Once Delivery"](https://bravenewgeek.com/you-cannot-have-exactly-once-delivery/)).
+
+Walk it through. A worker finishes and must tell Redis "done, never run this again." That message can be lost, so the worker retries it. But if the original "done" *did* arrive and only the reply was lost, the retry acknowledges twice — so the acknowledgement itself must be idempotent. The exactly-once problem has just moved down a layer, from "run the job once" to "record completion once," and the same lost-message gap reappears there. There is always a step where one party has acted and the other doesn't yet know, and a crash in that window forces a choice between running again or losing the work.
+
+Concretely: no configuration lets Redis promise your card was charged exactly once, because Redis never knew a charge happened — it only knew a job was delivered. So serious systems stop trying to fix delivery. They provide honest at-least-once delivery and build **exactly-once *effects*** on top of it through idempotency — a consensus that holds from message-queue theory to Kafka's own design, where even Kafka's "exactly-once semantics" is built by making the producer *idempotent* on top of at-least-once sends, not by achieving true exactly-once delivery ([Confluent, "Exactly-Once Semantics Are Possible: Here's How Kafka Does It"](https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/)). Delivery may happen many times; the effect happens once. That shift — from fixing the queue to fixing the effect — is the whole solution, because it relocates the problem to the one component that can actually enforce "once."
+
+## Where correctness actually lives
+
+Stop asking how to make the queue deliver exactly once. Ask how to make your job's *effect* happen once regardless of how many times the job runs. That property is **idempotency**, and the wiki names it as the answer: idempotency means a job can safely execute multiple times ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). Run it once or five times, the world ends up the same — one charge, one email, one row.
+
+The tempting first move is a guard clause:
+
+```ruby
+def perform(user_id)
+  user = User.find(user_id)
+  return if user.welcome_email_sent_at.present?  # already sent? skip.
+
+  WelcomeMailer.welcome(user).deliver_now
+  user.update!(welcome_email_sent_at: Time.current)
+end
+```
+
+For a low-stakes welcome email, this is often enough. But it has the same shape as the problem it's solving: *read* a state, *decide*, then *write* — with a gap in the middle. The sequential re-runs in windows 1–4 are mostly handled by it. The case it does **not** handle is the one that matters most: two duplicate deliveries running *in parallel*. Both copies read `welcome_email_sent_at` as blank, both pass the guard, both send. The guard narrows the window; concurrency reopens it.
+
+Closing it means moving the guarantee out of a Ruby conditional and into the layer that can enforce uniqueness under concurrency — the database. A unique index makes a duplicate physically impossible to persist. An atomic state transition — one statement that flips `pending → processing` so exactly one worker wins — settles the race at the point all racing workers share. The queue delivers as many times as it must; the database ensures only one delivery produces an effect.
+
+That's the throughline of this blog: **the queue provides delivery; correctness lives in the database.** It's also how large operators build. GitLab treats jobs as idempotent by convention and defines the bar precisely: a worker is idempotent if it can safely run multiple times with the same arguments and its side effects happen only once, or a second run has no effect ([GitLab: Idempotent Sidekiq jobs](https://docs.gitlab.com/development/sidekiq/idempotent_jobs/)). They design for at-least-once because at-least-once is the guarantee that exists.
+
+One practical follow-up people always ask: when a job re-runs, it's a fresh execution with a new JID, so you can't dedupe on the job ID ([Discussion #5775](https://github.com/sidekiq/sidekiq/discussions/5775)) — the identity you key on has to come from your domain, like the order or user, not from Sidekiq.
+
+## Takeaways
+
+Your job didn't run twice because of a bug. It ran twice because an at-least-once system re-runs a job whenever it can't be *certain* the job already succeeded — on a deploy, a retry, an unrecorded completion, or a timeout. That uncertainty can't be configured away; it's the price of never silently losing work.
+
+So the fix was never a queue setting. Assume every job runs more than once, and make the *effect* idempotent — enforced at the database layer, where uniqueness holds against concurrent duplicates rather than merely being checked by a guard clause. Do that, and a rising retry count stops being a threat and becomes a sign the system is healing itself.
+
+The obvious next question is *how*, specifically: what a real idempotency key looks like, why a unique index beats a guard clause, and how an atomic claim lets exactly one of two racing workers win. I walk through exactly that, in production, in **[Idempotent Background Workers for LLM Calls in Rails →](/blog/idempotent-ai-workers-rails/)** — where the "queue delivers, the database enforces" idea is implemented against real Sidekiq workers, with the concurrency test that proves two workers charge exactly once.
+
+If one sentence sticks: at-least-once isn't the queue being unreliable — it's the queue being honest, and handing you the one job only your database can finish.

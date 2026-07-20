@@ -1,0 +1,22 @@
+{
+  // markdownlint config tuned for Astro MDX content. Disables only the rules
+  // that conflict with MDX/Astro conventions; all genuine-defect rules stay on
+  // (single H1, duplicate headings, empty links, blanks around headings/lists/
+  // fences, trailing spaces, etc.).
+  "default": true,
+
+  // Prose is written one paragraph per line (soft-wrapped by the editor), and
+  // MDX/JSX has no line-continuation, so a hard 80-col limit doesn't apply.
+  "MD013": false,
+
+  // MDX requires inline HTML/JSX: JSON-LD <script>, the <nav> table of
+  // contents, and the <img> diagram.
+  "MD033": false,
+
+  // Content files legitimately open with frontmatter and JSON-LD before the
+  // first heading (the H1 is rendered by the Astro layout, not the body).
+  "MD041": false,
+
+  // Compact GFM table pipe style ("|---|---|") is valid and used throughout.
+  "MD060": false
+}

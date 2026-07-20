@@ -19,9 +19,6 @@ tags:
 draft: false
 ---
 
-{/* JSON-LD structured data. It is valid in the document body and Google reads it from
-    either head or body; if you prefer, lift these two objects into your BlogPost layout. */}
-
 <script type="application/ld+json">{`
 {
   "@context": "https://schema.org",
@@ -107,7 +104,7 @@ Moving an LLM call out of the request path and behind a queue is the right call 
 
 ## Why an LLM makes double-execution worse
 
-At-least-once delivery is not a Sidekiq flaw; it's the guarantee — [Sidekiq gives you at-least-once, not exactly-once, semantics](https://github.com/sidekiq/sidekiq/wiki/Best-Practices). A worker can be retried after a timeout, a deploy, an OOM kill, or a network blip between finishing the job and acknowledging it. For an ordinary job — recalculate a counter, resize an image — running twice is usually harmless or trivially fixable.
+At-least-once delivery is not a Sidekiq flaw; it's the guarantee ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). If you want the full picture of *why* a job runs more than once — deploys, lost acks, timeouts — I break down all five windows in **[Why Your Sidekiq Job Runs Twice →](/blog/sidekiq-job-runs-twice-at-least-once-delivery/)**. Here we take that guarantee as given and focus on what to build because of it. A worker can be retried after a timeout, a deploy, an OOM kill, or a network blip between finishing the job and acknowledging it. For an ordinary job — recalculate a counter, resize an image — running twice is usually harmless or trivially fixable.
 
 An LLM call breaks both of those comforts:
 
