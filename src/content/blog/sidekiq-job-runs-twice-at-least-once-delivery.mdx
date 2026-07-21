@@ -19,6 +19,8 @@ tags:
 draft: false
 ---
 
+import AtLeastOnceLoop from '../../components/diagram/figures/AtLeastOnceLoop.astro';
+
 <script type="application/ld+json">{`
 {
   "@context": "https://schema.org",
@@ -176,15 +178,7 @@ Slowness widens every window above. A job calling a third-party API that hangs i
 
 An honest counter-case. The open-source `basic_fetch` optimizes for simplicity by not polling Redis with extra bookkeeping, and that has a cost: there's a small chance of job *loss* with open-source Sidekiq, because at-least-once delivery does not by itself guarantee reliability — a job popped by a worker that then dies can simply vanish ([Thoughtbot, citing the Sidekiq wiki](https://thoughtbot.com/blog/enhancing-job-reliability-with-sidekiq-pros-super-fetch-strategy)). Sidekiq Pro's reliability fetch exists to close that window ([Sidekiq Reliability wiki](https://github.com/sidekiq/sidekiq/wiki/Reliability)). So the guarantee carries an asterisk in both directions: the OSS default can, rarely, run a job *zero* times, while the reliability model is the one that most cleanly produces the duplicate in window 3. Either way, the instruction to your code is identical — don't rely on the queue for correctness.
 
-<img
-  class="diagram"
-  src="/sidekiq-at-least-once-retry-loop.svg"
-  alt="At-least-once delivery retry loop: a job is enqueued, a worker runs perform and charges the card, and if the run cannot be confirmed complete — a crash, deploy timeout, or Redis blip — the job returns to the queue and runs again."
-  width="760"
-  height="520"
-  loading="lazy"
-  decoding="async"
-/>
+<AtLeastOnceLoop />
 
 Every path back to the top shares one property: the loop closes on "the system couldn't *confirm* the work," not on "the work didn't happen." That uncertainty is irreducible.
 

@@ -46,8 +46,4 @@ const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" vi
 
 writeFileSync(join(pub, 'og', 'idempotent-ai-workers-rails.png'), await sharp(Buffer.from(og)).png().toBuffer());
 
-// Preview raster of the architecture diagram (not written to public; scratch only)
-const diagram = await sharp(join(pub, 'idempotent-sidekiq-llm-worker-retry-flow.svg')).resize(760).png().toBuffer();
-writeFileSync(join(root, 'scripts', '_diagram-preview.png'), diagram);
-
-console.log('✓ Generated public/og/idempotent-ai-workers-rails.png and scripts/_diagram-preview.png');
+console.log('✓ Generated public/og/idempotent-ai-workers-rails.png');

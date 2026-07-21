@@ -22,6 +22,25 @@
 	--brand-soft: color-mix(in srgb, var(--brand) 10%, transparent);
 	--brand-ring: color-mix(in srgb, var(--brand) 28%, transparent);
 
+	/* ---- Diagram system: light ("blueprint on paper") ----
+	   sage = guarantees/correct paths · clay = failures/hazards · grey = infra */
+	--dg-canvas: #F7F7F5;
+	--dg-surface: #FFFFFF;
+	--dg-boundary: #F0F0EC;
+	--dg-stroke: #D8D8D2;
+	--dg-stroke-2: #BDBDB5;
+	--dg-label: #1A1A18;
+	--dg-sub: #5C5C57;
+	--dg-mono: #5C5C57;
+	--dg-flow: #A9A9A2;
+	--dg-accent: #2F5E4E;
+	--dg-accent-fill: #E8F0EC;
+	--dg-accent-ink: #FFFFFF;
+	--dg-hazard: #9E4F44;
+	--dg-hazard-fill: #F6EAE8;
+	--dg-decision: #EFEFEA;
+	--dg-future: #8A8A83;
+
 	/* ---- Spacing: 4px base (canonical) ---- */
 	--space-1: 4px;
 	--space-2: 8px;
@@ -100,6 +119,24 @@
 	--brand: #6FB39A;
 	--brand-hover: #86C3AC;
 	--brand-contrast: #0E0F0D;
+
+	/* ---- Diagram system: dark ("schematic on ink") ---- */
+	--dg-canvas: #0E0F0D;
+	--dg-surface: #161714;
+	--dg-boundary: #111512;
+	--dg-stroke: #2E332C;
+	--dg-stroke-2: #4A4E45;
+	--dg-label: #ECECE6;
+	--dg-sub: #A6A69E;
+	--dg-mono: #A6A69E;
+	--dg-flow: #6E6E67;
+	--dg-accent: #6FB39A;
+	--dg-accent-fill: #182420;
+	--dg-accent-ink: #0E0F0D;
+	--dg-hazard: #B5675C;
+	--dg-hazard-fill: #2A1A18;
+	--dg-decision: #15130E;
+	--dg-future: #8A8A82;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
 	--shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .45);
@@ -313,3 +350,58 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+/* ==========================================================================
+   Diagram system — theme-aware technical diagrams (see docs/diagrams.md)
+   Every node/edge reads from the --dg-* tokens above, so a diagram renders as
+   a schematic-on-ink in dark and a blueprint-on-paper in light. Architecture
+   only: no decorative graphics.
+   ========================================================================== */
+.dg-figure { margin: var(--s-4) 0; }
+.dg-canvas {
+	background: var(--dg-canvas);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: var(--s-3);
+}
+.dg-canvas.dg-scroll { overflow-x: auto; }
+.dg-canvas-label {
+	font-family: var(--font-mono); font-size: var(--fs-xs);
+	letter-spacing: .08em; text-transform: uppercase;
+	color: var(--dg-accent); margin: 0 0 var(--s-2);
+}
+.dg-svg { display: block; width: 100%; height: auto; }
+.dg-caption {
+	font-family: var(--font-sans); font-size: var(--fs-sm);
+	color: var(--text-muted); line-height: var(--lh-snug); margin-top: var(--s-2);
+}
+/* One arrowhead marker per diagram; context-stroke makes it match each edge's
+   colour in both themes. Edges reference it through the --dg-marker variable. */
+.dg-arrowhead { fill: context-stroke; }
+
+/* nodes */
+.dg-box { fill: var(--dg-surface); stroke: var(--dg-stroke); stroke-width: 1.5; }
+.dg-boundary { fill: var(--dg-boundary); stroke: var(--dg-stroke); stroke-width: 1.5; }
+.dg-gate { fill: var(--dg-accent-fill); stroke: var(--dg-accent); stroke-width: 1.6; }
+.dg-hazardbox { fill: var(--dg-hazard-fill); stroke: var(--dg-hazard); stroke-width: 1.5; }
+.dg-decision { fill: var(--dg-decision); stroke: var(--dg-stroke-2); stroke-width: 1.5; }
+.dg-futurebox { fill: none; stroke: var(--dg-stroke-2); stroke-width: 1.4; stroke-dasharray: 5 4; }
+
+/* text (sizes are viewBox user units, so they scale with the diagram) */
+.dg-label { fill: var(--dg-label); font-family: var(--font-sans); font-size: 15px; font-weight: 600; }
+.dg-sub { fill: var(--dg-sub); font-family: var(--font-sans); font-size: 12.5px; }
+.dg-mono { fill: var(--dg-mono); font-family: var(--font-mono); font-size: 12px; }
+.dg-code { fill: var(--dg-accent); font-family: var(--font-mono); font-size: 12px; }
+.dg-futuretext { fill: var(--dg-future); font-family: var(--font-mono); font-size: 12px; }
+.dg-sub--accent { fill: var(--dg-accent); }
+.dg-sub--hazard { fill: var(--dg-hazard); }
+
+/* success badge */
+.dg-badge { fill: var(--dg-accent); }
+.dg-badge-t { fill: var(--dg-accent-ink); font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+
+/* edges (arrowhead via the per-diagram --dg-marker) */
+.dg-flow { stroke: var(--dg-flow); stroke-width: 1.6; fill: none; marker-end: var(--dg-marker, none); }
+.dg-edge-accent { stroke: var(--dg-accent); stroke-width: 1.6; fill: none; marker-end: var(--dg-marker, none); }
+.dg-edge-hazard { stroke: var(--dg-hazard); stroke-width: 1.6; fill: none; marker-end: var(--dg-marker, none); }
+.dg-future { stroke: var(--dg-stroke-2); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: var(--dg-marker, none); }

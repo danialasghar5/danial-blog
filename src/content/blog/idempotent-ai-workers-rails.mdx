@@ -19,6 +19,8 @@ tags:
 draft: false
 ---
 
+import IdempotentWorkerFlow from '../../components/diagram/figures/IdempotentWorkerFlow.astro';
+
 <script type="application/ld+json">{`
 {
   "@context": "https://schema.org",
@@ -122,15 +124,7 @@ Concretely: calling `perform(ticket_id)` any number of times must leave the syst
 
 The engine protects the write today with the completion gate. The outbound side effect arrives with the webhook roadmap, and it will need its own per-delivery idempotency key rather than leaning on that gate.
 
-<img
-  class="diagram"
-  src="/idempotent-sidekiq-llm-worker-retry-flow.svg"
-  alt="Idempotent Sidekiq worker flow for LLM calls in Rails showing retry handling and completion gate."
-  width="760"
-  height="716"
-  loading="lazy"
-  decoding="async"
-/>
+<IdempotentWorkerFlow />
 
 ## The shipped gate: status-based idempotency on the UUID
 

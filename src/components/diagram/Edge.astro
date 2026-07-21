@@ -1,0 +1,37 @@
+---
+// Edge — a connector with an arrowhead. Pass raw path data `d` (covers straight,
+// elbow, and curved routes); pick a variant for its meaning:
+//   flow (grey, infrastructure) · guarantee (sage) · hazard (clay) · future (dashed)
+// Optional label with position and rotation.
+interface Props {
+	d: string;
+	variant?: 'flow' | 'guarantee' | 'hazard' | 'future';
+	label?: string;
+	labelX?: number;
+	labelY?: number;
+	rotate?: number;
+}
+const { d, variant = 'flow', label, labelX, labelY, rotate } = Astro.props;
+
+const edgeClass = {
+	flow: 'dg-flow',
+	guarantee: 'dg-edge-accent',
+	hazard: 'dg-edge-hazard',
+	future: 'dg-future',
+}[variant];
+
+const labelClass = {
+	flow: 'dg-sub',
+	guarantee: 'dg-sub dg-sub--accent',
+	hazard: 'dg-sub dg-sub--hazard',
+	future: 'dg-futuretext',
+}[variant];
+
+const transform = rotate != null && labelX != null && labelY != null
+	? `rotate(${rotate} ${labelX} ${labelY})`
+	: undefined;
+---
+<path class={edgeClass} d={d} />
+{label && labelX != null && labelY != null && (
+	<text class={labelClass} x={labelX} y={labelY} transform={transform}>{label}</text>
+)}

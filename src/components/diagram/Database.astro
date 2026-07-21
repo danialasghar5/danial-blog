@@ -1,0 +1,15 @@
+---
+// Database node — a cylinder. Any datastore of record.
+interface Props { x: number; y: number; w: number; h?: number; label: string; }
+const { x, y, w, h = 54, label } = Astro.props;
+const rx = w / 2;
+const ry = 9;
+const cx = x + rx;
+const topCy = y + ry;
+const botCy = y + h - ry;
+// Body: down the left side, arc across the bottom, up the right side, close.
+const body = `M${x},${topCy} V${botCy} a${rx},${ry} 0 0 0 ${w},0 V${topCy} Z`;
+---
+<path class="dg-box" d={body} />
+<ellipse class="dg-box" cx={cx} cy={topCy} rx={rx} ry={ry} />
+<text class="dg-label" x={cx} y={y + h / 2 + 8} text-anchor="middle">{label}</text>

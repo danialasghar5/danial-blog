@@ -1,0 +1,46 @@
+---
+// Diagram container — a themed <figure> wrapping an inline SVG. Node/edge
+// primitives are slotted as children (SVG fragments). Theme-aware via the
+// --dg-* tokens in global.css; a single arrowhead marker (context-stroke) is
+// exposed to child edges through the --dg-marker custom property, so its id
+// stays unique per diagram without the children needing to know it.
+//
+// Architecture diagrams only — see docs/diagrams.md.
+interface Props {
+	/** Required: the accessible description of the whole diagram. */
+	ariaLabel: string;
+	/** SVG viewBox, e.g. "0 0 760 520". */
+	viewBox: string;
+	/** Optional eyebrow rendered on the canvas (sage, mono, uppercase). */
+	label?: string;
+	/** Optional figcaption below the canvas ("Figure 1. …"). */
+	caption?: string;
+	/** Dense diagrams: allow horizontal scroll instead of shrinking below legibility. */
+	scroll?: boolean;
+}
+
+const { ariaLabel, viewBox, label, caption, scroll = false } = Astro.props;
+const markerId = 'dgm-' + Math.random().toString(36).slice(2, 9);
+const vbWidth = Number(viewBox.split(/\s+/)[2]) || 760;
+---
+<figure class="dg-figure">
+	<div class:list={['dg-canvas', { 'dg-scroll': scroll }]}>
+		{label && <p class="dg-canvas-label">{label}</p>}
+		<svg
+			class="dg-svg"
+			viewBox={viewBox}
+			role="img"
+			aria-label={ariaLabel}
+			preserveAspectRatio="xMidYMid meet"
+			style={`--dg-marker:url(#${markerId})${scroll ? `;min-width:${vbWidth}px` : ''}`}
+		>
+			<defs>
+				<marker id={markerId} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+					<path class="dg-arrowhead" d="M0 0 L10 5 L0 10 z" />
+				</marker>
+			</defs>
+			<slot />
+		</svg>
+	</div>
+	{caption && <figcaption class="dg-caption">{caption}</figcaption>}
+</figure>

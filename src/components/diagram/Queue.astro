@@ -1,0 +1,12 @@
+---
+// Queue node — a segmented box. Message queue or stream. Segment ticks sit at
+// the top edge so they never collide with the label.
+interface Props { x: number; y: number; w: number; h?: number; label: string; segments?: number; }
+const { x, y, w, h = 40, label, segments = 4 } = Astro.props;
+const cx = x + w / 2;
+const step = w / segments;
+const ticks = Array.from({ length: segments - 1 }, (_, i) => x + step * (i + 1));
+---
+<rect class="dg-box" x={x} y={y} width={w} height={h} rx="8" />
+{ticks.map((tx) => <line class="dg-flow" x1={tx} y1={y} x2={tx} y2={y + 12} />)}
+<text class="dg-label" x={cx} y={y + h / 2 + 6} text-anchor="middle">{label}</text>

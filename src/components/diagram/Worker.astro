@@ -1,0 +1,11 @@
+---
+// Worker node — a boundary that wraps a job's steps. Its inner nodes/edges are
+// slotted as children (positioned in the same absolute SVG coordinate space).
+interface Props { x: number; y: number; w: number; h: number; label: string; }
+const { x, y, w, h, label } = Astro.props;
+---
+<g>
+	<rect class="dg-boundary" x={x} y={y} width={w} height={h} rx="14" />
+	<text class="dg-sub" x={x + 18} y={y + 24} font-weight="600">{label}</text>
+	<slot />
+</g>

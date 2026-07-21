@@ -1,0 +1,33 @@
+---
+// Migrated from public/sidekiq-at-least-once-retry-loop.svg — now built from the
+// diagram kit (theme-aware). Grey = infrastructure flow, sage = the confirmed
+// "ran once" guarantee, clay = the crash/requeue hazard loop.
+import Diagram from '../Diagram.astro';
+import Service from '../Service.astro';
+import Decision from '../Decision.astro';
+import Success from '../Success.astro';
+import Hazard from '../Hazard.astro';
+import Edge from '../Edge.astro';
+---
+<Diagram
+	viewBox="0 0 760 462"
+	label="At-least-once delivery · the retry loop"
+	caption={"Figure 1. The loop closes on “the system couldn’t confirm the work,” not “the work didn’t happen.” Only a confirmed run is done; anything else returns to the queue and runs again."}
+	ariaLabel="At-least-once delivery retry loop. A job is enqueued, a worker picks it up and runs perform (charging the card — the side effect), then a check asks whether the run was confirmed complete. If yes, the job is done and ran once. If a crash, deploy timeout, or Redis blip prevents confirmation, the job is returned to the queue and picked up again, so it can run more than once."
+>
+	<Service x={250} y={56} w={260} label="Job enqueued" />
+	<Edge d="M380 102 V126" />
+	<Service x={250} y={128} w={260} label="Worker picks up job" />
+	<Edge d="M380 174 V198" />
+	<Service x={250} y={200} w={260} label="perform runs" sub="charges the card · the side effect" />
+	<Edge d="M380 246 V264" />
+	<Decision cx={380} cy={316} w={240} h={100} label="Run confirmed" label2="complete?" />
+
+	<Edge variant="guarantee" d="M500 316 H566" label="yes" labelX={533} labelY={308} />
+	<Success x={566} y={293} w={168} h={46} label="Done" badge="RAN ONCE" />
+
+	<Edge variant="hazard" d="M380 366 V404" label="crash · deploy timeout · Redis blip" labelX={396} labelY={388} />
+	<Hazard x={250} y={406} w={260} h={50} label="Job returned to the queue" sub={"the run was never confirmed — not “it didn’t happen”"} />
+
+	<Edge variant="hazard" d="M250 431 H132 V151 H248" label="runs again — at least once" labelX={120} labelY={291} rotate={-90} />
+</Diagram>
