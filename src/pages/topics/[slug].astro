@@ -1,0 +1,177 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PostCard from '../../components/PostCard.astro';
+import TopicChip from '../../components/TopicChip.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { readingTime } from '../../utils/reading-time';
+import { SITE_TITLE } from '../../consts';
+import { liveTopics, getTopic, topicUrl } from '../../data/topics';
+
+// Rollout gate: only live hubs get a page.
+export async function getStaticPaths() {
+	const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+	return liveTopics().map((topic) => ({
+		params: { slug: topic.slug },
+		props: {
+			topic,
+			posts: posts
+				.filter((p) => p.data.category === topic.slug)
+				.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+		},
+	}));
+}
+
+const { topic, posts } = Astro.props;
+
+const startHerePost = topic.startHere
+	? posts.find((p) => p.id === topic.startHere)
+	: undefined;
+
+// Cross-link only to sibling hubs that are actually published.
+const relatedLive = topic.related.map((s) => getTopic(s)).filter((t) => t?.live);
+
+const site = Astro.site?.toString() ?? 'https://danialasghar.com/';
+const canonical = new URL(topicUrl(topic.slug), site).toString();
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'CollectionPage',
+			'@id': canonical,
+			url: canonical,
+			name: topic.title,
+			description: topic.blurb,
+			keywords: topic.keywords.join(', '),
+			isPartOf: { '@id': `${site}#website` },
+			mainEntity: {
+				'@type': 'ItemList',
+				itemListElement: posts.map((p, i) => ({
+					'@type': 'ListItem',
+					position: i + 1,
+					url: new URL(`/blog/${p.id}/`, site).toString(),
+					name: p.data.title,
+				})),
+			},
+		},
+		{
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{ '@type': 'ListItem', position: 1, name: 'Home', item: site },
+				{ '@type': 'ListItem', position: 2, name: 'Topics', item: new URL('/topics/', site).toString() },
+				{ '@type': 'ListItem', position: 3, name: topic.title, item: canonical },
+			],
+		},
+	],
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${topic.title} — ${SITE_TITLE}`} description={topic.blurb} />
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+	</head>
+	<body>
+		<Header />
+		<main id="main-content" class="container">
+			<Breadcrumbs items={[
+				{ label: 'Home', href: '/' },
+				{ label: 'Topics', href: '/topics/' },
+				{ label: topic.title },
+			]} />
+
+			<header class="hub-header">
+				<p class="eyebrow">Topic</p>
+				<h1 class="hub-title">{topic.title}</h1>
+				<div class="hub-intro">
+					{topic.intro.map((para) => <p set:html={para} />)}
+				</div>
+			</header>
+
+			{startHerePost && (
+				<section class="start-here" aria-label="Start here">
+					<p class="section-eyebrow">Start here</p>
+					<a class="start-card" href={`/blog/${startHerePost.id}/`}>
+						<h2>{startHerePost.data.title}</h2>
+						<p class="start-desc">{startHerePost.data.description}</p>
+						<div class="start-meta">
+							<FormattedDate date={startHerePost.data.pubDate} />
+							<span class="dot">·</span>
+							<span>{readingTime(startHerePost.body)}</span>
+						</div>
+					</a>
+				</section>
+			)}
+
+			{posts.length > 0 && (
+				<section class="hub-list" aria-label="All articles">
+					<p class="section-eyebrow">All articles</p>
+					<div class="grid-cards">
+						{posts.map((post) => <PostCard post={post} />)}
+					</div>
+				</section>
+			)}
+
+			{relatedLive.length > 0 && (
+				<section class="related" aria-label="Related topics">
+					<p class="section-eyebrow">Related topics</p>
+					<div class="related-chips">
+						{relatedLive.map((t) => <TopicChip slug={t!.slug} arrow />)}
+					</div>
+				</section>
+			)}
+		</main>
+		<Footer />
+
+		<style>
+			main { padding-block: var(--s-6) var(--s-4); }
+
+			.hub-header { margin-bottom: var(--s-6); }
+			.eyebrow {
+				font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase;
+				letter-spacing: .06em; color: var(--brand); margin: 0 0 var(--s-1);
+			}
+			.hub-title {
+				font-size: var(--fs-3xl); font-weight: 800;
+				letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-3); max-width: 24ch;
+			}
+			.hub-intro {
+				font-family: var(--font-prose);
+				font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text);
+				max-width: 68ch;
+			}
+			.hub-intro :global(p) { margin: 0 0 var(--s-3); }
+			.hub-intro :global(p:last-child) { margin-bottom: 0; }
+
+			.section-eyebrow {
+				font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em;
+				color: var(--text-muted); font-weight: 600; margin: 0 0 var(--s-2);
+				padding-bottom: var(--s-2); border-bottom: 1px solid var(--border);
+			}
+
+			.start-here { margin-bottom: var(--s-6); }
+			.start-card {
+				display: block; text-decoration: none; color: var(--text);
+				border: 1px solid var(--border); border-left: 3px solid var(--brand);
+				border-radius: var(--radius); background: var(--card-bg);
+				padding: var(--s-3) var(--s-4);
+				transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+			}
+			.start-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
+			.start-card h2 { margin: 0 0 var(--s-1); font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug); }
+			.start-card:hover h2 { color: var(--brand); }
+			.start-desc { margin: 0 0 var(--s-2); color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
+			.start-meta { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-xs); color: var(--text-faint); }
+			.dot { color: var(--text-faint); }
+
+			.hub-list { margin-bottom: var(--s-6); }
+
+			.related-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+		</style>
+	</body>
+</html>

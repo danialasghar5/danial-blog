@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { TOPIC_SLUGS } from './data/topics';
 
 const blog = defineCollection({
 	// Load Markdown and MDX files in the `src/content/blog/` directory.
@@ -19,6 +20,10 @@ const blog = defineCollection({
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
 			tags: z.array(z.string()).default([]),
+			// Primary topic hub this post is filed under. Optional (drafts may omit
+			// it), but when present must be one of the defined topic slugs — the
+			// single source of truth for the /topics/ system.
+			category: z.enum(TOPIC_SLUGS).optional(),
 			draft: z.boolean().default(false),
 			// When true, the post supplies its own article JSON-LD (e.g. TechArticle),
 			// so BaseHead suppresses its generic Article to avoid duplicate schema.

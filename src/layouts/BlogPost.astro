@@ -5,6 +5,7 @@ import BaseHead from '../components/BaseHead.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import FiledUnder from '../components/FiledUnder.astro';
 import Header from '../components/Header.astro';
 
 type PostLink = { slug: string; title: string } | null;
@@ -18,6 +19,7 @@ interface Props {
 	updatedDate?: Date;
 	heroImage?: CollectionEntry<'blog'>['data']['heroImage'];
 	tags?: string[];
+	category?: string;
 	readingTime?: string;
 	prevPost?: PostLink;
 	nextPost?: PostLink;
@@ -33,6 +35,7 @@ const {
 	updatedDate,
 	heroImage,
 	tags = [],
+	category,
 	readingTime,
 	prevPost = null,
 	nextPost = null,
@@ -79,6 +82,8 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 							{tags.map((t) => <li class="chip">{t}</li>)}
 						</ul>
 					)}
+
+					<FiledUnder category={category} />
 				</header>
 
 				{heroImage && (

@@ -1,0 +1,39 @@
+---
+// "Filed under: <Topic>" — the spoke → hub link on a post. Links to the hub
+// when it is live; falls back to a plain label when the topic is defined but
+// not yet published (so we never emit a link to a page that doesn't exist).
+// Renders nothing when the post has no (or an unknown) category.
+import { getTopic, topicUrl } from '../data/topics';
+
+interface Props {
+	category?: string;
+}
+
+const topic = getTopic(Astro.props.category);
+---
+{topic && (
+	<p class="filed-under">
+		Filed under{' '}
+		{topic.live
+			? <a href={topicUrl(topic.slug)}>{topic.title}</a>
+			: <span class="topic-name">{topic.title}</span>}
+	</p>
+)}
+
+<style>
+	.filed-under {
+		margin: 0;
+		font-size: var(--fs-sm);
+		color: var(--text-muted);
+	}
+	.filed-under a, .filed-under .topic-name {
+		font-weight: 600;
+		color: var(--brand);
+	}
+	.filed-under a {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		text-decoration-color: var(--brand-ring);
+	}
+	.filed-under a:hover { text-decoration-color: var(--brand); }
+</style>

@@ -1,0 +1,120 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { SITE_TITLE } from '../../consts';
+import { liveTopics, topicUrl } from '../../data/topics';
+
+const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+const countFor = (slug: string) => posts.filter((p) => p.data.category === slug).length;
+
+const hubs = liveTopics().map((t) => ({ ...t, count: countFor(t.slug) }));
+
+const description = 'Browse the blog by topic — curated hubs on backend reliability engineering.';
+const site = Astro.site?.toString() ?? 'https://danialasghar.com/';
+const canonical = new URL('/topics/', site).toString();
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'CollectionPage',
+			'@id': canonical,
+			url: canonical,
+			name: 'Topics',
+			description,
+			isPartOf: { '@id': `${site}#website` },
+			mainEntity: {
+				'@type': 'ItemList',
+				itemListElement: hubs.map((h, i) => ({
+					'@type': 'ListItem',
+					position: i + 1,
+					url: new URL(topicUrl(h.slug), site).toString(),
+					name: h.title,
+				})),
+			},
+		},
+		{
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{ '@type': 'ListItem', position: 1, name: 'Home', item: site },
+				{ '@type': 'ListItem', position: 2, name: 'Topics', item: canonical },
+			],
+		},
+	],
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Topics — ${SITE_TITLE}`} description={description} />
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+	</head>
+	<body>
+		<Header />
+		<main id="main-content" class="container">
+			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Topics' }]} />
+
+			<header class="topics-header">
+				<p class="eyebrow">Browse</p>
+				<h1 class="topics-title">Topics</h1>
+				<p class="topics-subtitle">How this blog is organized — each hub is a focused body of work on one part of backend reliability engineering.</p>
+			</header>
+
+			<ul class="hub-list">
+				{hubs.map((hub) => (
+					<li>
+						<a class="hub-block" href={topicUrl(hub.slug)}>
+							<div class="hub-copy">
+								<h2>{hub.title}</h2>
+								<p class="hub-blurb">{hub.blurb}</p>
+							</div>
+							<span class="hub-meta">
+								{hub.count} {hub.count === 1 ? 'article' : 'articles'}
+								<span class="arrow" aria-hidden="true">→</span>
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</main>
+		<Footer />
+
+		<style>
+			main { padding-block: var(--s-6) var(--s-4); }
+			.topics-header { margin-bottom: var(--s-5); }
+			.eyebrow {
+				font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase;
+				letter-spacing: .06em; color: var(--brand); margin: 0 0 var(--s-1);
+			}
+			.topics-title { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-1); }
+			.topics-subtitle { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; max-width: 62ch; }
+
+			.hub-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+			.hub-block {
+				display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+				padding: var(--s-3) var(--s-4);
+				border: 1px solid var(--border); border-radius: var(--radius-lg);
+				background: var(--card-bg); color: var(--text); text-decoration: none;
+				transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+			}
+			.hub-block:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
+			.hub-copy h2 { margin: 0 0 .25rem; font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug); }
+			.hub-block:hover .hub-copy h2 { color: var(--brand); }
+			.hub-blurb { margin: 0; color: var(--text-muted); font-size: var(--fs-sm); line-height: var(--lh-normal); max-width: 60ch; }
+			.hub-meta {
+				display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;
+				font-size: var(--fs-sm); color: var(--text-faint); font-weight: 500;
+			}
+			.arrow { color: var(--brand); transition: transform .15s ease; }
+			.hub-block:hover .arrow { transform: translateX(3px); }
+
+			@media (max-width: 560px) {
+				.hub-block { flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+			}
+		</style>
+	</body>
+</html>

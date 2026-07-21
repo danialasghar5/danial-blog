@@ -1,0 +1,44 @@
+---
+// A clickable topic pill. Same visual weight as the design-system `.chip`
+// (rounded, bordered, subtle) but interactive: links to the hub and warms to
+// the brand on hover. Used in the homepage "Browse by topic" row and the hub
+// "Related topics" footer.
+import { getTopic, topicUrl } from '../data/topics';
+
+interface Props {
+	slug: string;
+	/** Show a trailing arrow (used in the "Related topics" context). */
+	arrow?: boolean;
+	/** Override the visible label (defaults to the topic title). */
+	label?: string;
+}
+
+const { slug, arrow = false, label } = Astro.props;
+const topic = getTopic(slug);
+---
+{topic && (
+	<a class="topic-chip" href={topicUrl(topic.slug)}>
+		{label ?? topic.title}{arrow && <span class="arrow" aria-hidden="true">→</span>}
+	</a>
+)}
+
+<style>
+	.topic-chip {
+		display: inline-flex; align-items: center; gap: .35rem;
+		font-size: var(--fs-sm); font-weight: 500;
+		padding: .35rem .8rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		color: var(--text-muted);
+		background: var(--bg-subtle);
+		text-decoration: none;
+		transition: color .15s ease, background .15s ease, border-color .15s ease;
+	}
+	.topic-chip:hover {
+		color: var(--brand);
+		background: var(--brand-soft);
+		border-color: var(--brand-ring);
+	}
+	.arrow { transition: transform .15s ease; }
+	.topic-chip:hover .arrow { transform: translateX(2px); }
+</style>
