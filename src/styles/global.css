@@ -93,7 +93,7 @@
 	--bg-elevated: #161714;
 	--text: #ECECE6;
 	--text-muted: #A6A69E;
-	--text-faint: #71716A;
+	--text-faint: #8A8A82;   /* ≥4.5:1 on --bg for small meta text (was #71716A ≈ 3.7:1) */
 	--border: #262723;
 	--border-strong: #33342E;
 

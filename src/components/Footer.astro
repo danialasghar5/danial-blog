@@ -1,5 +1,6 @@
 ---
 import { SITE_TITLE, SOCIALS, EMAIL } from '../consts';
+import BrandMark from './BrandMark.astro';
 const today = new Date();
 const nav = [
 	{ href: '/blog', label: 'Blog' },
@@ -15,7 +16,7 @@ const nav = [
 	<div class="footer-container">
 		<div class="footer-top">
 			<a href="/" class="footer-brand">
-				<span class="brand-mark" aria-hidden="true">DA</span>
+				<BrandMark size={28} />
 				<span>{SITE_TITLE}</span>
 			</a>
 			<nav class="footer-nav" aria-label="Footer">
@@ -64,12 +65,6 @@ const nav = [
 	.footer-brand {
 		display: inline-flex; align-items: center; gap: .6rem;
 		color: var(--text); font-weight: 700; text-decoration: none;
-	}
-	.brand-mark {
-		display: inline-grid; place-items: center;
-		width: 28px; height: 28px; border-radius: var(--radius-sm);
-		background: var(--brand);
-		color: var(--brand-contrast); font-weight: 700; font-size: .68rem;
 	}
 	.footer-nav { display: flex; flex-wrap: wrap; gap: var(--s-3); }
 	.footer-nav a { color: var(--text-muted); font-size: var(--fs-sm); font-weight: 500; }
