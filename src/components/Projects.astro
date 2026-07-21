@@ -4,9 +4,10 @@ import { getCollection } from 'astro:content';
 interface Props {
   showAll?: boolean;
   heading?: string;
+  blurb?: string;
   withHeader?: boolean;
 }
-const { showAll = false, heading, withHeader = true } = Astro.props;
+const { showAll = false, heading, blurb, withHeader = true } = Astro.props;
 
 const all = (await getCollection('projects'))
   .filter((p) => !p.data.draft)
@@ -21,6 +22,7 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
       {!showAll && <a class="more" href="/projects">All projects &rarr;</a>}
     </div>
   )}
+  {blurb && <p class="section-blurb">{blurb}</p>}
   <div class="grid-cards">
     {displayProjects.map((p) => (
       <a class="proj" href={`/projects/${p.id}/`}>
@@ -37,6 +39,14 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
 
 <style>
   .block { padding-block: var(--s-6); }
+  /* When a blurb follows the header row, tighten the rule→dek gap so they read
+     as one header block, consistent with the section rhythm. */
+  .section-head:has(+ .section-blurb) { margin-bottom: var(--s-2); }
+  .section-blurb {
+    margin: 0 0 var(--s-4);
+    color: var(--text-muted); font-size: var(--fs-base);
+    line-height: var(--lh-normal); max-width: 62ch;
+  }
   .proj {
     display: flex; flex-direction: column; gap: .5rem;
     padding: var(--s-3);

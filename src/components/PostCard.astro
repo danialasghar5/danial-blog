@@ -2,10 +2,13 @@
 import { Image } from 'astro:assets';
 import FormattedDate from './FormattedDate.astro';
 import { readingTime } from '../utils/reading-time';
+import { getTopic } from '../data/topics';
 
 const { post } = Astro.props;
-const { title, description, pubDate, heroImage, tags = [] } = post.data;
+const { title, description, pubDate, heroImage, tags = [], category } = post.data;
 const minutes = readingTime(post.body);
+// Prefer the primary topic label; fall back to the first tag for uncategorized posts.
+const label = getTopic(category)?.title ?? tags[0];
 ---
 <article class="post-card-wrapper" data-tags={tags.join(',')}>
   <a class="post-card" href={`/blog/${post.id}/`}>
@@ -15,7 +18,7 @@ const minutes = readingTime(post.body);
       </div>
     )}
     <div class="card-body">
-      {tags.length > 0 && <span class="card-tag">{tags[0]}</span>}
+      {label && <span class="card-tag">{label}</span>}
       <h3>{title}</h3>
       <p class="desc">{description}</p>
       <div class="card-footer">
