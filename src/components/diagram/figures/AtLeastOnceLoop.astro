@@ -27,7 +27,7 @@ import Edge from '../Edge.astro';
 	<Success x={566} y={293} w={168} h={46} label="Done" badge="RAN ONCE" />
 
 	<Edge variant="hazard" d="M380 366 V404" label="crash · deploy timeout · Redis blip" labelX={396} labelY={388} />
-	<Hazard x={250} y={406} w={260} h={50} label="Job returned to the queue" sub={"the run was never confirmed — not “it didn’t happen”"} />
+	<Hazard x={230} y={406} w={300} h={50} label="Job returned to the queue" sub={"never confirmed — not “it didn’t happen”"} />
 
-	<Edge variant="hazard" d="M250 431 H132 V151 H248" label="runs again — at least once" labelX={120} labelY={291} rotate={-90} />
+	<Edge variant="hazard" d="M230 431 H132 V151 H248" label="runs again — at least once" labelX={120} labelY={291} rotate={-90} />
 </Diagram>
