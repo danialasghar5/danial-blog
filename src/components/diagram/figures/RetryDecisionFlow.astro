@@ -1,0 +1,33 @@
+---
+// The article's core decision model, built from the diagram kit (theme-aware).
+// Grey = infrastructure/actions, sage = the recoverable transient→retry path,
+// clay = the doomed permanent→discard path. Reads without the surrounding text.
+import Diagram from '../Diagram.astro';
+import Service from '../Service.astro';
+import Decision from '../Decision.astro';
+import Success from '../Success.astro';
+import Hazard from '../Hazard.astro';
+import Edge from '../Edge.astro';
+---
+<Diagram
+	viewBox="0 0 760 460"
+	label="Failure handling · retry or discard"
+	caption={"Figure 1. Classify once, at the boundary: transient failures retry with bounded backoff and jitter, reaching the Dead Set only when attempts run out; permanent failures are discarded immediately."}
+	ariaLabel="Decision flow for a failed background job. A job raises an error and is classified at the service boundary. Transient failures — timeouts, 429s, 5xx — are retried with bounded exponential backoff and jitter, and fall to the Dead Set only if the retries are exhausted. Permanent failures — validation errors, 4xx, missing records — are discarded immediately."
+>
+	<Service x={265} y={24} w={230} h={46} label="Job raises an error" />
+	<Edge d="M380 70 V94" />
+	<Service x={265} y={96} w={230} h={46} label="Classify at the boundary" />
+	<Edge d="M380 142 V166" />
+	<Decision cx={380} cy={218} w={250} h={104} label="Transient or" label2="permanent?" />
+
+	<!-- Transient → retry (recoverable path) -->
+	<Edge variant="guarantee" d="M255 218 H190 V300" label="transient" labelX={224} labelY={210} />
+	<Success x={40} y={302} w={300} h={58} label="Retry with backoff + jitter" code="wait: :polynomially_longer" />
+	<Edge d="M190 360 V386" label="retries exhausted" labelX={206} labelY={376} />
+	<Service x={90} y={388} w={200} h={48} label="Dead Set" sub="inspect · replay" />
+
+	<!-- Permanent → discard (terminal) -->
+	<Edge variant="hazard" d="M505 218 H570 V300" label="permanent" labelX={540} labelY={210} />
+	<Hazard x={470} y={302} w={200} h={46} label="Discard immediately" />
+</Diagram>

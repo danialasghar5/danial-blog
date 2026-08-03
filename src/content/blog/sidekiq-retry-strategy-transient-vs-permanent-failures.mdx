@@ -1,0 +1,315 @@
+---
+title: "Sidekiq Retry Strategy: Transient vs Permanent Failures"
+seoTitle: "Sidekiq Retry Strategy: Transient vs Permanent Failures"
+description: "Not every failed job should retry. A practical guide to Sidekiq retry strategy — backoff, error classification, the Dead Set, and when to stop."
+pubDate: 2026-07-30
+updatedDate: 2026-07-30
+canonicalURL: "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/"
+ogImage: "/og/sidekiq-retry-strategy.png"
+author: "Danial Asghar"
+category: "background-jobs"
+hasCustomSchema: true
+tags:
+  - "sidekiq"
+  - "background-jobs"
+  - "reliability"
+  - "retries"
+  - "rails"
+draft: false
+---
+
+import RetryDecisionFlow from '../../components/diagram/figures/RetryDecisionFlow.astro';
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Sidekiq Retry Strategy: Transient vs Permanent Failures",
+  "description": "Not every failed job should retry. A practical guide to Sidekiq retry strategy — backoff, error classification, the Dead Set, and when to stop.",
+  "image": "https://danialasghar.com/og/sidekiq-retry-strategy.png",
+  "datePublished": "2026-07-30",
+  "dateModified": "2026-07-30",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/" },
+  "keywords": ["sidekiq retry strategy", "transient vs permanent failures", "retry_on discard_on", "exponential backoff jitter", "sidekiq dead set", "background jobs"],
+  "articleSection": "Background Jobs & Async",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How many times should a Sidekiq job retry?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For transient failures, 5–8 bounded attempts over a few minutes handle almost all real blips. Sidekiq's default is 25, which is a safe floor but excessive for most jobs and harmful for permanent failures. Set the count per job based on how long the dependency realistically takes to recover."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's the difference between retry_on and discard_on?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "retry_on marks an error as transient and re-runs the job with backoff up to a limit. discard_on marks an error as permanent and drops the job immediately without retrying. Use retry_on for timeouts and 5xx; use discard_on for validation errors, 4xx, and missing records."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I retry a 429 Too Many Requests?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, but carefully. A 429 is transient — the limit resets — but retrying too aggressively makes it worse. Back off exponentially and honor the Retry-After header when the API provides one, rather than guessing the delay."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens when a Sidekiq job runs out of retries?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It moves to the Dead Set, Sidekiq's dead-letter queue, where it's retained and can be inspected and manually re-enqueued from the Web UI. Nothing is silently lost, which is what makes bounded retries safe."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does classifying retries replace idempotency?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Classification controls whether and when a job re-runs; idempotency controls what happens when it does. A retried transient failure still repeats earlier side effects unless the job is idempotent. You need both."
+      }
+    }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Sidekiq Retry Strategy: Transient vs Permanent Failures", "item": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/" }
+  ]
+}
+`}</script>
+
+A good Sidekiq retry strategy retries only *transient* failures — timeouts, rate limits, and 5xx errors likely to succeed later — using exponential backoff with jitter, and discards *permanent* failures like validation errors, 4xx responses, and missing records immediately. Retrying a permanent failure never fixes it; it only costs time, money, and repeated side effects.
+
+Sidekiq turns retries on by default: 25 attempts spread over about three weeks. That default is fine for a hobby app and quietly dangerous for a production one, because it treats every failure the same. A payment-gateway timeout and a malformed request both get 25 attempts — even though one will probably succeed on attempt two and the other will *never* succeed, no matter how many times you try.
+
+This article is about making that distinction on purpose. If you've already read [why background jobs run at least once](/blog/sidekiq-job-runs-twice-at-least-once-delivery/), you know retries are a feature, not a bug. Here we design the retry itself: what to retry, how to back off, when to stop, and where failed jobs should go.
+
+<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
+  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
+  <ul style="margin:0; padding-left:1.1rem;">
+    <li><a href="#the-two-kinds-of-failure">The two kinds of failure</a></li>
+    <li><a href="#why-the-default-sidekiq-retry-is-a-trap">Why the default Sidekiq retry is a trap</a></li>
+    <li><a href="#which-failures-to-retry-and-which-to-discard">Which failures to retry (and which to discard)</a></li>
+    <li><a href="#retrying-transient-failures-the-right-way">Retrying transient failures the right way</a></li>
+    <li><a href="#discarding-permanent-failures">Discarding permanent failures</a></li>
+    <li><a href="#exponential-backoff-and-jitter">Exponential backoff and jitter</a></li>
+    <li><a href="#where-dead-jobs-go-the-dead-set">Where dead jobs go: the Dead Set</a></li>
+    <li><a href="#retries-and-idempotency-go-together">Retries and idempotency go together</a></li>
+    <li><a href="#common-retry-mistakes">Common retry mistakes</a></li>
+    <li><a href="#key-takeaways">Key takeaways</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+
+## The two kinds of failure
+
+Every exception your job raises falls into one of two buckets, and the entire strategy hinges on telling them apart.
+
+A **transient failure** is temporary. The operation failed because of a condition likely to change on its own: a network blip, a database deadlock, a `429 Too Many Requests`, a `503 Service Unavailable`, a lock timeout. Retry it in a few seconds and it may well succeed. Retrying is exactly the right response.
+
+A **permanent failure** is deterministic. The operation failed because of something about the *request itself* that a retry cannot change: a validation error, a `400 Bad Request`, a `401 Unauthorized`, a `404` for a record that was deleted. The tenth attempt fails identically to the first. Retrying is not just useless — it's actively harmful, because every attempt re-runs whatever side effects ran before the failure (an email, a partial write, a metered API call you pay for).
+
+The core principle follows directly: **retry what might work; discard what can't.** A retry count without this classification is the beginner version — it bounds the damage but doesn't prevent it.
+
+## Why the default Sidekiq retry is a trap
+
+Sidekiq's default retry — [25 attempts with a built-in exponential backoff](https://github.com/sidekiq/sidekiq/wiki/Error-Handling) — is a sensible *floor*, not a strategy. (The backoff grows on a roughly `retry_count**4 + 15` seconds curve with a little randomness, stretching 25 attempts across about 21 days.) Three things go wrong when you leave it unexamined:
+
+- **Permanent failures burn all 25 attempts.** A job that raises `ActiveRecord::RecordInvalid` retries for three weeks, failing identically every time, cluttering your retry queue and your alerts.
+- **Side effects repeat.** If your job charges a card on line 2 and raises a permanent error on line 4, all 25 attempts re-attempt everything up to line 4. Without idempotency, that's 25 chances to double-charge.
+- **Metered calls cost real money.** For jobs that call an LLM or a paid API, a doomed retry re-bills the provider on every attempt. At scale, unclassified retries become a line item.
+
+The default optimizes for "never silently drop work." That's the right instinct. But "never drop" and "always retry 25 times" are not the same thing — and conflating them is where the trap closes.
+
+## Which failures to retry (and which to discard)
+
+Here's a working starting point. Treat it as a template to adapt to your domain, not gospel — the right classification sometimes depends on the specific API you're calling.
+
+| Failure | Type | Why | Action |
+|---|---|---|---|
+| Timeout / connection reset | Transient | The service may recover | Retry with backoff |
+| `429 Too Many Requests` | Transient | Rate limit resets over time | Retry with backoff (respect `Retry-After`) |
+| `500` / `502` / `503` | Transient | Server-side, usually temporary | Retry with backoff |
+| Database deadlock / lock timeout | Transient | Contention clears | Retry (a few attempts) |
+| `400 Bad Request` | Permanent | The payload is wrong | Discard |
+| `401` / `403` | Permanent | Auth won't fix itself on retry | Discard, alert |
+| `404` / `RecordNotFound` | Permanent | The record is gone | Discard |
+| `ActiveRecord::RecordInvalid` | Permanent | Validation won't pass on retry | Discard |
+| Malformed / unparseable response | Usually permanent | Same input → same failure | Discard (or repair once) |
+
+Two honest caveats. First, a `429` is transient but needs *special* handling — retrying too fast makes the rate limit worse (see backoff below). Second, some errors are ambiguous: a `409 Conflict` might be transient (a race that resolves) or permanent (a genuine conflict). When you're unsure, **default to transient** — the cost of one extra retry is small; the cost of silently dropping recoverable work is large. Fail *open* on classification, *closed* on billing.
+
+<RetryDecisionFlow />
+
+## Retrying transient failures the right way
+
+Once you've decided an error is transient, you tell the framework so. In Active Job, [`retry_on`](https://guides.rubyonrails.org/active_job_basics.html#retrying-or-discarding-failed-jobs) marks an error as retryable; in raw Sidekiq, you scope `sidekiq_options retry:` and rescue selectively. An Active Job example:
+
+```ruby
+class ChargeCustomerJob < ApplicationJob
+  # Transient: worth retrying, with backoff and a sane ceiling.
+  retry_on Net::OpenTimeout, Faraday::TimeoutError,
+           wait: :polynomially_longer, attempts: 5
+
+  retry_on RateLimitError, wait: 30.seconds, attempts: 8
+
+  def perform(order_id)
+    order = Order.find(order_id)
+    PaymentGateway.charge!(order)
+  end
+end
+```
+
+Note the *bounded* attempt counts. "Retry with backoff" doesn't mean "retry forever." Five attempts over a few minutes handle the overwhelming majority of transient blips; beyond that, if it's still failing, the failure has effectively become permanent and belongs in the Dead Set where a human can look at it.
+
+## Discarding permanent failures
+
+This is the half most teams skip, and it's the half that saves you money and prevents duplicate side effects. `discard_on` tells the framework: this error is terminal — don't retry, drop it cleanly.
+
+```ruby
+class ChargeCustomerJob < ApplicationJob
+  # Permanent: retrying can never help — discard immediately.
+  discard_on ActiveJob::DeserializationError   # the record was deleted before the job ran
+  discard_on ActiveRecord::RecordNotFound
+  discard_on ActiveRecord::RecordInvalid
+
+  retry_on Net::OpenTimeout, wait: :polynomially_longer, attempts: 5
+
+  def perform(order_id)
+    order = Order.find(order_id)
+    PaymentGateway.charge!(order)
+  end
+end
+```
+
+The record-deleted case deserves a callout because it's the single most common wasteful retry in Rails. A job is enqueued with a GlobalID reference to a record; the record is deleted before the job runs; Active Job can't deserialize the argument and raises `ActiveJob::DeserializationError` (or your `find` raises `RecordNotFound`) — and without `discard_on`, Sidekiq dutifully retries a job that can *never* succeed, 25 times. One line fixes it.
+
+For custom errors, define a small taxonomy so classification lives in one place:
+
+```ruby
+class PermanentError < StandardError; end
+class RetryableError < StandardError; end
+
+# In your service, map provider errors onto the taxonomy at the boundary:
+def call
+  response = api.post(payload)
+  case response.status
+  when 200            then parse(response)
+  when 429, 500..599  then raise RetryableError, response.status.to_s
+  when 400..499       then raise PermanentError, response.status.to_s
+  end
+end
+```
+
+Then the job only has to know two words: `retry_on RetryableError`, `discard_on PermanentError`. Classification happens once, at the edge where you actually understand the error — not scattered across every job.
+
+## Exponential backoff and jitter
+
+When you *do* retry, *how* you space the attempts matters as much as *whether* you retry. Two failure modes to avoid:
+
+**Retrying too fast** hammers a service that's already struggling, turning a brief blip into an outage. **Retrying in lockstep** — every failed job waking at the exact same interval — creates a *thundering herd*: when a downstream service recovers, thousands of jobs retry simultaneously and knock it back down.
+
+The fix for both is **exponential backoff with jitter**: each attempt waits longer than the last (2s, 4s, 8s, 16s…), and a random offset spreads the retries out so they don't synchronize. AWS's [write-up on exponential backoff and jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) is the canonical reference: together they prevent both hammering and herding, and its testing shows jitter dramatically reduces contention.
+
+Active Job's `wait: :polynomially_longer` gives you increasing delays *with jitter* out of the box. Its one limit: the `wait:` calculation sees only the attempt number, not the error — so to honor a rate limiter's own `Retry-After`, drop to Sidekiq's `sidekiq_retry_in`, which is handed the exception:
+
+```ruby
+class SyncInventoryJob
+  include Sidekiq::Job
+  sidekiq_options retry: 8
+
+  # Error-aware backoff: honor the API's Retry-After when it sends one,
+  # and fall back to Sidekiq's default (return nil) for everything else.
+  sidekiq_retry_in do |count, exception|
+    exception.retry_after if exception.is_a?(RateLimitError)
+  end
+end
+```
+
+Rule of thumb: exponential backoff for general transient errors, provider-directed waits (`Retry-After`) for rate limits, and always add jitter when many jobs can fail at once.
+
+## Where dead jobs go: the Dead Set
+
+A retry strategy is incomplete without an answer to "what happens when retries run out?" In Sidekiq, the answer is the **Dead Set** — its dead-letter queue. When a job exhausts its retries, [Sidekiq moves it to the Dead Set rather than deleting it](https://github.com/sidekiq/sidekiq/wiki/Error-Handling), where it's retained (by default, up to 6 months or 10,000 jobs) and can be inspected and manually re-enqueued from the Web UI.
+
+This is the safety net that makes bounded retries safe. You *can* set `attempts: 5` and stop, because "stop retrying" for a still-failing transient error means "hand it to a human," not "lose it." Monitor the Dead Set: a growing dead count is your earliest signal that a dependency is degraded or a classification is wrong. Treat it like an inbox, not a graveyard.
+
+## Retries and idempotency go together
+
+Here's the connection that ties this article to the rest of the cluster: **a retry strategy and idempotency are two halves of the same guarantee.** Backoff and classification decide *whether and when* a job runs again. Idempotency decides *what happens* when it does.
+
+You need both. Classify perfectly but skip idempotency, and a legitimately-retried transient failure still repeats the side effects that already ran before it failed. Make the job idempotent but skip classification, and you burn 25 doomed attempts on every permanent error. If you haven't built the second half yet, the companion piece walks through it in production: [designing idempotent background workers for LLM calls in Rails](/blog/idempotent-ai-workers-rails/), including why a database-level guard beats a guard clause under concurrency.
+
+## Common retry mistakes
+
+- **Leaving the default 25 retries on every job.** It's a floor, not a strategy — permanent failures burn all 25.
+- **No `discard_on` for deleted records.** The most common wasteful retry in Rails; one line fixes it.
+- **Rescuing broadly and re-raising everything.** `rescue => e; raise` treats a permanent 401 exactly like a transient timeout. Classify at the boundary instead.
+- **Retrying without backoff.** Fast retries hammer a struggling service into an outage.
+- **Backoff without jitter.** Synchronized retries create a thundering herd when the dependency recovers.
+- **Retrying non-idempotent side effects.** Every retry re-charges, re-emails, re-bills. Classification limits attempts; idempotency makes each attempt safe.
+- **Treating the Dead Set as a graveyard.** It's a monitored inbox — a growing dead count is a signal, not noise.
+- **Unbounded custom retries.** "Transient" doesn't mean "retry forever"; a still-failing transient error has become permanent.
+
+## Key takeaways
+
+- Classify every failure as **transient** (retry) or **permanent** (discard). This decision is the whole strategy.
+- Use `retry_on` for transient errors with **bounded** attempts; use `discard_on` for permanent ones — especially deleted records.
+- Classify errors **once, at the service boundary**, into a small taxonomy the job can act on.
+- Retry with **exponential backoff and jitter** to avoid hammering and thundering herds; respect `Retry-After` for rate limits.
+- Let exhausted jobs fall to the **Dead Set** and monitor it — bounded retries are safe *because* nothing is silently lost.
+- Pair retries with **idempotency**; they're two halves of the same correctness guarantee.
+
+## FAQ
+
+### How many times should a Sidekiq job retry?
+
+For transient failures, 5–8 bounded attempts over a few minutes handle almost all real blips. Sidekiq's default is 25, which is a safe floor but excessive for most jobs and harmful for permanent failures. Set the count per job based on how long the dependency realistically takes to recover.
+
+### What's the difference between `retry_on` and `discard_on`?
+
+`retry_on` marks an error as transient and re-runs the job with backoff up to a limit. `discard_on` marks an error as permanent and drops the job immediately without retrying. Use `retry_on` for timeouts and 5xx; use `discard_on` for validation errors, 4xx, and missing records.
+
+### Should I retry a `429 Too Many Requests`?
+
+Yes, but carefully. A `429` is transient — the limit resets — but retrying too aggressively makes it worse. Back off exponentially and honor the `Retry-After` header when the API provides one, rather than guessing the delay.
+
+### What happens when a Sidekiq job runs out of retries?
+
+It moves to the Dead Set, Sidekiq's dead-letter queue, where it's retained and can be inspected and manually re-enqueued from the Web UI. Nothing is silently lost, which is what makes bounded retries safe.
+
+### Does classifying retries replace idempotency?
+
+No. Classification controls *whether and when* a job re-runs; idempotency controls *what happens* when it does. A retried transient failure still repeats earlier side effects unless the job is idempotent. You need both.
+
+## Conclusion
+
+The difference between a hobby-grade and a production-grade background system isn't the retry *count* — it's the retry *decision*. Classify failures as transient or permanent, retry the recoverable ones with bounded backoff and jitter, discard the doomed ones immediately, and let the Dead Set catch whatever survives. Do that, and your retry queue stops being a graveyard of doomed jobs and a source of surprise bills, and becomes what it should be: a system that heals from the failures it can and gets out of the way of the ones it can't.

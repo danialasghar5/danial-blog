@@ -104,6 +104,23 @@ The fix is **idempotency**: making a background worker safe to run more than onc
 
 Moving an LLM call out of the request path and behind a queue is the right call — it's the core decision in the [AI Support Ticket Triage Engine](/projects/ai-support-ticket-triage-engine), a service I built and open-sourced — and it keeps ticket ingestion fast — a `202 Accepted` in single-digit milliseconds in local measurement (the handler only inserts and enqueues), not a measured production SLA — instead of coupling it to a 1–10 second model call. But that queue changes the reliability contract in a way that's easy to miss: **the moment work runs in a background job, it runs *at least once*, not exactly once.** Every worker has to be safe to run more than one time. With an LLM in the loop, "more than once" isn't just a correctness bug — it's a billing line item and a data-consistency problem.
 
+<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
+  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
+  <ul style="margin:0; padding-left:1.1rem;">
+    <li><a href="#why-an-llm-makes-double-execution-worse">Why an LLM makes double-execution worse</a></li>
+    <li><a href="#what-idempotency-means-for-an-llm-worker">What idempotency means for an LLM worker</a></li>
+    <li><a href="#the-shipped-gate-status-based-idempotency-on-the-uuid">The shipped gate: status-based idempotency on the UUID</a></li>
+    <li><a href="#where-a-status-gate-isnt-enough-the-check-then-act-race">Where a status gate isn't enough: the check-then-act race</a></li>
+    <li><a href="#a-subtle-case-the-model-succeeded-the-write-didnt">A subtle case: the model succeeded, the write didn't</a></li>
+    <li><a href="#common-idempotency-mistakes">Common idempotency mistakes</a></li>
+    <li><a href="#tradeoffs">Tradeoffs</a></li>
+    <li><a href="#failure-modes">Failure modes</a></li>
+    <li><a href="#testing-and-monitoring-idempotent-workers">Testing and monitoring idempotent workers</a></li>
+    <li><a href="#whats-shipped-vs-whats-planned">What's shipped vs. what's planned</a></li>
+    <li><a href="#the-lesson">The lesson</a></li>
+  </ul>
+</nav>
+
 ## Why an LLM makes double-execution worse
 
 At-least-once delivery is not a Sidekiq flaw; it's the guarantee ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). If you want the full picture of *why* a job runs more than once — deploys, lost acks, timeouts — I break down all five windows in **[Why Your Sidekiq Job Runs Twice →](/blog/sidekiq-job-runs-twice-at-least-once-delivery/)**. Here we take that guarantee as given and focus on what to build because of it. A worker can be retried after a timeout, a deploy, an OOM kill, or a network blip between finishing the job and acknowledging it. For an ordinary job — recalculate a counter, resize an image — running twice is usually harmless or trivially fixable.
@@ -161,7 +178,7 @@ class TriageWorker
 end
 ```
 
-The `rescue` is deliberate: it records the failure and re-raises so the bounded retries take over. With `retry: 3`, Sidekiq re-runs the job with exponential backoff; once those attempts are exhausted the job lands in Sidekiq's Dead Set — a dead-letter queue you can inspect and replay, not a silent loss. Note the honest limitation of this MVP: the rescue is unclassified — it retries *every* error the same way. A permanent failure (a bad request, a deterministic truncation on an over-long ticket) will therefore retry and re-bill on each of the three attempts before it dies to the Dead Set. Separating transient failures from permanent ones is a later pass, not something this worker does yet.
+The `rescue` is deliberate: it records the failure and re-raises so the bounded retries take over. With `retry: 3`, Sidekiq re-runs the job with exponential backoff; once those attempts are exhausted the job lands in Sidekiq's Dead Set — a dead-letter queue you can inspect and replay, not a silent loss. Note the honest limitation of this MVP: the rescue is unclassified — it retries *every* error the same way. A permanent failure (a bad request, a deterministic truncation on an over-long ticket) will therefore retry and re-bill on each of the three attempts before it dies to the Dead Set. Separating transient failures from permanent ones is [a later pass](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/), not something this worker does yet.
 
 Two decisions here are worth stating explicitly, because each had an alternative I rejected:
 

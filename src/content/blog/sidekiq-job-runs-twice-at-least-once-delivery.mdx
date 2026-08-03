@@ -160,7 +160,7 @@ The job that was still running at the deadline restarts from the top on the new 
 
 ### 2. The job raises and retries
 
-The familiar case. Sidekiq's retry system re-runs failed jobs, and the wiki is explicit: with error retries, a job might be half-processed, throw an error, and then be re-executed until it completes ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). "Half-processed" is the operative word — if `perform` charges on line 2 and raises on line 4, the retry begins again at line 1 with the charge already made. This applies whether you use Sidekiq's native retries or ActiveJob's `retry_on`; they're different layers over the same at-least-once reality.
+The familiar case. Sidekiq's retry system re-runs failed jobs, and the wiki is explicit: with error retries, a job might be half-processed, throw an error, and then be re-executed until it completes ([Sidekiq Best Practices](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)). "Half-processed" is the operative word — if `perform` charges on line 2 and raises on line 4, the retry begins again at line 1 with the charge already made. This applies whether you use Sidekiq's native retries or ActiveJob's `retry_on`; they're different layers over the same at-least-once reality — and [deciding which failures to retry, and when to stop](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/), is a strategy of its own.
 
 A related trap: a *permanently* failing job — say one that raises `ActiveRecord::RecordNotFound` because the record was deleted — still retries the full count, repeating any side effects that precede the failure on every attempt, for a run that can never succeed.
 
