@@ -4,6 +4,33 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
 
+// Wrap every rendered Markdown/MDX <table> in a horizontally-scrollable div so a
+// wide table scrolls inside its own box on small screens instead of pushing the
+// whole page sideways. Styled by .table-scroll in global.css.
+function rehypeWrapTables() {
+	/** @param {any} tree */
+	return (tree) => {
+		/** @param {any} node */
+		const walk = (node) => {
+			if (!node.children) return;
+			/** @param {any} child */
+			node.children = node.children.map((child) => {
+				walk(child);
+				if (child.type === 'element' && child.tagName === 'table') {
+					return {
+						type: 'element',
+						tagName: 'div',
+						properties: { className: ['table-scroll'] },
+						children: [child],
+					};
+				}
+				return child;
+			});
+		};
+		walk(tree);
+	};
+}
+
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://danialasghar.com',
@@ -13,6 +40,7 @@ export default defineConfig({
 	// Dual-theme syntax highlighting: readable light theme by default, dark theme
 	// swapped in via [data-theme="dark"] (see global.css .astro-code overrides).
 	markdown: {
+		rehypePlugins: [rehypeWrapTables],
 		shikiConfig: {
 			themes: { light: 'github-light', dark: 'github-dark' },
 			wrap: true,

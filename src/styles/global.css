@@ -351,6 +351,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
 	white-space: nowrap;
 }
 
+/* Wide Markdown tables scroll inside their own box (via the rehypeWrapTables
+   plugin in astro.config.mjs) instead of pushing the page sideways on mobile. */
+.table-scroll { overflow-x: auto; }
+
 /* ==========================================================================
    Diagram system — theme-aware technical diagrams (see docs/diagrams.md)
    Every node/edge reads from the --dg-* tokens above, so a diagram renders as
