@@ -1,0 +1,308 @@
+---
+title: "How Solid Queue Works Under the Hood (Rails 8)"
+seoTitle: "How Solid Queue Works Under the Hood (Rails 8)"
+description: "A deep look at Solid Queue internals — execution tables, SKIP LOCKED claiming, concurrency controls, heartbeats — and the one guarantee it doesn't give you."
+canonicalURL: "https://danialasghar.com/blog/how-solid-queue-works/"
+ogImage: "/og/how-solid-queue-works.png"
+pubDate: 2026-08-04
+updatedDate: 2026-08-04
+author: "Danial Asghar"
+category: "background-jobs"
+hasCustomSchema: true
+tags:
+  - "solid-queue"
+  - "background-jobs"
+  - "rails"
+  - "active-job"
+  - "reliability"
+draft: false
+---
+
+import SolidQueueArchitecture from '../../components/diagram/figures/SolidQueueArchitecture.astro';
+import SolidQueueLifecycle from '../../components/diagram/figures/SolidQueueLifecycle.astro';
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "How Solid Queue Works Under the Hood (Rails 8)",
+  "description": "A deep look at Solid Queue internals — execution tables, SKIP LOCKED claiming, concurrency controls, heartbeats — and the one guarantee it doesn't give you.",
+  "image": "https://danialasghar.com/og/how-solid-queue-works.png",
+  "datePublished": "2026-08-04",
+  "dateModified": "2026-08-04",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/how-solid-queue-works/" },
+  "keywords": ["solid queue", "rails 8 background jobs", "solid queue vs sidekiq", "for update skip locked", "active job database backend", "solid queue architecture"],
+  "articleSection": "Background Jobs & Async",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Solid Queue use Redis?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. It runs entirely on your relational database (Postgres, MySQL, or SQLite), storing the queue as ordinary tables. Removing Redis is the point — one fewer service to operate — at the cost of polling load on your database." }
+    },
+    {
+      "@type": "Question",
+      "name": "How does Solid Queue handle concurrency without Redis?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Workers poll solid_queue_ready_executions and claim jobs with FOR UPDATE SKIP LOCKED. That clause lets a worker lock and take a row while other workers skip past it to different rows, so many workers run jobs concurrently without blocking or double-claiming." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Solid Queue exactly-once?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No — at-least-once. SKIP LOCKED stops two workers claiming the same row at once, but a job can still run more than once if a worker crashes after a side effect but before completion is recorded. Make your jobs idempotent." }
+    },
+    {
+      "@type": "Question",
+      "name": "How does limits_concurrency work in Solid Queue?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Jobs that would exceed the limit go to solid_queue_blocked_executions, tracked by a semaphore; the dispatcher promotes them to ready when a slot frees. It enforces strict limits but adds overhead, so reserve it for mutual exclusion rather than general rate-limiting." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Solid Queue retry failed jobs automatically?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No — retries come from Active Job (retry_on / discard_on), not Solid Queue. A job that raises without a retry rule lands in solid_queue_failed_executions and stays there until you retry or discard it." }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens to jobs when a Solid Queue worker crashes?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The supervisor prunes the dead process after its heartbeat expires (process_alive_threshold, default 5 minutes) and marks its in-flight jobs failed with ProcessPrunedError for inspection — they aren't silently re-run." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is my Solid Queue job slow to start?",
+      "acceptedAnswer": { "@type": "Answer", "text": "It polls rather than pushes, so there's a latency floor equal to your polling interval (0.1s by default for workers). A job enqueued just after a poll waits for the next one. Lower the interval for faster pickup, at the cost of more database queries." }
+    }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "How Solid Queue Works Under the Hood (Rails 8)", "item": "https://danialasghar.com/blog/how-solid-queue-works/" }
+  ]
+}
+`}</script>
+
+Solid Queue runs Active Job on your database instead of Redis. Dispatchers move scheduled jobs into a ready table; workers poll it and claim jobs with `FOR UPDATE SKIP LOCKED`, so many workers grab different jobs at once without blocking; a supervisor tracks heartbeats and fails the jobs of dead workers so you can inspect them. It gives you at-least-once execution, not exactly-once — so your jobs still need to be idempotent.
+
+Rails 8 ships Solid Queue as the default Active Job backend, so most teams now run it *because it's the default*, not by choice. That's fine — but "I run it because it's default" and "I understand what it's doing to my database every second" are different states, and the gap between them is where production surprises live: a job that starts a beat late, a `failed_executions` table filling after a bad deploy, a worker that dies mid-job and leaves work behind.
+
+This is the internals walkthrough, traced against the [official `rails/solid_queue` README](https://github.com/rails/solid_queue) and the [Rails Guides](https://guides.rubyonrails.org/active_job_basics.html). Not a setup tutorial — how the thing works, and why those details matter under load.
+
+<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
+  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
+  <ul style="margin:0; padding-left:1.1rem;">
+    <li><a href="#the-core-idea-the-database-is-the-queue">The core idea: the database is the queue</a></li>
+    <li><a href="#the-four-processes">The four processes</a></li>
+    <li><a href="#the-execution-tables">The execution tables</a></li>
+    <li><a href="#how-a-worker-claims-a-job-for-update-skip-locked">How a worker claims a job: FOR UPDATE SKIP LOCKED</a></li>
+    <li><a href="#the-job-lifecycle-as-a-state-machine">The job lifecycle as a state machine</a></li>
+    <li><a href="#concurrency-controls-limits_concurrency-and-blocked-jobs">Concurrency controls: limits_concurrency and blocked jobs</a></li>
+    <li><a href="#the-polling-model-and-where-latency-comes-from">The polling model, and where latency comes from</a></li>
+    <li><a href="#what-happens-when-a-worker-dies">What happens when a worker dies</a></li>
+    <li><a href="#finished-and-failed-jobs-two-production-gotchas">Finished and failed jobs: two production gotchas</a></li>
+    <li><a href="#the-guarantee-solid-queue-gives-you-and-the-one-it-doesnt">The guarantee Solid Queue gives you, and the one it doesn't</a></li>
+    <li><a href="#common-misconceptions">Common misconceptions</a></li>
+    <li><a href="#key-takeaways">Key takeaways</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+</nav>
+
+## The core idea: the database is the queue
+
+Sidekiq keeps its queue in Redis; workers pop jobs from memory. Solid Queue removes Redis and puts the queue *in your relational database* — Postgres, MySQL, or SQLite — as ordinary tables you can query with SQL.
+
+That one decision drives everything else, and it buys a property a Redis-backed queue has to engineer around: **transactional enqueuing**. A job enqueued inside a database transaction becomes visible to workers only *after that transaction commits*; if it rolls back, the job was never there. This kills a whole class of "`RecordNotFound` on a brand-new job" bugs, where a job runs against a record whose transaction never committed. The job and the data it depends on now commit or fail together.
+
+The cost is that claiming work must be coordinated through *database* mechanics instead of Redis operations. That coordination is the interesting part, and it's where the rest of this article lives.
+
+## The four processes
+
+Running `bin/jobs` starts a few cooperating processes. Four roles matter, and keeping them straight explains everything downstream:
+
+- **Supervisor** — the parent. Runs the others per your config, tracks their heartbeats, restarts them as needed. Runs in **fork mode** by default (a separate process per worker/dispatcher/scheduler — best isolation), with an **async mode** that runs everything in threads inside one process (lighter, less isolation). It never runs your jobs.
+- **Dispatchers** — handle *scheduled* work: move due jobs from `scheduled_executions` into `ready_executions`, and run the maintenance behind concurrency controls.
+- **Workers** — do the work: poll `ready_executions`, claim jobs, and run them in a pool of **threads** (or **fibers**, in async execution).
+- **Scheduler** — enqueues recurring jobs when they're due.
+
+The separation is the whole design: each process type polls a *different table* on its own interval, and the database — not a broker — arbitrates contention. No coordinator decides who does what; the coordination *is* the SQL.
+
+A representative config:
+
+```yaml
+# config/queue.yml
+production:
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+  workers:
+    - queues: "*"
+      threads: 3
+      polling_interval: 0.1
+      processes: 2
+```
+
+One operational rule is worth committing to memory, because it's the most common way Solid Queue bites you: **each worker thread holds a database connection while running a job.** The README recommends setting `threads` **≤ your connection pool size − 2** (two connections are reserved for polling and the heartbeat). Concurrency is bounded by your DB pool, not by memory — so plan `threads`, `processes`, and pool size together, or workers stall waiting on connections.
+
+<SolidQueueArchitecture />
+
+## The execution tables
+
+Solid Queue models a job's life as movement *between tables*, not a status column changing in place. Each execution type has a **unique index on `job_id`** — that's how the database enforces "one state at a time." The tables that matter:
+
+| Table | Holds | Written by |
+|---|---|---|
+| `solid_queue_jobs` | The canonical job record (class, args, timestamps) | Enqueue |
+| `solid_queue_scheduled_executions` | Jobs due in the future | Enqueue (delayed) |
+| `solid_queue_ready_executions` | Jobs ready to run now | Dispatcher / immediate enqueue |
+| `solid_queue_claimed_executions` | Jobs a worker has claimed and is running | Worker, on claim |
+| `solid_queue_blocked_executions` | Jobs held back by a concurrency limit | Dispatcher |
+| `solid_queue_failed_executions` | Jobs that raised or were interrupted | Worker / supervisor |
+| `solid_queue_semaphores` | Counters backing `limits_concurrency` | Enqueue / dispatcher |
+| `solid_queue_processes` | Running processes and their last heartbeat | Every process |
+
+The path: `perform_later` lands a job in `ready_executions` (immediate) or `scheduled_executions` (delayed). A dispatcher promotes due scheduled jobs to ready. A worker claims one — the row moves to `claimed_executions` — runs it, and on success marks the `solid_queue_jobs` row finished. On failure, a row goes to `failed_executions` and stays until something retries or discards it. The whole system is that choreography: rows moving between tables, arbitrated by SQL locks.
+
+## How a worker claims a job: FOR UPDATE SKIP LOCKED
+
+This is the mechanism that makes database-as-queue work concurrently — and the source of both Solid Queue's key guarantee and its key non-guarantee, so it's worth getting exact.
+
+Claiming the next job naively means `SELECT ... FOR UPDATE`: lock the next row so no one else takes it. But plain `FOR UPDATE` *blocks* — while one worker holds the lock, others wait, and the polling table becomes a bottleneck. The fix is one clause: `FOR UPDATE SKIP LOCKED`.
+
+```sql
+SELECT * FROM solid_queue_ready_executions
+WHERE queue_name = 'default'
+ORDER BY priority ASC, job_id ASC
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+```
+
+`SKIP LOCKED` tells the database to *skip past* a locked row to the next unlocked one instead of waiting for it ([PostgreSQL docs](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)). Ten workers polling at once each lock a *different* row — no double-claiming, no queuing behind each other. This is why it needs Postgres 9.5+, MySQL 8+, or MariaDB 10.6+; SQLite works but serializes writes, so multiple workers on one queue contend. A composite poll index on `[queue_name, priority, job_id]` keeps that hot query from scanning — a big part of why "just poll a table" performs at all.
+
+That claim is the database's own version of the atomic claim we built by hand in [designing idempotent background workers for LLM calls in Rails](/blog/idempotent-ai-workers-rails/): the database, not the application, decides who wins the row. Solid Queue does this for you *at the queue level* — but not for your job's *side effects*, which is the whole of the guarantee section below.
+
+## The job lifecycle as a state machine
+
+Put the tables and the claim together and a job is a **state machine the database enforces**. Because each state is its own table with a unique `job_id` index, a job is in exactly one state at any moment, and every transition is a row moving between tables:
+
+<SolidQueueLifecycle />
+
+This is why "how does Solid Queue work" has a cleaner answer than most queues: there's no hidden in-memory state. Every state a job can be in is a row you can `SELECT` — to see what your queue is doing right now, you query it.
+
+## Concurrency controls: limits_concurrency and blocked jobs
+
+Solid Queue can cap how many jobs of a kind run at once — useful when a vendor API allows only *N* concurrent calls, or a resource can't take parallel writes:
+
+```ruby
+class SyncToVendorJob < ApplicationJob
+  limits_concurrency to: 1, key: ->(account) { account.id }, duration: 5.minutes
+
+  def perform(account)
+    Vendor.sync!(account)   # only one runs per account at a time
+  end
+end
+```
+
+This isn't free, and the maintainers say so. A job that would exceed the limit is written to `blocked_executions` instead of `ready_executions`, with a **semaphore** row tracking the count; the dispatcher periodically promotes unblockable jobs back to ready. The README's own caution: concurrency controls add *significant overhead* (blocked rows and semaphores to create and update). The rule that follows: reach for `limits_concurrency` when you need **strict mutual exclusion** (only-one-at-a-time), not for throttling. For plain rate-shaping where the limit is comfortably above 1, the maintainers recommend the blunter, cheaper tool — **run fewer workers or threads on that queue.**
+
+## The polling model, and where latency comes from
+
+Solid Queue is a **polling** system: workers aren't notified of new jobs, they *check* the ready table on an interval (`polling_interval` — 0.1s for workers, 1s for dispatchers by default). That means a **latency floor equal to your polling interval** — a job enqueued just after a poll waits for the next one.
+
+For almost all background work — emails, imports, webhooks, reports — a pickup latency of tens to hundreds of milliseconds is invisible. For a user-visible interactive path (click → expect a result *now*), it's something to measure, not assume away. Tightening the interval cuts latency but raises database load, since every poll is a query against a hot table. That latency-versus-load trade is the central tuning knob of any polling queue, and the honest counterweight to the "no Redis" win. It's also the first thing to check when a job is slow to *start* rather than slow to *run*.
+
+## What happens when a worker dies
+
+A queue is only trustworthy if it survives crashes. Every worker and dispatcher registers in `solid_queue_processes` and updates a heartbeat; `process_alive_threshold` — how long after the last heartbeat a process is considered dead — **defaults to 5 minutes**. The supervisor prunes expired processes and handles the jobs they had claimed.
+
+Precision matters here, because secondary write-ups disagree — and the disagreement is a *version* artifact. The **current README** states: jobs claimed by a pruned process are **marked failed with `SolidQueue::Processes::ProcessPrunedError`** and moved to `failed_executions` for inspection — not silently re-run, not lost. Older articles (and AI answers) say pruned jobs are "released back to their queues"; that wording came from an earlier README and was corrected ([issue #422](https://github.com/rails/solid_queue/issues/422)). A worker killed outright — a `KILL` signal, or an OOM killer reaping a leaky process — likewise has its in-flight jobs marked failed.
+
+One limitation worth knowing: **liveness is tracked per *process*, not per *job*.** A worker that's alive but stuck on one job won't be caught by heartbeats — detecting that needs an explicit timeout or watchdog on top. Either way, the lesson for your code is the same: a crash mid-execution leaves a *failed row a human or retry rule handles*, not a guaranteed clean single re-run. The correctness burden stays on your job, not the queue.
+
+## Finished and failed jobs: two production gotchas
+
+**Finished jobs stick around by default.** With `preserve_finished_jobs` on (the default), successful jobs stay in `solid_queue_jobs`, marked finished, and are cleared after `clear_finished_jobs_after` (default: 1 day). The installer configures a recurring job to prune them hourly, so on a standard setup this is handled — but *confirm that recurring task is scheduled and running.* Remove it (or roll a custom install) and the table grows unbounded; you can also prune on demand with `SolidQueue::Job.clear_finished_in_batches`.
+
+**Solid Queue doesn't retry failed jobs — Active Job does.** A crucial difference from Sidekiq's model: when a job raises, Solid Queue writes it to `failed_executions` and *leaves it there*. There's no built-in retry-with-backoff in the queue. Automatic retries come from Active Job's `retry_on`/`discard_on` — the exact machinery in [Sidekiq retry strategy: transient vs permanent failures](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/), and the same classification applies. Without a retry rule, a bad deploy that fails ten thousand jobs leaves ten thousand rows in `failed_executions` until you triage them (via the Mission Control — Jobs dashboard) or re-enqueue them. Not a flaw — a default you should know you're accepting.
+
+## The guarantee Solid Queue gives you, and the one it doesn't
+
+`SKIP LOCKED` guarantees two workers never claim the *same ready execution* at once. That's a real guarantee about *claiming*. It is **not** a guarantee about *execution*.
+
+Solid Queue is **at-least-once, not exactly-once.** A job can still run twice: a worker claims and runs it, crashes after a side effect but before completion is recorded, and the failure/reclaim path runs it again. `SKIP LOCKED` prevents concurrent double-*claiming*; it does nothing about a crash *after* a side effect. So the instruction to your code is unchanged: write jobs that are safe to run twice.
+
+That's the *same reality as Sidekiq*, reached by different plumbing. [Sidekiq is at-least-once because of Redis acknowledgement windows](/blog/sidekiq-job-runs-twice-at-least-once-delivery/); Solid Queue is at-least-once because of claim-crash-recover windows in the database. Different mechanism, identical obligation: **the queue delivers; correctness lives in your database.** A job that charges a card or calls a paid API must be safe to run twice regardless of backend — which is the point of [designing an idempotent worker](/blog/idempotent-ai-workers-rails/), where a database-level guard, not a guard clause, holds under concurrency.
+
+## Common misconceptions
+
+- **"SKIP LOCKED makes it exactly-once."** No — it prevents concurrent double-*claiming*, not a re-run after a crash. Execution is at-least-once.
+- **"Pruned jobs get retried / released back to the queue."** Not on current versions — marked failed with `ProcessPrunedError`. The "released back" wording is from an old README.
+- **"`limits_concurrency` is a cheap rate-limiter."** It has real overhead (blocked rows + semaphores). Use it for mutual exclusion; throttle with fewer workers.
+- **"No Redis means no moving parts."** You traded Redis for polling load and connection-pool pressure on your primary database.
+- **"Solid Queue retries failed jobs."** It doesn't; Active Job does.
+- **"You must schedule finished-job cleanup yourself."** The installer already configures an hourly recurring job for it — just don't remove it, and check it's running.
+- **"Pickup is instant."** Polling-based; latency floor = your interval.
+
+## Key takeaways
+
+- Solid Queue **is** your database: jobs are rows, and a job's life is a **state machine** enforced by unique `job_id` indexes across the execution tables.
+- Four roles: **supervisor** (heartbeats), **dispatchers** (scheduled → ready, concurrency maintenance), **workers** (claim and run), **scheduler** (recurring) — fork mode by default, async optionally.
+- Workers claim with **`FOR UPDATE SKIP LOCKED`** over a composite poll index; needs Postgres 9.5+/MySQL 8+.
+- Concurrency is **bounded by your connection pool** — set `threads` ≤ pool size − 2.
+- **`limits_concurrency`** enforces strict limits via blocked executions + semaphores, with real overhead; prefer fewer workers for throttling.
+- **Polling** system: latency floor = polling interval (0.1s default for workers); tightening trades latency for DB load.
+- Crash recovery runs on **heartbeats** (5-minute default); pruned jobs are **marked failed** (`ProcessPrunedError`), not re-run — and stuck-but-alive workers need a watchdog.
+- Finished jobs **persist**, cleaned by an auto-configured hourly job; Solid Queue **doesn't retry** — Active Job does.
+- **At-least-once, not exactly-once** — same obligation as Sidekiq. Your jobs must be idempotent.
+
+## FAQ
+
+### Does Solid Queue use Redis?
+
+No. It runs entirely on your relational database (Postgres, MySQL, or SQLite), storing the queue as ordinary tables. Removing Redis is the point — one fewer service to operate — at the cost of polling load on your database.
+
+### How does Solid Queue handle concurrency without Redis?
+
+Workers poll `solid_queue_ready_executions` and claim jobs with `FOR UPDATE SKIP LOCKED`. That clause lets a worker lock and take a row while other workers skip past it to different rows, so many workers run jobs concurrently without blocking or double-claiming.
+
+### Is Solid Queue exactly-once?
+
+No — at-least-once. `SKIP LOCKED` stops two workers claiming the same row at once, but a job can still run more than once if a worker crashes after a side effect but before completion is recorded. Make your jobs idempotent.
+
+### How does `limits_concurrency` work in Solid Queue?
+
+Jobs that would exceed the limit go to `solid_queue_blocked_executions`, tracked by a semaphore; the dispatcher promotes them to ready when a slot frees. It enforces strict limits but adds overhead, so reserve it for mutual exclusion rather than general rate-limiting.
+
+### Does Solid Queue retry failed jobs automatically?
+
+No — retries come from Active Job (`retry_on`/`discard_on`), not Solid Queue. A job that raises without a retry rule lands in `solid_queue_failed_executions` and stays there until you retry or discard it.
+
+### What happens to jobs when a Solid Queue worker crashes?
+
+The supervisor prunes the dead process after its heartbeat expires (`process_alive_threshold`, default 5 minutes) and marks its in-flight jobs failed with `ProcessPrunedError` for inspection — they aren't silently re-run.
+
+### Why is my Solid Queue job slow to start?
+
+It polls rather than pushes, so there's a latency floor equal to your polling interval (0.1s by default for workers). A job enqueued just after a poll waits for the next one. Lower the interval for faster pickup, at the cost of more database queries.
+
+## Conclusion
+
+Solid Queue is an elegant piece of engineering: it turns your database into a job queue with little more than `FOR UPDATE SKIP LOCKED`, a set of execution tables, and a heartbeat — a job as a state machine moving from ready to claimed to done, workers claiming rows without stepping on each other, a supervisor failing the jobs of the dead so you can see them. But the real lesson isn't a table name. Adopting the Rails 8 default changes your operational world — no Redis, polling latency, connection-bound concurrency — while leaving your correctness obligations untouched. The queue delivers at least once. Making each delivery count exactly once is still your database's job, and yours.

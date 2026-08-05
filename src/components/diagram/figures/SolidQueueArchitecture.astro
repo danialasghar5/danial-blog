@@ -1,0 +1,89 @@
+---
+// Layered architecture diagram (not a flowchart): supervisor over the process
+// layer over the database layer. Uses the shared .dg-canvas/.dg-caption
+// treatment for design-system consistency; shapes are styled from the --dg-*
+// tokens via a scoped block, so it is theme-aware.
+---
+<figure class="dg-figure">
+	<div class="dg-canvas">
+		<p class="dg-canvas-label">Solid Queue · architecture</p>
+		<svg class="dg-svg sqa" viewBox="0 0 900 470" role="img"
+			aria-label="Solid Queue architecture in three layers. A supervisor process forks and monitors, via heartbeats, a dispatcher, a worker, and a scheduler. The dispatcher moves scheduled executions to ready; the worker claims ready executions with SKIP LOCKED and, on failure, writes to failed executions; the scheduler enqueues recurring jobs. All of them act on tables in the database, which holds the queue: scheduled, ready, claimed, and failed executions, plus the processes table for heartbeats and blocked executions and semaphores for concurrency controls.">
+			<!-- layer 1: supervisor -->
+			<rect class="node" x="300" y="28" width="300" height="52" rx="9"/>
+			<text class="lbl" x="450" y="52" text-anchor="middle">Supervisor</text>
+			<text class="sub" x="450" y="70" text-anchor="middle">forks &amp; monitors via heartbeat</text>
+
+			<!-- supervises -->
+			<path class="arwd" d="M450 80 L170 138"/><path class="arwd" d="M450 80 L450 138"/><path class="arwd" d="M450 80 L730 138"/>
+			<text class="neut" x="602" y="112" text-anchor="middle">supervises</text>
+
+			<!-- layer 2: processes -->
+			<rect class="node" x="70"  y="140" width="200" height="56" rx="9"/>
+			<text class="lbl" x="170" y="170" text-anchor="middle">Dispatcher</text>
+			<text class="sub" x="170" y="188" text-anchor="middle">scheduled &#8594; ready</text>
+
+			<rect class="node" x="350" y="140" width="200" height="56" rx="9"/>
+			<text class="lbl" x="450" y="170" text-anchor="middle">Worker</text>
+			<text class="sub" x="450" y="188" text-anchor="middle">claims &amp; runs jobs</text>
+
+			<rect class="node" x="630" y="140" width="200" height="56" rx="9"/>
+			<text class="lbl" x="730" y="170" text-anchor="middle">Scheduler</text>
+			<text class="sub" x="730" y="188" text-anchor="middle">recurring jobs</text>
+
+			<!-- layer 3: database -->
+			<rect class="panel" x="70" y="250" width="760" height="190" rx="10"/>
+			<text class="cap" x="88" y="276">Database — the queue is a set of tables</text>
+
+			<rect class="chip" x="90"  y="298" width="160" height="34" rx="7"/><text class="chiplbl" x="170" y="320" text-anchor="middle">scheduled_exec</text>
+			<rect class="chip" x="290" y="298" width="140" height="34" rx="7"/><text class="chiplbl" x="360" y="320" text-anchor="middle">ready_exec</text>
+			<rect class="chip" x="460" y="298" width="160" height="34" rx="7"/><text class="chiplbl" x="540" y="320" text-anchor="middle">claimed_exec</text>
+			<rect class="chip" x="645" y="298" width="150" height="34" rx="7"/><text class="chiplbl" x="720" y="320" text-anchor="middle">failed_exec</text>
+
+			<rect class="chip" x="150" y="352" width="210" height="34" rx="7"/><text class="chiplbl" x="255" y="374" text-anchor="middle">solid_queue_processes</text>
+			<rect class="chip muted" x="400" y="352" width="300" height="34" rx="7"/><text class="chiplbl muted" x="550" y="374" text-anchor="middle">blocked_exec &#183; semaphores</text>
+			<text class="capf" x="255" y="405" text-anchor="middle">heartbeats &#183; liveness</text>
+			<text class="capf" x="550" y="405" text-anchor="middle">concurrency controls</text>
+
+			<!-- process -> table -->
+			<path class="arw" d="M170 196 C 220 250, 300 270, 355 296"/><polygon class="neuh" points="349,289 361,293 353,301"/>
+			<text class="neut" x="240" y="250">moves scheduled &#8594; ready</text>
+			<path class="arw thin" d="M250 315 L286 315"/><polygon class="neuh" points="285,311 285,319 292,315"/>
+
+			<path class="sage" d="M450 196 C 480 250, 510 270, 535 296"/><polygon class="sageh" points="529,289 541,292 534,301"/>
+			<text class="saget" x="470" y="248">claim &#183; SKIP LOCKED</text>
+			<path class="sage thin" d="M430 315 L456 315"/><polygon class="sageh" points="455,311 455,319 462,315"/>
+
+			<path class="clay" d="M470 196 C 590 232, 660 270, 700 296"/><polygon class="clayh" points="694,289 706,291 700,301"/>
+			<text class="clayt" x="662" y="230" text-anchor="middle">on failure</text>
+
+			<path class="arw thin" d="M730 196 L730 294"/><polygon class="neuh" points="724,289 736,289 730,297"/>
+			<text class="neut" x="730" y="250" text-anchor="middle">enqueues recurring</text>
+		</svg>
+	</div>
+	<figcaption class="dg-caption">Figure 1. Solid Queue as three layers — a supervisor over the processes, and the processes acting on the database tables that hold the queue.</figcaption>
+</figure>
+
+<style>
+	.sqa { font-family: var(--font-sans); }
+	.sqa .node { fill: var(--dg-surface); stroke: var(--dg-stroke); stroke-width: 1.5; }
+	.sqa .lbl { fill: var(--dg-label); font-size: 15px; font-weight: 600; }
+	.sqa .sub { fill: var(--dg-sub); font-size: 11.5px; }
+	.sqa .panel { fill: none; stroke: var(--dg-stroke); stroke-width: 1.5; }
+	.sqa .cap { fill: var(--dg-sub); font-size: 12px; }
+	.sqa .capf { fill: var(--dg-future); font-size: 12px; }
+	.sqa .chip { fill: var(--dg-boundary); stroke: var(--dg-stroke); stroke-width: 1.25; }
+	.sqa .chiplbl { fill: var(--dg-mono); font-family: var(--font-mono); font-size: 12.5px; }
+	.sqa .muted { opacity: .6; }
+	.sqa .arw { stroke: var(--dg-flow); stroke-width: 1.6; fill: none; }
+	.sqa .arwd { stroke: var(--dg-stroke-2); stroke-width: 1.4; fill: none; stroke-dasharray: 4 4; }
+	.sqa .thin { stroke-width: 1.4; }
+	.sqa .sage { stroke: var(--dg-accent); stroke-width: 1.8; fill: none; }
+	.sqa .clay { stroke: var(--dg-hazard); stroke-width: 1.8; fill: none; }
+	.sqa .neuh { fill: var(--dg-flow); }
+	.sqa .sageh { fill: var(--dg-accent); }
+	.sqa .clayh { fill: var(--dg-hazard); }
+	.sqa .neut { fill: var(--dg-sub); font-size: 12px; }
+	.sqa .saget { fill: var(--dg-accent); font-size: 12px; }
+	.sqa .clayt { fill: var(--dg-hazard); font-size: 12px; }
+</style>

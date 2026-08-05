@@ -1,0 +1,69 @@
+---
+// State-machine diagram (not a flowchart): a job's life as movement between the
+// execution tables, with finished as a terminal state and failed/blocked as
+// branches. Shared .dg-canvas treatment; theme-aware via the --dg-* tokens.
+---
+<figure class="dg-figure">
+	<div class="dg-canvas">
+		<p class="dg-canvas-label">Solid Queue · job lifecycle</p>
+		<svg class="dg-svg sql" viewBox="0 0 900 330" role="img"
+			aria-label="Solid Queue job lifecycle as a state machine. A job enters as scheduled (delayed) or ready (immediate); a scheduled job becomes ready when due. A worker claims a ready job; on success it becomes finished, on error or crash it becomes failed, and a retry sends it back to ready. A ready job that hits a concurrency limit becomes blocked, and returns to ready when a slot frees. Each state is a separate execution table.">
+			<circle class="entry" cx="46" cy="66" r="5"/>
+
+			<rect class="st" x="100" y="40" width="150" height="52" rx="10"/><text class="stl" x="175" y="72" text-anchor="middle">scheduled</text>
+			<rect class="st" x="330" y="40" width="130" height="52" rx="10"/><text class="stl" x="395" y="72" text-anchor="middle">ready</text>
+			<rect class="st" x="520" y="40" width="150" height="52" rx="10"/><text class="stl" x="595" y="72" text-anchor="middle">claimed</text>
+			<rect class="term" x="740" y="40" width="140" height="52" rx="10"/>
+			<rect class="term-in" x="744" y="44" width="132" height="44" rx="8"/>
+			<text class="terml" x="810" y="72" text-anchor="middle">finished</text>
+
+			<rect class="blk"  x="330" y="200" width="130" height="48" rx="10"/><text class="blkl" x="395" y="230" text-anchor="middle">blocked</text>
+			<rect class="fail" x="520" y="200" width="150" height="48" rx="10"/><text class="faill" x="595" y="230" text-anchor="middle">failed</text>
+
+			<!-- transitions -->
+			<path class="t" d="M51 66 L98 66"/><polygon class="h" points="97,62 97,70 104,66"/>
+			<text class="lab" x="74" y="56" text-anchor="middle">delayed</text>
+			<path class="t" d="M46 61 C 46 16, 395 16, 395 38"/><polygon class="h" points="391,45 399,45 395,52"/>
+			<text class="lab" x="215" y="24" text-anchor="middle">immediate</text>
+			<path class="t" d="M250 66 L328 66"/><polygon class="h" points="327,62 327,70 334,66"/>
+			<text class="lab" x="289" y="56" text-anchor="middle">when due</text>
+			<path class="ts" d="M460 66 L518 66"/><polygon class="hs" points="517,62 517,70 524,66"/>
+			<text class="labs" x="489" y="56" text-anchor="middle">claim</text>
+			<path class="ts" d="M670 66 L738 66"/><polygon class="hs" points="737,62 737,70 744,66"/>
+			<text class="labs" x="704" y="56" text-anchor="middle">success</text>
+			<path class="tc" d="M595 92 L595 198"/><polygon class="hc" points="591,197 599,197 595,204"/>
+			<text class="labc" x="605" y="150">error / crash</text>
+			<path class="td" d="M520 232 C 250 250, 250 66, 328 66"/><polygon class="h" points="333,62 333,70 340,66"/>
+			<text class="lab" x="278" y="150" text-anchor="middle">retry</text>
+			<path class="t" d="M380 92 L380 198"/><polygon class="h" points="376,197 384,197 380,204"/>
+			<text class="lab" x="332" y="150" text-anchor="middle">limit</text>
+			<path class="td" d="M412 200 L412 94"/><polygon class="h" points="408,95 416,95 412,88"/>
+			<text class="lab" x="462" y="150" text-anchor="middle">freed</text>
+		</svg>
+	</div>
+	<figcaption class="dg-caption">Figure 2. A job as a state machine — scheduled or ready, then claimed, then finished, with failed and blocked as branch states. Each state is its own table.</figcaption>
+</figure>
+
+<style>
+	.sql { font-family: var(--font-sans); }
+	.sql .entry { fill: var(--dg-sub); }
+	.sql .st { fill: var(--dg-surface); stroke: var(--dg-stroke); stroke-width: 1.6; }
+	.sql .stl { fill: var(--dg-label); font-size: 14.5px; font-weight: 600; }
+	.sql .term { fill: var(--dg-accent-fill); stroke: var(--dg-accent); stroke-width: 1.8; }
+	.sql .term-in { fill: none; stroke: var(--dg-accent); stroke-width: 1; opacity: .6; }
+	.sql .terml { fill: var(--dg-accent); font-size: 14.5px; font-weight: 600; }
+	.sql .fail { fill: var(--dg-hazard-fill); stroke: var(--dg-hazard); stroke-width: 1.6; }
+	.sql .faill { fill: var(--dg-hazard); font-size: 14px; font-weight: 600; }
+	.sql .blk { fill: none; stroke: var(--dg-stroke-2); stroke-width: 1.5; stroke-dasharray: 5 4; }
+	.sql .blkl { fill: var(--dg-sub); font-size: 13.5px; }
+	.sql .t { stroke: var(--dg-flow); stroke-width: 1.6; fill: none; }
+	.sql .td { stroke: var(--dg-stroke-2); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+	.sql .ts { stroke: var(--dg-accent); stroke-width: 1.9; fill: none; }
+	.sql .tc { stroke: var(--dg-hazard); stroke-width: 1.8; fill: none; }
+	.sql .h { fill: var(--dg-flow); }
+	.sql .hs { fill: var(--dg-accent); }
+	.sql .hc { fill: var(--dg-hazard); }
+	.sql .lab { fill: var(--dg-sub); font-size: 12px; }
+	.sql .labs { fill: var(--dg-accent); font-size: 12px; }
+	.sql .labc { fill: var(--dg-hazard); font-size: 12px; }
+</style>
