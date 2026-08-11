@@ -1,0 +1,185 @@
+---
+title: "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time"
+slug: "why-background-jobs-are-slow"
+seoTitle: "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time"
+description: "A “slow” background job either waited (queue latency) or ran slowly (execution time). Measure which — then a diagnostic method for fixing each, in Rails."
+excerpt: "“Slow” isn't a diagnosis. A background job is slow because it waited in the queue or because it ran slowly once it started — two different problems with different fixes. Here's how to measure which, using built-in tools, and a diagnostic path for each branch."
+canonicalURL: "https://danialasghar.com/blog/why-background-jobs-are-slow/"
+ogTitle: "Why Your Rails Background Jobs Are Slow (Latency vs. Execution)"
+ogDescription: "Measure whether your job waited or ran slowly — then fix the right thing. A vendor-neutral diagnostic method for Sidekiq and Solid Queue."
+ogImage: "/og/why-background-jobs-are-slow.png"
+pubDate: 2026-08-10
+updatedDate: 2026-08-10
+author: "Danial Asghar"
+category: "background-jobs"
+tags:
+  - "sidekiq"
+  - "solid-queue"
+  - "background-jobs"
+  - "performance"
+  - "rails"
+draft: false
+---
+
+import LatencyExecutionTimeline from '../../components/diagram/figures/LatencyExecutionTimeline.astro';
+import DiagnosticDecisionTree from '../../components/diagram/figures/DiagnosticDecisionTree.astro';
+
+A "slow" background job has two entirely different causes, and they need entirely different fixes. Either the job **waited** a long time before a worker picked it up — that's queue latency — or it **ran** slowly once it started — that's execution time. Before you add workers, tune threads, or optimize a query, measure which of the two is actually high. Fixing execution time when the problem is latency (or the reverse) is how afternoons disappear.
+
+The trap is that "my jobs are slow" *feels* like one problem. It isn't. A job sitting in the queue for 40 seconds and then running in 200ms is a completely different incident from a job picked up instantly that then takes 40 seconds to run — even though a user watching the result sees the same 40-second delay. This article is a diagnostic method: split the number first, then follow the correct branch. It stays inside Rails, Sidekiq, and Solid Queue, and it leans on built-in tools, not a paid APM.
+
+## Table of contents
+
+- [Queue latency vs. execution time: the split that changes everything](#queue-latency-vs-execution-time-the-split-that-changes-everything)
+- [Measure the split before you guess](#measure-the-split-before-you-guess)
+- [When latency is high: the job waited](#when-latency-is-high-the-job-waited)
+- [When execution is high: the job ran slowly](#when-execution-is-high-the-job-ran-slowly)
+- [A debugging workflow](#a-debugging-workflow)
+- [Production considerations](#production-considerations)
+- [Key takeaways](#key-takeaways)
+- [FAQ](#faq)
+
+## Queue latency vs. execution time: the split that changes everything
+
+Two clocks run on every background job, and conflating them is the root of most wasted debugging time.
+
+**Queue latency** is the time from when a job is *enqueued* to when a worker *picks it up*. It measures how long the job sat waiting. Queue latency is a property of your *system under load* — arrival rate versus how fast your workers drain the queue — not of the job's code.
+
+**Execution time** is the time from *pickup* to *done*: how long your `perform` method actually took to run. This is a property of the *job's code and its dependencies* — the queries it makes, the APIs it calls, the work it does.
+
+<LatencyExecutionTimeline />
+
+These two numbers move independently. A perfectly fast job can have terrible latency because the queue is backed up. A queue with zero backlog can still deliver slow results because each job runs slowly. The single most useful habit when someone says "the jobs are slow" is to refuse the framing and ask: *which clock is high?*
+
+## Measure the split before you guess
+
+You don't need an APM to answer that question — Sidekiq and Active Job expose both numbers directly.
+
+**Queue latency** in Sidekiq comes straight from the API. `Sidekiq::Queue#latency` is defined as the difference in seconds since the oldest job in the queue was enqueued — effectively `now — (oldest job's enqueued_at)`:
+
+```ruby
+require "sidekiq/api"
+
+Sidekiq::Queue.all.each do |q|
+  puts "#{q.name}: size=#{q.size} latency=#{q.latency.round(1)}s"
+end
+# default:  size=3     latency=0.4s
+# mailers:  size=9120  latency=612.0s   <- this queue is waiting
+```
+
+A high `latency` with a large `size` is the signature of the *waiting* branch. But there is a real footgun here worth knowing before you wire it to an alert: **`latency` is based on the oldest job's original enqueue time, and that can mislead in two documented cases.** A long-running job that gets re-enqueued after a TERM during a deploy reports latency from its *first* enqueue, not the re-enqueue ([sidekiq#5506](https://github.com/sidekiq/sidekiq/issues/5506)); and a job deliberately scheduled far in the future inflates the number for its queue ([sidekiq#2373](https://github.com/sidekiq/sidekiq/issues/2373)). So read a latency spike as "investigate," not "the queue is definitely backed up" — confirm with `size` and the actual oldest job.
+
+**Execution time** comes from Active Job's instrumentation. Every job run emits a `perform.active_job` event through `ActiveSupport::Notifications`, so you can record real execution durations without touching the job's code:
+
+```ruby
+# config/initializers/job_timing.rb
+ActiveSupport::Notifications.subscribe("perform.active_job") do |*args|
+  event = ActiveSupport::Notifications::Event.new(*args)
+  Rails.logger.info(
+    "[job_timing] #{event.payload[:job].class.name} " \
+    "ran in #{event.duration.round(1)}ms"
+  )
+end
+```
+
+Now you have both clocks: latency from the Sidekiq API, execution from the notification. Log them, and the "slow" complaint resolves into one of two concrete problems. On Solid Queue the same `perform.active_job` timing applies; its queue-wait has an extra structural contributor covered in the next section.
+
+## When latency is high: the job waited
+
+High latency means jobs are arriving faster than your workers drain them, or something is throttling the drain. Causes, most common first.
+
+**Backlog: too few workers for the arrival rate.** The blunt reality of a queue is that throughput is bounded by total worker concurrency. If jobs arrive faster than `processes × threads` can process them, the queue grows and latency climbs — every job waits behind the ones in front of it. The fix is capacity (more threads or processes) or shedding load (moving noncritical work to a separate, lower-priority queue so it can't starve the critical one). *When* to add workers versus re-architect is its own topic; here the point is simply to recognize backlog as a latency cause, not an execution one.
+
+**Solid Queue's polling floor.** If you're on Solid Queue, part of your latency is structural: workers *poll* the ready table on an interval rather than being pushed work, so there's a latency floor equal to your `polling_interval`. A job enqueued just after a poll waits for the next one. That's usually milliseconds and invisible — but it's the first thing to check when a Solid Queue job seems slow to *start* rather than slow to *run*. This mechanism, and how claiming works, is covered in [how Solid Queue works under the hood](/blog/how-solid-queue-works/).
+
+**Connection-pool starvation.** Workers need database connections to do anything, and if the pool is too small they *wait* for a connection before they can even start — which shows up as latency even when workers are idle. On Solid Queue the guidance is explicit: each worker thread holds a connection, so keep `threads` at or below your pool size minus two (the [Solid Queue internals piece](/blog/how-solid-queue-works/) explains why two are reserved). The same principle applies broadly: if your worker concurrency exceeds your connection pool, threads block on checkout and your effective throughput is lower than your thread count suggests.
+
+**Retry storms.** A queue can be flooded not by new work but by *retries*. A job that raises a permanent error but is retried anyway re-enqueues itself on every failure, cycling through its configured retry limit before it finally lands in the Dead Set — and at volume those doomed re-runs consume worker capacity that legitimate jobs need, inflating latency for everything. This is exactly why classifying failures matters: retrying a permanent failure never fixes it, it just burns capacity. The fix is to discard what can't succeed, covered in [retry strategy: transient vs permanent failures](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/).
+
+**Scheduler / enqueue delay.** Scheduled jobs don't become ready the instant their time arrives — a poller has to notice them and move them onto the queue, which adds its own small delay. It's rarely the main culprit, but it's a real contributor when you're chasing the last bit of latency on time-sensitive scheduled work.
+
+## When execution is high: the job ran slowly
+
+If latency is low but jobs still deliver results slowly, the problem is inside `perform`. Profile it — but the causes cluster into a few Rails-specific patterns.
+
+**N+1 queries inside the job.** The most common execution killer, and easy to miss because jobs don't get the eyeball testing controllers do. A job that loops over records and touches an association re-queries per iteration:
+
+```ruby
+# Slow: one query for orders, then one per order for its customer.
+def perform(order_ids)
+  Order.where(id: order_ids).find_each do |order|
+    Notifier.send_receipt(order.customer.email)  # N+1 on customer
+  end
+end
+
+# Fixed: eager-load the association up front.
+def perform(order_ids)
+  Order.where(id: order_ids).includes(:customer).find_each do |order|
+    Notifier.send_receipt(order.customer.email)
+  end
+end
+```
+
+At ten records the N+1 is invisible; at ten thousand it's the whole runtime. `includes` collapses it to a constant number of queries.
+
+**Long transactions and lock contention.** A job that holds a database transaction open while doing slow work — an external call, heavy computation — holds any row locks it acquired for that entire span. Other jobs (and web requests) that need those rows block, and their execution time balloons even though their own code is fast. The fix is to keep transactions short: do the slow work *outside* the transaction, and hold locks only across the actual writes. If you use pessimistic locking, never hold the lock across a network call — that pattern turns one slow dependency into system-wide contention.
+
+**External API latency with no timeout.** A job that calls a third-party API is only as fast as that API, and a job with no HTTP timeout is a job that can hang indefinitely when the dependency stalls — occupying a worker thread the whole time, which quietly becomes a *latency* problem for everything else too. Always set an explicit timeout on outbound calls from jobs, and treat a slow dependency as expected, not exceptional.
+
+**CPU-bound vs I/O-bound work.** This determines whether adding threads even helps. Sidekiq and Solid Queue workers run jobs on threads, and because of Ruby's GIL, threads help *I/O-bound* work (waiting on the database or an API — the GIL is released during the wait) far more than *CPU-bound* work (parsing, image processing, encryption), where threads contend for the same core. If a CPU-bound job is slow, more threads on one process won't fix it — you need more processes, or the work moved off the request-to-result path entirely.
+
+## A debugging workflow
+
+Put it together and the method is mechanical: measure latency first, then branch.
+
+<DiagnosticDecisionTree />
+
+1. **Read queue latency** (`Sidekiq::Queue#latency`, cross-checked with `size` and the oldest job — remember the TERM/scheduled caveat).
+2. **If latency is high, the job waited.** Work the left branch: is it backlog (add capacity / isolate queues), the Solid Queue polling floor, connection-pool starvation, or a retry storm?
+3. **If latency is low but results are slow, the job ran slowly.** Work the right branch: capture execution time from `perform.active_job`, then profile the `perform` for N+1s, long transactions, slow external calls, or CPU-bound work.
+
+The discipline is refusing to optimize before you've read the first number. Most "background jobs are slow" tickets are resolved in the first step, not the fifth.
+
+## Production considerations
+
+Two things worth holding in mind once you're operating this in production.
+
+**Latency is your earliest warning.** Queue latency climbs *before* jobs start failing or timing out, which makes it the best leading indicator of a backlog forming — alert on it (with the caveat above) rather than waiting for user complaints.
+
+**The two clocks are coupled under load.** Slow *execution* eventually causes high *latency*: jobs that run slowly hold workers longer, which drains the queue slower, which makes the next jobs wait. So a latency spike can have an execution root cause. That's not a contradiction of the split — it's why you measure both and fix the upstream one. And remember that a job killed mid-run is re-enqueued and runs again ([at-least-once delivery](/blog/sidekiq-job-runs-twice-at-least-once-delivery/)), which both inflates reported latency and repeats work — so when your fix for slowness is "add concurrency," make sure the jobs are safe to run more than once ([designing idempotent workers](/blog/idempotent-ai-workers-rails/)).
+
+## Key takeaways
+
+- "Slow" is not a diagnosis. Split it: did the job **wait** (queue latency) or **run slowly** (execution time)?
+- **Measure both with built-in tools** — `Sidekiq::Queue#latency` for waiting, `perform.active_job` for running. No APM required.
+- `Sidekiq::Queue#latency` is `now — oldest job's enqueue time`; it can **mislead** for TERM-requeued or scheduled jobs, so confirm before alerting.
+- **High latency → the job waited:** backlog/capacity, Solid Queue polling floor, connection-pool starvation, retry storms.
+- **High execution → the job ran slowly:** N+1 queries, long transactions and lock contention, external API latency, CPU-bound work.
+- **Threads help I/O-bound work, not CPU-bound work** — know which you have before adding concurrency.
+- The two clocks couple under load: slow execution eventually becomes high latency. Fix the upstream cause.
+
+## FAQ
+
+### Why are my Sidekiq jobs slow?
+
+Either they waited in the queue before a worker picked them up (queue latency) or they ran slowly once started (execution time). Measure queue latency with `Sidekiq::Queue#latency`; if it's high, the problem is capacity or throttling, not the job's code. If latency is low but results are slow, profile the job's `perform`.
+
+### What is Sidekiq queue latency?
+
+It's the time in seconds since the oldest job in the queue was enqueued — roughly `now — oldest_enqueued_at`. It measures how long jobs are waiting before execution, which makes it the earliest signal of a backlog. Note it can read high for jobs re-enqueued after a deploy TERM or scheduled far in the future.
+
+### Why is my job slow to start but fast to run?
+
+That's high queue latency with low execution time — the job waited. Common causes are too few workers for the arrival rate, a retry storm consuming capacity, connection-pool starvation, or (on Solid Queue) the polling-interval floor.
+
+### How do I measure background job execution time in Rails?
+
+Subscribe to the `perform.active_job` event via `ActiveSupport::Notifications`. Each job run reports its duration, so you get real execution times without modifying job code or installing an APM.
+
+### Does adding more Sidekiq threads make jobs faster?
+
+Only for I/O-bound jobs. Because of Ruby's GIL, extra threads help work that waits on the database or an API, but not CPU-bound work, where threads contend for the same core. For CPU-bound jobs, add processes instead. Also keep threads at or below your database connection pool size, or workers stall waiting for connections.
+
+## Conclusion
+
+The reason "my background jobs are slow" is so frustrating to debug is that it's two problems wearing one sentence. A job that waited and a job that ran slowly look identical to the person waiting for the result, but they live in different parts of your system and take opposite fixes — more capacity versus faster code. Read queue latency first, let it route you to the right branch, and the vague complaint becomes a specific, fixable problem. Measure the split before you tune anything, and you'll spend your time fixing the slowness that's actually there instead of the one you assumed.

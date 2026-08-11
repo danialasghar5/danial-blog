@@ -1,0 +1,81 @@
+---
+// Diagnostic decision-tree figure for "Why Your Rails Background Jobs Are Slow".
+// The SVG markup is the author's, verbatim; it lives in a wrapper (rendered via
+// set:html) only because an inline <style>{...} block can't sit in MDX — the
+// diagram itself is unchanged.
+const svg = `<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t1 d1" font-family="'JetBrains Mono', ui-monospace, monospace">
+  <title id="t1">Slow background job diagnostic decision tree</title>
+  <desc id="d1">Measure queue latency first. If latency is high, the job waited: check backlog, workers, polling interval, connection pool, and retry storms. If latency is low, the job ran slowly: profile the perform method for N plus one queries, long transactions and locks, external API latency, and CPU-bound work.</desc>
+  <style>
+    .n{fill:currentColor;fill-opacity:.04;stroke:currentColor;stroke-opacity:.30;stroke-width:1.5}
+    .q{fill:currentColor;fill-opacity:.05;stroke:currentColor;stroke-opacity:.45;stroke-width:1.6}
+    .wait{fill:#c47a63;fill-opacity:.06;stroke:#c47a63;stroke-width:1.6}
+    .run{fill:#86bfa5;fill-opacity:.06;stroke:#86bfa5;stroke-width:1.6}
+    .l{fill:currentColor;font-size:14px}
+    .lh{fill:currentColor;font-size:14.5px;font-weight:bold}
+    .cw{fill:#c47a63;font-size:13.5px}.cr{fill:#86bfa5;font-size:13.5px}
+    .cap{fill:currentColor;fill-opacity:.7;font-size:12.5px}
+    .a{stroke:currentColor;stroke-opacity:.4;stroke-width:1.6;fill:none}
+    .aw{stroke:#c47a63;stroke-width:1.7;fill:none}.ar{stroke:#86bfa5;stroke-width:1.7;fill:none}
+    .hn{fill:currentColor;fill-opacity:.5}.hw{fill:#c47a63}.hr{fill:#86bfa5}
+    .br{fill:#c47a63;fill-opacity:.85;font-size:12.5px}.bg{fill:#86bfa5;fill-opacity:.9;font-size:12.5px}
+    text{font-family:'JetBrains Mono', ui-monospace, monospace}
+  </style>
+
+  <!-- top: slow job -->
+  <rect class="n" x="320" y="24" width="180" height="44" rx="9"/>
+  <text class="lh" x="410" y="51" text-anchor="middle">job is &#8220;slow&#8221;</text>
+  <path class="a" d="M410 68 L410 96"/><polygon class="hn" points="404,95 416,95 410,102"/>
+
+  <!-- decision -->
+  <rect class="q" x="285" y="104" width="250" height="48" rx="9"/>
+  <text class="l" x="410" y="133" text-anchor="middle">measure queue latency</text>
+
+  <!-- split -->
+  <path class="aw" d="M300 152 C 200 180, 175 190, 165 214"/><polygon class="hw" points="159,208 171,210 164,219"/>
+  <text class="br" x="212" y="188" text-anchor="middle">HIGH</text>
+  <path class="ar" d="M520 152 C 630 180, 655 190, 665 214"/><polygon class="hr" points="657,208 669,208 663,219"/>
+  <text class="bg" x="612" y="188" text-anchor="middle">LOW</text>
+
+  <!-- left branch: waited -->
+  <rect class="wait" x="40" y="216" width="250" height="46" rx="9"/>
+  <text class="cw" x="165" y="238" text-anchor="middle">the job WAITED</text>
+  <text class="cap" x="165" y="255" text-anchor="middle" fill-opacity=".6">queue latency &#183; time enqueued &#8594; picked up</text>
+  <path class="aw" d="M165 262 L165 288" stroke-opacity=".7"/><polygon class="hw" points="159,287 171,287 165,294"/>
+  <rect class="wait" x="40" y="296" width="250" height="150" rx="9" fill-opacity=".025"/>
+  <text class="cw" x="60" y="322">&#8226; backlog / too few workers</text>
+  <text class="cw" x="60" y="348">&#8226; Solid Queue polling floor</text>
+  <text class="cw" x="60" y="374">&#8226; connection-pool starvation</text>
+  <text class="cw" x="60" y="400">&#8226; retry storms</text>
+  <text class="cw" x="60" y="426">&#8226; scheduler / enqueue delay</text>
+
+  <!-- right branch: ran slowly -->
+  <rect class="run" x="530" y="216" width="250" height="46" rx="9"/>
+  <text class="cr" x="655" y="238" text-anchor="middle">the job RAN SLOWLY</text>
+  <text class="cap" x="655" y="255" text-anchor="middle" fill-opacity=".6">execution time &#183; the perform</text>
+  <path class="ar" d="M655 262 L655 288" stroke-opacity=".7"/><polygon class="hr" points="649,287 661,287 655,294"/>
+  <rect class="run" x="530" y="296" width="250" height="150" rx="9" fill-opacity=".025"/>
+  <text class="cr" x="550" y="322">&#8226; N+1 queries in the job</text>
+  <text class="cr" x="550" y="348">&#8226; long transactions, locks</text>
+  <text class="cr" x="550" y="374">&#8226; external API latency</text>
+  <text class="cr" x="550" y="400">&#8226; CPU-bound vs I/O-bound</text>
+  <text class="cr" x="550" y="426">&#8226; profile the perform</text>
+</svg>`;
+---
+<figure class="svg-figure">
+	<Fragment set:html={svg} />
+	<figcaption>Measure queue latency first. High latency means the job waited — look at capacity, polling, the connection pool, and retries. Low latency with slow results means the job ran slowly — profile the perform for N+1 queries, long transactions, external calls, and CPU-bound work.</figcaption>
+</figure>
+
+<style>
+	/* Fit the author's inline SVG to the reading column and keep it responsive
+	   (the SVG markup itself is unchanged). :global because the SVG is injected
+	   via set:html and doesn't carry the scoped attribute. */
+	.svg-figure { margin: var(--s-4) 0; }
+	.svg-figure :global(svg) { display: block; width: 100%; height: auto; color: var(--text); }
+	.svg-figure figcaption {
+		margin-top: .6rem; text-align: center;
+		font-family: var(--font-sans); font-size: var(--fs-sm);
+		color: var(--text-muted); line-height: var(--lh-snug);
+	}
+</style>
