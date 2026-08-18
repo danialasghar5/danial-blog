@@ -1,0 +1,57 @@
+---
+// Push-vs-poll comparison figure for "Solid Queue vs Sidekiq". The SVG markup
+// is the author's, verbatim; it lives in a wrapper (rendered via set:html) only
+// because an inline <style>{...} block can't sit in MDX — the diagram itself is
+// unchanged.
+const svg = `<svg viewBox="0 0 840 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="a1t a1d" font-family="'JetBrains Mono', ui-monospace, monospace">
+  <title id="a1t">Sidekiq push versus Solid Queue poll</title>
+  <desc id="a1d">Sidekiq: the app pushes jobs into Redis and workers block-pop them, a push model. Solid Queue: the app writes jobs into database tables and workers poll those tables on an interval, a poll model.</desc>
+  <style>
+    .box{fill:currentColor;fill-opacity:.04;stroke:currentColor;stroke-opacity:.3;stroke-width:1.5}
+    .store-sk{fill:#c47a63;fill-opacity:.06;stroke:#c47a63;stroke-width:1.6}
+    .store-sq{fill:#86bfa5;fill-opacity:.06;stroke:#86bfa5;stroke-width:1.6}
+    .l{fill:currentColor;font-size:13px}
+    .cap{fill:currentColor;fill-opacity:.6;font-size:11.5px}
+    .a{stroke:currentColor;stroke-opacity:.45;stroke-width:1.6;fill:none}
+    .h{fill:currentColor;fill-opacity:.5}
+    .tag{font-size:12px}.tsk{fill:#c47a63}.tsq{fill:#86bfa5}
+    text{font-family:'JetBrains Mono', ui-monospace, monospace}
+  </style>
+  <!-- Sidekiq row -->
+  <text class="tag tsk" x="20" y="40">Sidekiq &#8212; push</text>
+  <rect class="box" x="20" y="52" width="150" height="46" rx="8"/><text class="l" x="95" y="80" text-anchor="middle">Rails app</text>
+  <rect class="store-sk" x="330" y="52" width="150" height="46" rx="8"/><text class="l" x="405" y="80" text-anchor="middle">Redis</text>
+  <rect class="box" x="640" y="52" width="150" height="46" rx="8"/><text class="l" x="715" y="80" text-anchor="middle">workers</text>
+  <path class="a" d="M170 75 L326 75"/><polygon class="h" points="325,71 325,79 332,75"/>
+  <text class="cap" x="248" y="66" text-anchor="middle">push job</text>
+  <path class="a" d="M636 75 L484 75"/><polygon class="h" points="485,71 485,79 478,75"/>
+  <text class="cap" x="560" y="66" text-anchor="middle">block-pop (BRPOP)</text>
+
+  <!-- Solid Queue row -->
+  <text class="tag tsq" x="20" y="150">Solid Queue &#8212; poll</text>
+  <rect class="box" x="20" y="162" width="150" height="46" rx="8"/><text class="l" x="95" y="190" text-anchor="middle">Rails app</text>
+  <rect class="store-sq" x="330" y="162" width="150" height="46" rx="8"/><text class="l" x="405" y="184" text-anchor="middle">database</text><text class="cap" x="405" y="200" text-anchor="middle">solid_queue_* tables</text>
+  <rect class="box" x="640" y="162" width="150" height="46" rx="8"/><text class="l" x="715" y="190" text-anchor="middle">workers</text>
+  <path class="a" d="M170 185 L326 185"/><polygon class="h" points="325,181 325,189 332,185"/>
+  <text class="cap" x="248" y="176" text-anchor="middle">INSERT job</text>
+  <path class="a" d="M636 185 L484 185"/><polygon class="h" points="485,181 485,189 478,185"/>
+  <text class="cap" x="560" y="176" text-anchor="middle">poll + SKIP LOCKED</text>
+</svg>`;
+---
+<figure class="svg-figure">
+	<Fragment set:html={svg} />
+	<figcaption>The root difference: Sidekiq pushes jobs into Redis and workers block-pop them; Solid Queue writes jobs to database tables and workers poll them. Everything downstream follows from this.</figcaption>
+</figure>
+
+<style>
+	/* Fit the author's inline SVG to the reading column and keep it responsive
+	   (the SVG markup itself is unchanged). :global because the SVG is injected
+	   via set:html and doesn't carry the scoped attribute. */
+	.svg-figure { margin: var(--s-4) 0; }
+	.svg-figure :global(svg) { display: block; width: 100%; height: auto; color: var(--text); }
+	.svg-figure figcaption {
+		margin-top: .6rem; text-align: center;
+		font-family: var(--font-sans); font-size: var(--fs-sm);
+		color: var(--text-muted); line-height: var(--lh-snug);
+	}
+</style>

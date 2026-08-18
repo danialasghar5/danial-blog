@@ -1,0 +1,88 @@
+---
+// Decision-matrix figure for "Solid Queue vs Sidekiq". The SVG markup is the
+// author's, verbatim; it lives in a wrapper (rendered via set:html) only
+// because an inline <style>{...} block can't sit in MDX — the diagram itself is
+// unchanged.
+const svg = `<svg viewBox="0 0 840 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="m1t m1d" font-family="'JetBrains Mono', ui-monospace, monospace">
+  <title id="m1t">Solid Queue versus Sidekiq decision matrix</title>
+  <desc id="m1d">For each constraint, which backend it leans toward. Redis already in your stack leans Sidekiq. No Redis today leans Solid Queue. Ample database headroom leans Solid Queue; a constrained database leans Sidekiq. Sub-100ms pickup latency leans Sidekiq; seconds are fine leans Solid Queue. Sustained very high throughput leans Sidekiq. Needing built-in concurrency controls or recurring jobs leans Solid Queue. Needing batches or rate limiting leans Sidekiq paid tiers. A Postgres-comfortable team leans Solid Queue; a Redis-comfortable team leans Sidekiq.</desc>
+  <style>
+    .hd{fill:currentColor;font-size:13px;fill-opacity:.6}
+    .row{fill:currentColor;font-size:13.5px}
+    .sq{fill:#86bfa5;font-size:13px}
+    .sk{fill:#c47a63;font-size:13px}
+    .line{stroke:currentColor;stroke-opacity:.14;stroke-width:1}
+    .hline{stroke:currentColor;stroke-opacity:.3;stroke-width:1.3}
+    .colL{fill:#86bfa5;fill-opacity:.05}
+    .colR{fill:#c47a63;fill-opacity:.05}
+    text{font-family:'JetBrains Mono', ui-monospace, monospace}
+  </style>
+  <!-- column tints -->
+  <rect class="colL" x="360" y="44" width="230" height="404" rx="6"/>
+  <rect class="colR" x="600" y="44" width="230" height="404" rx="6"/>
+  <!-- headers -->
+  <text class="hd" x="20" y="36">your constraint</text>
+  <text class="sq" x="475" y="36" text-anchor="middle" font-size="14">leans Solid Queue</text>
+  <text class="sk" x="715" y="36" text-anchor="middle" font-size="14">leans Sidekiq</text>
+  <line class="hline" x1="20" y1="52" x2="830" y2="52"/>
+
+  <!-- rows -->
+  <!-- y positions -->
+  <!-- 1 -->
+  <text class="row" x="20" y="88">Redis in your stack?</text>
+  <text class="sq" x="475" y="88" text-anchor="middle">no Redis today</text>
+  <text class="sk" x="715" y="88" text-anchor="middle">already running Redis</text>
+  <line class="line" x1="20" y1="104" x2="830" y2="104"/>
+  <!-- 2 -->
+  <text class="row" x="20" y="140">Database headroom?</text>
+  <text class="sq" x="475" y="140" text-anchor="middle">ample capacity</text>
+  <text class="sk" x="715" y="140" text-anchor="middle">DB already strained</text>
+  <line class="line" x1="20" y1="156" x2="830" y2="156"/>
+  <!-- 3 -->
+  <text class="row" x="20" y="192">Pickup latency need?</text>
+  <text class="sq" x="475" y="192" text-anchor="middle">seconds are fine</text>
+  <text class="sk" x="715" y="192" text-anchor="middle">sub-100ms matters</text>
+  <line class="line" x1="20" y1="208" x2="830" y2="208"/>
+  <!-- 4 -->
+  <text class="row" x="20" y="244">Throughput?</text>
+  <text class="sq" x="475" y="244" text-anchor="middle">ordinary volume</text>
+  <text class="sk" x="715" y="244" text-anchor="middle">sustained very high</text>
+  <line class="line" x1="20" y1="260" x2="830" y2="260"/>
+  <!-- 5 -->
+  <text class="row" x="20" y="296">Concurrency / recurring?</text>
+  <text class="sq" x="475" y="296" text-anchor="middle">want them built-in</text>
+  <text class="sk" x="715" y="296" text-anchor="middle">have your own setup</text>
+  <line class="line" x1="20" y1="312" x2="830" y2="312"/>
+  <!-- 6 -->
+  <text class="row" x="20" y="348">Need batches / rate limits?</text>
+  <text class="sq" x="475" y="348" text-anchor="middle">not required</text>
+  <text class="sk" x="715" y="348" text-anchor="middle">yes (Pro / Enterprise)</text>
+  <line class="line" x1="20" y1="364" x2="830" y2="364"/>
+  <!-- 7 -->
+  <text class="row" x="20" y="400">Infra cost pressure?</text>
+  <text class="sq" x="475" y="400" text-anchor="middle">avoid a paid service</text>
+  <text class="sk" x="715" y="400" text-anchor="middle">Redis cost acceptable</text>
+  <line class="line" x1="20" y1="416" x2="830" y2="416"/>
+  <!-- 8 -->
+  <text class="row" x="20" y="440">Team is comfortable with</text>
+  <text class="sq" x="475" y="440" text-anchor="middle">Postgres / MySQL</text>
+  <text class="sk" x="715" y="440" text-anchor="middle">operating Redis</text>
+</svg>`;
+---
+<figure class="svg-figure">
+	<Fragment set:html={svg} />
+	<figcaption>Each row is a real constraint, not a feature. Read down the column that matches your situation — the backend most of your constraints lean toward is usually the right default.</figcaption>
+</figure>
+
+<style>
+	/* Fit the author's inline SVG to the reading column and keep it responsive
+	   (the SVG markup itself is unchanged). :global because the SVG is injected
+	   via set:html and doesn't carry the scoped attribute. */
+	.svg-figure { margin: var(--s-4) 0; }
+	.svg-figure :global(svg) { display: block; width: 100%; height: auto; color: var(--text); }
+	.svg-figure figcaption {
+		margin-top: .6rem; text-align: center;
+		font-family: var(--font-sans); font-size: var(--fs-sm);
+		color: var(--text-muted); line-height: var(--lh-snug);
+	}
+</style>
