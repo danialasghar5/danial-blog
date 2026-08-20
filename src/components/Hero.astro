@@ -1,41 +1,49 @@
 ---
-import { NAME, ROLE } from '../consts';
+import { NAME, ROLE, SOCIALS } from '../consts';
 ---
 <section class="hero container">
-  <h1 class="thesis">Reliability engineering for Rails and AI backends.</h1>
-
-  <p class="lede">
+  <p class="hero-kicker">{NAME} · {ROLE}</p>
+  <h1 class="hero-thesis">Reliability engineering for Rails and AI backends.</h1>
+  <p class="hero-lede">
     I write about the systems that have to stay correct when things go wrong —
-    background jobs, databases, distributed systems, and AI backend reliability.
-    Production-grounded write-ups on the decisions that keep a Rails backend
-    consistent when work runs at least once, fails halfway, or races under
-    concurrency.
+    background jobs, databases, and AI backends — with each piece grounded in
+    open-source code I build and ship, not just opinions.
   </p>
-
-  <p class="byline">
-    By {NAME}, {ROLE}. Every piece is grounded in open-source systems I build and
-    ship — the code behind the writing, not just opinions.
-  </p>
-
-  <div class="cta">
-    <a class="btn btn-primary" href="/about">About &rarr;</a>
+  <div class="hero-actions">
+    <a class="btn btn-primary hero-cta" href="/blog">Read the writing →</a>
+    <nav class="hero-links" aria-label="Quick links">
+      <a href="/about">About</a>
+      <a href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
+      <a href="/rss.xml">RSS</a>
+    </nav>
   </div>
 </section>
 
 <style>
-  .hero { padding-block: var(--s-12) var(--s-8); }
-  .thesis {
-    font-size: var(--fs-4xl); line-height: var(--lh-tight);
-    margin: 0 0 var(--s-4); letter-spacing: var(--tracking-tighter); font-weight: 800;
-    max-width: 20ch;
+  .hero { padding-block: var(--s-8) var(--s-6); }
+  .hero-kicker {
+    font-size: var(--fs-sm); font-weight: 600;
+    letter-spacing: var(--tracking-wide); text-transform: uppercase;
+    color: var(--brand); margin: 0 0 var(--s-2);
   }
-  .lede {
-    font-size: var(--fs-lg); line-height: var(--lh-normal); color: var(--text-muted);
-    max-width: 62ch; margin: 0 0 var(--s-3);
+  .hero-thesis {
+    font-size: var(--fs-3xl); line-height: var(--lh-tight);
+    margin: 0 0 var(--s-3); letter-spacing: var(--tracking-tighter); font-weight: 800;
+    max-width: 22ch;
   }
-  .byline {
-    font-size: var(--fs-base); line-height: var(--lh-normal); color: var(--text-muted);
-    max-width: 62ch; margin: 0 0 var(--s-5);
+  .hero-lede {
+    font-family: var(--font-prose);
+    font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text-muted);
+    max-width: 60ch; margin: 0 0 var(--s-4);
   }
-  .cta { display: flex; gap: .75rem; flex-wrap: wrap; }
+  /* Spacing via margins (not flex `gap`) so it holds up everywhere. */
+  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; }
+  .hero-cta { font-size: var(--fs-base); margin: 0 var(--s-4) var(--s-2) 0; }
+  .hero-links { display: flex; flex-wrap: wrap; align-items: center; }
+  .hero-links a {
+    font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted);
+    margin: 0 1.5rem var(--s-2) 0;
+  }
+  .hero-links a:last-child { margin-right: 0; }
+  .hero-links a:hover { color: var(--text); }
 </style>

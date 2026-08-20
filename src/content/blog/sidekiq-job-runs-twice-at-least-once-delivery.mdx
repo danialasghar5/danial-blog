@@ -3,10 +3,7 @@ title: "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
 seoTitle: "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
 description: "Sidekiq runs jobs at least once, not exactly once. Here's why background jobs execute twice — deploys, retries, timeouts, lost acks — and where the fix actually lives."
 pubDate: 2026-07-20
-updatedDate: 2026-07-20
-canonicalURL: "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/"
 ogImage: "/og/sidekiq-job-runs-twice-at-least-once-delivery.png"
-author: "Danial Asghar"
 category: "background-jobs"
 hasCustomSchema: true
 tags:
@@ -111,18 +108,6 @@ It's 9:14 a.m. and three support tickets say the same thing: *"Why was I charged
 You don't have the bug you think you have. **Sidekiq does not guarantee that a job runs exactly once — it guarantees at least once.** That's not a defect or a misconfiguration; it's the documented contract ([Sidekiq Best Practices wiki](https://github.com/sidekiq/sidekiq/wiki/Best-Practices)), and every background system built on the same principle behaves the same way. The gap between "at least once" and "exactly once" is where duplicate charges, duplicate emails, and duplicate API calls come from — and it tells you exactly where the fix belongs. It isn't a queue setting.
 
 This article covers what at-least-once actually means, the specific windows where a job re-runs, why exactly-once is nearly impossible in a distributed system, and where correctness has to live once you accept the guarantee you're really operating under.
-
-<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
-  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
-  <ul style="margin:0; padding-left:1.1rem;">
-    <li><a href="#does-sidekiq-guarantee-exactly-once-execution">Does Sidekiq guarantee exactly-once execution?</a></li>
-    <li><a href="#delivery-vs-execution-vs-side-effects">Delivery vs. execution vs. side effects</a></li>
-    <li><a href="#why-did-my-sidekiq-job-run-twice-the-five-windows">Why did my Sidekiq job run twice? The five windows</a></li>
-    <li><a href="#why-cant-sidekiq-just-guarantee-exactly-once">Why can't Sidekiq just guarantee exactly-once?</a></li>
-    <li><a href="#where-correctness-actually-lives">Where correctness actually lives</a></li>
-    <li><a href="#takeaways">Takeaways</a></li>
-  </ul>
-</nav>
 
 ## Does Sidekiq guarantee exactly-once execution?
 

@@ -2,7 +2,19 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { rehypeHeadingIds } from '@astrojs/markdown-remark';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { defineConfig, fontProviders } from 'astro/config';
+
+// Append a subtle, hoverable "#" anchor to each article heading so readers can
+// deep-link a section. rehypeHeadingIds runs first to assign the same
+// github-slugger IDs Astro already generates (existing anchors stay identical);
+// autolink then links to them.
+const autolinkOptions = {
+	behavior: 'append',
+	properties: { className: ['heading-anchor'], ariaHidden: 'true', tabIndex: -1 },
+	content: { type: 'text', value: '#' },
+};
 
 // Wrap every rendered Markdown/MDX <table> in a horizontally-scrollable div so a
 // wide table scrolls inside its own box on small screens instead of pushing the
@@ -14,7 +26,7 @@ function rehypeWrapTables() {
 		const walk = (node) => {
 			if (!node.children) return;
 			/** @param {any} child */
-			node.children = node.children.map((child) => {
+			node.children = node.children.map((/** @type {any} */ child) => {
 				walk(child);
 				if (child.type === 'element' && child.tagName === 'table') {
 					return {
@@ -40,7 +52,7 @@ export default defineConfig({
 	// Dual-theme syntax highlighting: readable light theme by default, dark theme
 	// swapped in via [data-theme="dark"] (see global.css .astro-code overrides).
 	markdown: {
-		rehypePlugins: [rehypeWrapTables],
+		rehypePlugins: [rehypeWrapTables, rehypeHeadingIds, [rehypeAutolinkHeadings, autolinkOptions]],
 		shikiConfig: {
 			themes: { light: 'github-light', dark: 'github-dark' },
 			wrap: true,

@@ -2,11 +2,8 @@
 title: "How Solid Queue Works Under the Hood (Rails 8)"
 seoTitle: "How Solid Queue Works Under the Hood (Rails 8)"
 description: "A deep look at Solid Queue internals — execution tables, SKIP LOCKED claiming, concurrency controls, heartbeats — and the one guarantee it doesn't give you."
-canonicalURL: "https://danialasghar.com/blog/how-solid-queue-works/"
 ogImage: "/og/how-solid-queue-works.png"
 pubDate: 2026-08-04
-updatedDate: 2026-08-04
-author: "Danial Asghar"
 category: "background-jobs"
 hasCustomSchema: true
 tags:
@@ -106,25 +103,6 @@ Solid Queue runs Active Job on your database instead of Redis. Dispatchers move 
 Rails 8 ships Solid Queue as the default Active Job backend, so most teams now run it *because it's the default*, not by choice. That's fine — but "I run it because it's default" and "I understand what it's doing to my database every second" are different states, and the gap between them is where production surprises live: a job that starts a beat late, a `failed_executions` table filling after a bad deploy, a worker that dies mid-job and leaves work behind.
 
 This is the internals walkthrough, traced against the [official `rails/solid_queue` README](https://github.com/rails/solid_queue) and the [Rails Guides](https://guides.rubyonrails.org/active_job_basics.html). Not a setup tutorial — how the thing works, and why those details matter under load.
-
-<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
-  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
-  <ul style="margin:0; padding-left:1.1rem;">
-    <li><a href="#the-core-idea-the-database-is-the-queue">The core idea: the database is the queue</a></li>
-    <li><a href="#the-four-processes">The four processes</a></li>
-    <li><a href="#the-execution-tables">The execution tables</a></li>
-    <li><a href="#how-a-worker-claims-a-job-for-update-skip-locked">How a worker claims a job: FOR UPDATE SKIP LOCKED</a></li>
-    <li><a href="#the-job-lifecycle-as-a-state-machine">The job lifecycle as a state machine</a></li>
-    <li><a href="#concurrency-controls-limits_concurrency-and-blocked-jobs">Concurrency controls: limits_concurrency and blocked jobs</a></li>
-    <li><a href="#the-polling-model-and-where-latency-comes-from">The polling model, and where latency comes from</a></li>
-    <li><a href="#what-happens-when-a-worker-dies">What happens when a worker dies</a></li>
-    <li><a href="#finished-and-failed-jobs-two-production-gotchas">Finished and failed jobs: two production gotchas</a></li>
-    <li><a href="#the-guarantee-solid-queue-gives-you-and-the-one-it-doesnt">The guarantee Solid Queue gives you, and the one it doesn't</a></li>
-    <li><a href="#common-misconceptions">Common misconceptions</a></li>
-    <li><a href="#key-takeaways">Key takeaways</a></li>
-    <li><a href="#faq">FAQ</a></li>
-  </ul>
-</nav>
 
 ## The core idea: the database is the queue
 

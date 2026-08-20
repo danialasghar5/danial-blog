@@ -1,16 +1,21 @@
 ---
 import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import FiledUnder from '../components/FiledUnder.astro';
 import Header from '../components/Header.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { readingTime } from '../utils/reading-time';
+import { getTopic } from '../data/topics';
 
 type PostLink = { slug: string; title: string } | null;
+type Heading = { depth: number; slug: string; text: string };
 
 interface Props {
+	id?: string;
 	title: string;
 	seoTitle?: string;
 	ogImage?: string;
@@ -21,12 +26,14 @@ interface Props {
 	tags?: string[];
 	category?: string;
 	readingTime?: string;
+	headings?: Heading[];
 	prevPost?: PostLink;
 	nextPost?: PostLink;
 	hasCustomSchema?: boolean;
 }
 
 const {
+	id,
 	title,
 	seoTitle,
 	ogImage,
@@ -36,86 +43,148 @@ const {
 	heroImage,
 	tags = [],
 	category,
-	readingTime,
+	readingTime: readingTimeLabel,
+	headings = [],
 	prevPost = null,
 	nextPost = null,
 	hasCustomSchema = false,
 } = Astro.props;
 
+// On-page table of contents: H2 + H3 only. Shown when a post has enough
+// structure to be worth navigating (avoids a one-item TOC on short posts).
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const showToc = toc.length >= 3;
+
+// Related reading: other posts in the same topic hub, newest first, up to 3.
+const topic = getTopic(category);
+const related = category
+	? (await getCollection('blog'))
+			.filter((p) => !p.data.draft && p.data.category === category && p.id !== id)
+			.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+			.slice(0, 3)
+	: [];
+
 // Keyword-first SEO title when provided; brand suffix kept for recognition.
 const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
+
+// Show "Updated" only when the post was genuinely revised on a later calendar
+// day than it was published (compared in UTC, matching our date semantics).
+const showUpdated =
+	!!updatedDate &&
+	updatedDate.toISOString().slice(0, 10) > pubDate.toISOString().slice(0, 10);
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={pageTitle} description={description} type="article" suppressArticleSchema={hasCustomSchema} ogImageUrl={ogImage} />
+		<BaseHead title={pageTitle} description={description} type="article" suppressArticleSchema={hasCustomSchema} ogImageUrl={ogImage} pubDate={pubDate} updatedDate={updatedDate} />
 	</head>
 
 	<body>
 		<Header />
+		<div class="read-progress" aria-hidden="true"><span id="read-progress-bar"></span></div>
 		<main id="main-content">
-			<article class="blog-post">
-				<Breadcrumbs items={[
-					{ label: 'Home', href: '/' },
-					{ label: 'Blog', href: '/blog' },
-					{ label: title },
-				]} />
+			<article class:list={['blog-post', { 'has-toc': showToc }]}>
+				<div class="lede">
+					<Breadcrumbs items={[
+						{ label: 'Home', href: '/' },
+						{ label: 'Writing', href: '/blog' },
+						{ label: title },
+					]} />
 
-				<header class="post-header">
-					<h1 class="post-title">{title}</h1>
-					{description && <p class="post-desc">{description}</p>}
+					<header class="post-header">
+						<h1 class="post-title">{title}</h1>
+						{description && <p class="post-desc">{description}</p>}
 
-					<div class="post-meta">
-						<span class="meta-item">
-							Published <FormattedDate date={pubDate} />
-						</span>
-						{updatedDate && (
-							<span class="meta-item meta-updated">
-								Updated <FormattedDate date={updatedDate} />
+						<div class="post-meta">
+							<span class="meta-item">
+								Published <FormattedDate date={pubDate} />
 							</span>
+							{showUpdated && (
+								<span class="meta-item meta-updated">
+									Updated <FormattedDate date={updatedDate} />
+								</span>
+							)}
+							{readingTimeLabel && <span class="meta-item">{readingTimeLabel}</span>}
+						</div>
+
+						{tags.length > 0 && (
+							<ul class="post-tags">
+								{tags.map((t) => <li class="chip">{t}</li>)}
+							</ul>
 						)}
-						{readingTime && <span class="meta-item">{readingTime}</span>}
-					</div>
 
-					{tags.length > 0 && (
-						<ul class="post-tags">
-							{tags.map((t) => <li class="chip">{t}</li>)}
-						</ul>
+						<FiledUnder category={category} />
+					</header>
+
+					{heroImage && (
+						<div class="hero-image">
+							<Image width={1080} height={540} src={heroImage} alt={`Cover for ${title}`} />
+						</div>
 					)}
+				</div>
 
-					<FiledUnder category={category} />
-				</header>
-
-				{heroImage && (
-					<div class="hero-image">
-						<Image width={1080} height={540} src={heroImage} alt={`Cover for ${title}`} />
-					</div>
+				{showToc && (
+					<nav class="toc-rail" aria-label="On this page">
+						<details class="toc" id="toc">
+							<summary>On this page</summary>
+							<ol class="toc-list">
+								{toc.map((h) => (
+									<li class:list={['toc-item', { sub: h.depth === 3 }]}>
+										<a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+									</li>
+								))}
+							</ol>
+						</details>
+					</nav>
 				)}
 
 				<div class="prose">
 					<slot />
 				</div>
 
-				<nav class="post-nav" aria-label="More posts">
-					{prevPost ? (
-						<a class="post-nav-link prev" href={`/blog/${prevPost.slug}/`}>
-							<span class="dir">← Previous</span>
-							<span class="t">{prevPost.title}</span>
-						</a>
-					) : <span />}
-					{nextPost ? (
-						<a class="post-nav-link next" href={`/blog/${nextPost.slug}/`}>
-							<span class="dir">Next →</span>
-							<span class="t">{nextPost.title}</span>
-						</a>
-					) : <span />}
-				</nav>
+				<div class="foot">
+					{related.length > 0 && (
+						<aside class="related" aria-label="Related posts">
+							<h2 class="related-head">
+								More in {topic?.title ?? 'this topic'}
+							</h2>
+							<ul class="related-list">
+								{related.map((p) => (
+									<li>
+										<a class="related-link" href={`/blog/${p.id}/`}>
+											<span class="related-title">{p.data.title}</span>
+											<span class="related-meta">
+												<FormattedDate date={p.data.pubDate} /> · {readingTime(p.body)}
+											</span>
+										</a>
+									</li>
+								))}
+							</ul>
+						</aside>
+					)}
 
-				<div class="back-row">
-					<a href="/blog" class="back-link">← Back to all posts</a>
+					<nav class="post-nav" aria-label="More posts">
+						{prevPost ? (
+							<a class="post-nav-link prev" href={`/blog/${prevPost.slug}/`}>
+								<span class="dir">← Previous</span>
+								<span class="t">{prevPost.title}</span>
+							</a>
+						) : <span />}
+						{nextPost ? (
+							<a class="post-nav-link next" href={`/blog/${nextPost.slug}/`}>
+								<span class="dir">Next →</span>
+								<span class="t">{nextPost.title}</span>
+							</a>
+						) : <span />}
+					</nav>
+
+					<div class="back-row">
+						<a href="/blog" class="back-link">← Back to all posts</a>
+					</div>
 				</div>
 			</article>
 		</main>
+		<Newsletter />
 		<Footer />
 
 		<style>
@@ -124,8 +193,38 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 				margin-inline: auto;
 				padding: var(--s-6) var(--s-3) var(--s-4);
 			}
-			/* Centered reading column; text, code, images, and tables all share it. */
+
+			/* Reading-progress bar: a thin fill under the sticky header that tracks
+			   how far through the article you are. Position only — no animation. */
+			.read-progress {
+				position: fixed; top: var(--header-h); left: 0; right: 0; height: 2px;
+				z-index: 40; background: transparent; pointer-events: none;
+			}
+			.read-progress span {
+				display: block; height: 100%; width: 0;
+				background: var(--brand); transform-origin: left;
+			}
+
+			/* Article shell. Single column by default; on wide screens a sticky TOC
+			   rail sits in the right gutter and the reading measure tightens. */
 			.blog-post { display: flex; flex-direction: column; gap: var(--s-4); }
+			.lede, .prose, .foot { min-width: 0; }
+			.lede { display: flex; flex-direction: column; gap: var(--s-4); }
+
+			@media (min-width: 1080px) {
+				main { max-width: 1060px; }
+				.blog-post.has-toc {
+					display: grid;
+					grid-template-columns: minmax(0, 1fr) 232px;
+					grid-template-areas: 'lede toc' 'prose toc' 'foot toc';
+					column-gap: var(--s-6);
+					align-items: start;
+				}
+				.blog-post.has-toc .lede { grid-area: lede; }
+				.blog-post.has-toc .toc-rail { grid-area: toc; }
+				.blog-post.has-toc .prose { grid-area: prose; }
+				.blog-post.has-toc .foot { grid-area: foot; }
+			}
 
 			/* Header */
 			.post-header { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -151,6 +250,41 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 			}
 			.hero-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
+			/* TOC rail */
+			.toc-rail { font-family: var(--font-sans); }
+			.toc > summary {
+				cursor: pointer; list-style: none;
+				font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase;
+				letter-spacing: var(--tracking-wide); color: var(--text-faint);
+				padding: .3rem 0; display: flex; align-items: center; gap: .4rem;
+			}
+			.toc > summary::-webkit-details-marker { display: none; }
+			.toc > summary::before {
+				content: ''; width: 0; height: 0;
+				border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+				transition: transform .15s ease;
+			}
+			.toc[open] > summary::before { transform: rotate(90deg); }
+			.toc-list { list-style: none; margin: var(--s-1) 0 0; padding: 0; display: flex; flex-direction: column; gap: .1rem; border-left: 1px solid var(--border); }
+			.toc-item a {
+				display: block; padding: .28rem .75rem;
+				font-size: var(--fs-sm); line-height: var(--lh-snug);
+				color: var(--text-muted); text-decoration: none;
+				border-left: 2px solid transparent; margin-left: -1px;
+				transition: color .15s ease, border-color .15s ease;
+			}
+			.toc-item.sub a { padding-left: 1.5rem; font-size: var(--fs-xs); }
+			.toc-item a:hover { color: var(--text); }
+			.toc-item a.active { color: var(--brand); border-left-color: var(--brand); font-weight: 600; }
+
+			@media (min-width: 1080px) {
+				/* On the rail: always expanded, non-collapsible, sticky. */
+				.toc-rail { position: sticky; top: calc(var(--header-h) + var(--s-3)); align-self: start; max-height: calc(100vh - var(--header-h) - var(--s-5)); overflow-y: auto; }
+				.toc > summary { pointer-events: none; }
+				.toc > summary::before { display: none; }
+				.toc > .toc-list { display: flex !important; }
+			}
+
 			/* Prose */
 			.prose {
 				font-family: var(--font-prose);
@@ -159,8 +293,9 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 				line-height: var(--lh-prose);
 			}
 			.prose :global(p) { margin: 0 0 var(--s-3); }
-			.prose :global(h2) { font-size: var(--fs-2xl); font-weight: 700; margin: var(--s-6) 0 var(--s-2); letter-spacing: var(--tracking-tight); }
-			.prose :global(h3) { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-5) 0 var(--s-2); }
+			.prose :global(h2) { font-size: var(--fs-2xl); font-weight: 700; margin: var(--s-6) 0 var(--s-2); letter-spacing: var(--tracking-tight); scroll-margin-top: calc(var(--header-h) + var(--s-3)); }
+			.prose :global(h3) { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-5) 0 var(--s-2); scroll-margin-top: calc(var(--header-h) + var(--s-3)); }
+			.prose :global(h4) { scroll-margin-top: calc(var(--header-h) + var(--s-3)); }
 			.prose :global(ul), .prose :global(ol) { margin: 0 0 var(--s-3); padding-left: var(--s-3); }
 			.prose :global(li) { margin-bottom: .5rem; }
 			.prose :global(img) { border-radius: var(--radius); margin: var(--s-2) 0; }
@@ -201,10 +336,25 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 			.prose :global(tbody tr:nth-child(even)) { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
 			.prose :global(td code), .prose :global(th code) { white-space: nowrap; }
 
+			/* Foot: related + prev/next */
+			.foot { display: flex; flex-direction: column; gap: var(--s-5); margin-top: var(--s-6); }
+			.related { padding-top: var(--s-4); border-top: 1px solid var(--border); }
+			.related-head { font-size: var(--fs-xl); font-weight: 700; margin: 0 0 var(--s-3); letter-spacing: var(--tracking-tight); }
+			.related-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+			.related-link {
+				display: flex; flex-direction: column; gap: .15rem;
+				padding: var(--s-2) 0; border-top: 1px solid var(--border);
+				text-decoration: none; color: var(--text);
+			}
+			.related-list li:first-child .related-link { border-top: none; }
+			.related-title { font-weight: 600; font-size: var(--fs-base); line-height: var(--lh-snug); }
+			.related-link:hover .related-title { color: var(--brand); }
+			.related-meta { font-size: var(--fs-xs); color: var(--text-faint); }
+
 			/* Prev / next */
 			.post-nav {
 				display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2);
-				margin-top: var(--s-6); padding-top: var(--s-4);
+				padding-top: var(--s-4);
 				border-top: 1px solid var(--border);
 			}
 			.post-nav-link {
@@ -219,7 +369,7 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 			.post-nav-link .dir { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 			.post-nav-link .t { font-weight: 600; font-size: var(--fs-sm); line-height: var(--lh-snug); }
 
-			.back-row { margin-top: var(--s-4); }
+			.back-row { margin-top: 0; }
 			.back-link { font-weight: 600; font-size: var(--fs-sm); }
 
 			@media (max-width: 560px) {
@@ -227,5 +377,47 @@ const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
 				.post-nav-link.next { text-align: left; }
 			}
 		</style>
+
+		<script>
+			// Reading-progress bar + active-section highlighting in the TOC.
+			const bar = document.getElementById('read-progress-bar');
+			const article = document.querySelector('.blog-post');
+			const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+			function onScroll() {
+				if (!bar || !article) return;
+				const rect = article.getBoundingClientRect();
+				const total = rect.height - window.innerHeight;
+				const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(total, 0));
+				const pct = total > 0 ? (scrolled / total) * 100 : 0;
+				bar.style.width = pct + '%';
+			}
+			addEventListener('scroll', onScroll, { passive: true });
+			addEventListener('resize', onScroll, { passive: true });
+			onScroll();
+
+			// Highlight the TOC entry for the section currently in view.
+			const links = new Map();
+			document.querySelectorAll('[data-toc-link]').forEach((a) =>
+				links.set(a.getAttribute('data-toc-link'), a)
+			);
+			if (links.size) {
+				const headings = [...links.keys()]
+					.map((id) => document.getElementById(id))
+					.filter(Boolean);
+				const observer = new IntersectionObserver(
+					(entries) => {
+						entries.forEach((e) => {
+							if (e.isIntersecting) {
+								links.forEach((el) => el.classList.remove('active'));
+								links.get(e.target.id)?.classList.add('active');
+							}
+						});
+					},
+					{ rootMargin: `-${prefersReduced ? 0 : 10}% 0px -70% 0px`, threshold: 0 }
+				);
+				headings.forEach((h) => observer.observe(h));
+			}
+		</script>
 	</body>
 </html>

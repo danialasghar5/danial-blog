@@ -3,20 +3,26 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Hero from '../components/Hero.astro';
-import PostCard from '../components/PostCard.astro';
+import PostListItem from '../components/PostListItem.astro';
 import Projects from '../components/Projects.astro';
 import Newsletter from '../components/Newsletter.astro';
-import TopicChip from '../components/TopicChip.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import AtLeastOnceLoop from '../components/diagram/figures/AtLeastOnceLoop.astro';
 import { getCollection } from 'astro:content';
+import { readingTime } from '../utils/reading-time';
+import { getTopic } from '../data/topics';
 import { SITE_TITLE, SITE_DESCRIPTION, ROLE } from '../consts';
-import { liveTopics } from '../data/topics';
 
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.draft)
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, 3);
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const hubs = liveTopics();
+// Featured: the cornerstone "start here" piece, shown with its own diagram as
+// proof-of-depth. Falls back to the newest post if the cornerstone is absent.
+const FEATURED_ID = 'sidekiq-job-runs-twice-at-least-once-delivery';
+const featured = posts.find((p) => p.id === FEATURED_ID) ?? posts[0];
+const recent = posts.filter((p) => p.id !== featured?.id).slice(0, 5);
+const featuredTopic = getTopic(featured?.data.category);
 ---
 <html lang="en">
   <head><BaseHead title={`${SITE_TITLE} — ${ROLE}`} description={SITE_DESCRIPTION} /></head>
@@ -25,32 +31,43 @@ const hubs = liveTopics();
     <main id="main-content">
       <Hero />
 
-      {posts.length > 0 && (
-        <section class="container block">
-          <div class="section-head">
-            <h2>Latest Writing</h2>
-            <a class="more" href="/blog">All posts &rarr;</a>
-          </div>
-          <div class="grid-cards">
-            {posts.map(post => <PostCard post={post} />)}
+      {featured && (
+        <section class="container featured">
+          <div class="featured-inner">
+            <div class="featured-text">
+              <p class="eyebrow">Featured writing</p>
+              <h2 class="featured-title"><a href={`/blog/${featured.id}/`}>{featured.data.title}</a></h2>
+              <p class="featured-dek">{featured.data.description}</p>
+              <div class="featured-meta">
+                {featuredTopic && <span>{featuredTopic.title}</span>}
+                {featuredTopic && <span class="dot">·</span>}
+                <FormattedDate date={featured.data.pubDate} />
+                <span class="dot">·</span>
+                <span>{readingTime(featured.body)}</span>
+              </div>
+              <a class="featured-cta" href={`/blog/${featured.id}/`}>Read the article →</a>
+            </div>
+            <div class="featured-figure" aria-hidden="false">
+              <AtLeastOnceLoop />
+            </div>
           </div>
         </section>
       )}
 
-      {hubs.length > 0 && (
+      {recent.length > 0 && (
         <section class="container block">
           <div class="section-head">
-            <h2>Browse by topic</h2>
-            <a class="more" href="/topics">All topics &rarr;</a>
+            <h2>Recent writing</h2>
+            <a class="more" href="/blog">All posts &rarr;</a>
           </div>
-          <div class="chip-row">
-            {hubs.map((t) => <TopicChip slug={t.slug} />)}
+          <div class="home-list">
+            {recent.map((post) => <PostListItem post={post} compact />)}
           </div>
         </section>
       )}
 
       <Projects
-        heading="Selected Work"
+        heading="Selected work"
         blurb="Open-source systems and experiments behind the ideas I write about."
       />
       <Newsletter />
@@ -60,5 +77,29 @@ const hubs = liveTopics();
 </html>
 <style>
   .block { padding-block: var(--s-6); }
-  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+  /* Featured lead — an editorial pairing of the cornerstone piece and its
+     diagram. A top rule, not a heavy card, so it reads as writing, not product. */
+  .featured { padding-block: var(--s-6); }
+  .featured-inner {
+    display: grid; grid-template-columns: 1fr; gap: var(--s-5);
+    padding-top: var(--s-5); border-top: 1px solid var(--border);
+    align-items: center;
+  }
+  @media (min-width: 900px) {
+    .featured-inner { grid-template-columns: 1fr 1fr; gap: var(--s-8); }
+  }
+  .featured-text { min-width: 0; }
+  .featured-title { font-size: var(--fs-2xl); font-weight: 800; line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); margin: var(--s-1) 0 var(--s-2); max-width: 20ch; }
+  .featured-title a { color: var(--text); }
+  .featured-title a:hover { color: var(--brand); }
+  .featured-dek { font-family: var(--font-prose); font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-3); max-width: 54ch; }
+  .featured-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--text-faint); margin-bottom: var(--s-3); }
+  .featured-meta .dot { color: var(--text-faint); }
+  .featured-cta { font-weight: 600; font-size: var(--fs-base); color: var(--brand); }
+  .featured-cta:hover { color: var(--brand-hover); }
+  /* The figure component brings its own canvas + caption; give it room. */
+  .featured-figure { min-width: 0; }
+
+  .home-list { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 </style>

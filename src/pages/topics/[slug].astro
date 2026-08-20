@@ -4,7 +4,7 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import PostCard from '../../components/PostCard.astro';
+import PostListItem from '../../components/PostListItem.astro';
 import TopicChip from '../../components/TopicChip.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import { readingTime } from '../../utils/reading-time';
@@ -109,10 +109,10 @@ const jsonLd = {
 			)}
 
 			{posts.length > 0 && (
-				<section class="hub-list" aria-label="All articles">
-					<p class="section-eyebrow">All articles</p>
-					<div class="grid-cards">
-						{posts.map((post) => <PostCard post={post} />)}
+				<section class="hub-list" aria-label="More articles">
+					<p class="section-eyebrow">More articles</p>
+					<div class="post-list">
+						{posts.filter((p) => p.id !== topic.startHere).map((post) => <PostListItem post={post} />)}
 					</div>
 				</section>
 			)}
@@ -170,6 +170,7 @@ const jsonLd = {
 			.dot { color: var(--text-faint); }
 
 			.hub-list { margin-bottom: var(--s-6); }
+			.hub-list .post-list { border-bottom: 1px solid var(--border); }
 
 			.related-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
 		</style>

@@ -1,17 +1,11 @@
 ---
 title: "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time"
-slug: "why-background-jobs-are-slow"
 seoTitle: "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time"
 description: "A “slow” background job either waited (queue latency) or ran slowly (execution time). Measure which — then a diagnostic method for fixing each, in Rails."
-excerpt: "“Slow” isn't a diagnosis. A background job is slow because it waited in the queue or because it ran slowly once it started — two different problems with different fixes. Here's how to measure which, using built-in tools, and a diagnostic path for each branch."
-canonicalURL: "https://danialasghar.com/blog/why-background-jobs-are-slow/"
-ogTitle: "Why Your Rails Background Jobs Are Slow (Latency vs. Execution)"
-ogDescription: "Measure whether your job waited or ran slowly — then fix the right thing. A vendor-neutral diagnostic method for Sidekiq and Solid Queue."
 ogImage: "/og/why-background-jobs-are-slow.png"
 pubDate: 2026-08-10
-updatedDate: 2026-08-10
-author: "Danial Asghar"
 category: "background-jobs"
+hasCustomSchema: true
 tags:
   - "sidekiq"
   - "solid-queue"
@@ -24,20 +18,59 @@ draft: false
 import LatencyExecutionTimeline from '../../components/diagram/figures/LatencyExecutionTimeline.astro';
 import DiagnosticDecisionTree from '../../components/diagram/figures/DiagnosticDecisionTree.astro';
 
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time",
+  "description": "A “slow” background job either waited (queue latency) or ran slowly (execution time). Measure which — then a diagnostic method for fixing each, in Rails.",
+  "image": "https://danialasghar.com/og/why-background-jobs-are-slow.png",
+  "datePublished": "2026-08-10",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/why-background-jobs-are-slow/" },
+  "keywords": ["sidekiq queue latency", "background job execution time", "rails background jobs slow", "perform.active_job", "queue latency vs execution time"],
+  "articleSection": "Background Jobs & Async",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Why are my Sidekiq jobs slow?", "acceptedAnswer": { "@type": "Answer", "text": "Either they waited in the queue before a worker picked them up (queue latency) or they ran slowly once started (execution time). Measure queue latency with Sidekiq::Queue#latency; if it's high, the problem is capacity or throttling, not the job's code. If latency is low but results are slow, profile the job's perform." } },
+    { "@type": "Question", "name": "What is Sidekiq queue latency?", "acceptedAnswer": { "@type": "Answer", "text": "It's the time in seconds since the oldest job in the queue was enqueued — roughly now — oldest_enqueued_at. It measures how long jobs are waiting before execution, which makes it the earliest signal of a backlog. Note it can read high for jobs re-enqueued after a deploy TERM or scheduled far in the future." } },
+    { "@type": "Question", "name": "Why is my job slow to start but fast to run?", "acceptedAnswer": { "@type": "Answer", "text": "That's high queue latency with low execution time — the job waited. Common causes are too few workers for the arrival rate, a retry storm consuming capacity, connection-pool starvation, or (on Solid Queue) the polling-interval floor." } },
+    { "@type": "Question", "name": "How do I measure background job execution time in Rails?", "acceptedAnswer": { "@type": "Answer", "text": "Subscribe to the perform.active_job event via ActiveSupport::Notifications. Each job run reports its duration, so you get real execution times without modifying job code or installing an APM." } },
+    { "@type": "Question", "name": "Does adding more Sidekiq threads make jobs faster?", "acceptedAnswer": { "@type": "Answer", "text": "Only for I/O-bound jobs. Because of Ruby's GIL, extra threads help work that waits on the database or an API, but not CPU-bound work, where threads contend for the same core. For CPU-bound jobs, add processes instead. Also keep threads at or below your database connection pool size, or workers stall waiting for connections." } }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time", "item": "https://danialasghar.com/blog/why-background-jobs-are-slow/" }
+  ]
+}
+`}</script>
+
 A "slow" background job has two entirely different causes, and they need entirely different fixes. Either the job **waited** a long time before a worker picked it up — that's queue latency — or it **ran** slowly once it started — that's execution time. Before you add workers, tune threads, or optimize a query, measure which of the two is actually high. Fixing execution time when the problem is latency (or the reverse) is how afternoons disappear.
 
 The trap is that "my jobs are slow" *feels* like one problem. It isn't. A job sitting in the queue for 40 seconds and then running in 200ms is a completely different incident from a job picked up instantly that then takes 40 seconds to run — even though a user watching the result sees the same 40-second delay. This article is a diagnostic method: split the number first, then follow the correct branch. It stays inside Rails, Sidekiq, and Solid Queue, and it leans on built-in tools, not a paid APM.
-
-## Table of contents
-
-- [Queue latency vs. execution time: the split that changes everything](#queue-latency-vs-execution-time-the-split-that-changes-everything)
-- [Measure the split before you guess](#measure-the-split-before-you-guess)
-- [When latency is high: the job waited](#when-latency-is-high-the-job-waited)
-- [When execution is high: the job ran slowly](#when-execution-is-high-the-job-ran-slowly)
-- [A debugging workflow](#a-debugging-workflow)
-- [Production considerations](#production-considerations)
-- [Key takeaways](#key-takeaways)
-- [FAQ](#faq)
 
 ## Queue latency vs. execution time: the split that changes everything
 

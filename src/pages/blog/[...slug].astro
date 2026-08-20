@@ -30,11 +30,13 @@ type Props = {
 };
 
 const { post, prevPost, nextPost } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 ---
 
 <BlogPost
 	{...post.data}
+	id={post.id}
+	headings={headings}
 	readingTime={readingTime(post.body)}
 	prevPost={prevPost}
 	nextPost={nextPost}

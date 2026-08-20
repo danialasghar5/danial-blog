@@ -8,13 +8,13 @@ const svg = `<svg viewBox="0 0 840 250" xmlns="http://www.w3.org/2000/svg" role=
   <desc id="a1d">Sidekiq: the app pushes jobs into Redis and workers block-pop them, a push model. Solid Queue: the app writes jobs into database tables and workers poll those tables on an interval, a poll model.</desc>
   <style>
     .box{fill:currentColor;fill-opacity:.04;stroke:currentColor;stroke-opacity:.3;stroke-width:1.5}
-    .store-sk{fill:#c47a63;fill-opacity:.06;stroke:#c47a63;stroke-width:1.6}
-    .store-sq{fill:#86bfa5;fill-opacity:.06;stroke:#86bfa5;stroke-width:1.6}
+    .store-sk{fill:var(--dg-hazard);fill-opacity:.06;stroke:var(--dg-hazard);stroke-width:1.6}
+    .store-sq{fill:var(--dg-accent);fill-opacity:.06;stroke:var(--dg-accent);stroke-width:1.6}
     .l{fill:currentColor;font-size:13px}
     .cap{fill:currentColor;fill-opacity:.6;font-size:11.5px}
     .a{stroke:currentColor;stroke-opacity:.45;stroke-width:1.6;fill:none}
     .h{fill:currentColor;fill-opacity:.5}
-    .tag{font-size:12px}.tsk{fill:#c47a63}.tsq{fill:#86bfa5}
+    .tag{font-size:12px}.tsk{fill:var(--dg-hazard)}.tsq{fill:var(--dg-accent)}
     text{font-family:'JetBrains Mono', ui-monospace, monospace}
   </style>
   <!-- Sidekiq row -->
@@ -38,20 +38,16 @@ const svg = `<svg viewBox="0 0 840 250" xmlns="http://www.w3.org/2000/svg" role=
   <text class="cap" x="560" y="176" text-anchor="middle">poll + SKIP LOCKED</text>
 </svg>`;
 ---
-<figure class="svg-figure">
-	<Fragment set:html={svg} />
-	<figcaption>The root difference: Sidekiq pushes jobs into Redis and workers block-pop them; Solid Queue writes jobs to database tables and workers poll them. Everything downstream follows from this.</figcaption>
+<figure class="dg-figure">
+	<div class="dg-canvas">
+		<p class="dg-canvas-label">Sidekiq vs Solid Queue · push vs poll</p>
+		<Fragment set:html={svg} />
+	</div>
+	<figcaption class="dg-caption">The root difference: Sidekiq pushes jobs into Redis and workers block-pop them; Solid Queue writes jobs to database tables and workers poll them. Everything downstream follows from this.</figcaption>
 </figure>
 
 <style>
-	/* Fit the author's inline SVG to the reading column and keep it responsive
-	   (the SVG markup itself is unchanged). :global because the SVG is injected
-	   via set:html and doesn't carry the scoped attribute. */
-	.svg-figure { margin: var(--s-4) 0; }
-	.svg-figure :global(svg) { display: block; width: 100%; height: auto; color: var(--text); }
-	.svg-figure figcaption {
-		margin-top: .6rem; text-align: center;
-		font-family: var(--font-sans); font-size: var(--fs-sm);
-		color: var(--text-muted); line-height: var(--lh-snug);
-	}
+	/* Injected SVG (set:html) fills the shared diagram canvas; currentColor
+	   maps to the diagram label token so text stays theme-aware. */
+	.dg-canvas :global(svg) { display: block; width: 100%; height: auto; color: var(--dg-label); }
 </style>

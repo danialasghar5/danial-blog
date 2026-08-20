@@ -9,16 +9,16 @@ const svg = `<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role=
   <style>
     .n{fill:currentColor;fill-opacity:.04;stroke:currentColor;stroke-opacity:.30;stroke-width:1.5}
     .q{fill:currentColor;fill-opacity:.05;stroke:currentColor;stroke-opacity:.45;stroke-width:1.6}
-    .wait{fill:#c47a63;fill-opacity:.06;stroke:#c47a63;stroke-width:1.6}
-    .run{fill:#86bfa5;fill-opacity:.06;stroke:#86bfa5;stroke-width:1.6}
+    .wait{fill:var(--dg-hazard);fill-opacity:.06;stroke:var(--dg-hazard);stroke-width:1.6}
+    .run{fill:var(--dg-accent);fill-opacity:.06;stroke:var(--dg-accent);stroke-width:1.6}
     .l{fill:currentColor;font-size:14px}
     .lh{fill:currentColor;font-size:14.5px;font-weight:bold}
-    .cw{fill:#c47a63;font-size:13.5px}.cr{fill:#86bfa5;font-size:13.5px}
+    .cw{fill:var(--dg-hazard);font-size:13.5px}.cr{fill:var(--dg-accent);font-size:13.5px}
     .cap{fill:currentColor;fill-opacity:.7;font-size:10.5px}
     .a{stroke:currentColor;stroke-opacity:.4;stroke-width:1.6;fill:none}
-    .aw{stroke:#c47a63;stroke-width:1.7;fill:none}.ar{stroke:#86bfa5;stroke-width:1.7;fill:none}
-    .hn{fill:currentColor;fill-opacity:.5}.hw{fill:#c47a63}.hr{fill:#86bfa5}
-    .br{fill:#c47a63;fill-opacity:.85;font-size:12.5px}.bg{fill:#86bfa5;fill-opacity:.9;font-size:12.5px}
+    .aw{stroke:var(--dg-hazard);stroke-width:1.7;fill:none}.ar{stroke:var(--dg-accent);stroke-width:1.7;fill:none}
+    .hn{fill:currentColor;fill-opacity:.5}.hw{fill:var(--dg-hazard)}.hr{fill:var(--dg-accent)}
+    .br{fill:var(--dg-hazard);fill-opacity:.85;font-size:12.5px}.bg{fill:var(--dg-accent);fill-opacity:.9;font-size:12.5px}
     text{font-family:'JetBrains Mono', ui-monospace, monospace}
   </style>
 
@@ -62,20 +62,16 @@ const svg = `<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role=
   <text class="cr" x="550" y="426">&#8226; profile the perform</text>
 </svg>`;
 ---
-<figure class="svg-figure">
-	<Fragment set:html={svg} />
-	<figcaption>Measure queue latency first. High latency means the job waited — look at capacity, polling, the connection pool, and retries. Low latency with slow results means the job ran slowly — profile the perform for N+1 queries, long transactions, external calls, and CPU-bound work.</figcaption>
+<figure class="dg-figure">
+	<div class="dg-canvas">
+		<p class="dg-canvas-label">Background jobs · diagnosing a slow job</p>
+		<Fragment set:html={svg} />
+	</div>
+	<figcaption class="dg-caption">Measure queue latency first. High latency means the job waited — look at capacity, polling, the connection pool, and retries. Low latency with slow results means the job ran slowly — profile the perform for N+1 queries, long transactions, external calls, and CPU-bound work.</figcaption>
 </figure>
 
 <style>
-	/* Fit the author's inline SVG to the reading column and keep it responsive
-	   (the SVG markup itself is unchanged). :global because the SVG is injected
-	   via set:html and doesn't carry the scoped attribute. */
-	.svg-figure { margin: var(--s-4) 0; }
-	.svg-figure :global(svg) { display: block; width: 100%; height: auto; color: var(--text); }
-	.svg-figure figcaption {
-		margin-top: .6rem; text-align: center;
-		font-family: var(--font-sans); font-size: var(--fs-sm);
-		color: var(--text-muted); line-height: var(--lh-snug);
-	}
+	/* Injected SVG (set:html) fills the shared diagram canvas; currentColor
+	   maps to the diagram label token so text stays theme-aware. */
+	.dg-canvas :global(svg) { display: block; width: 100%; height: auto; color: var(--dg-label); }
 </style>

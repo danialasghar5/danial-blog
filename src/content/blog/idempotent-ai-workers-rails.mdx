@@ -3,10 +3,7 @@ title: "Designing Idempotent Background Workers for LLM Calls in Rails"
 seoTitle: "Idempotent Background Workers for LLM Calls in Rails"
 description: "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills."
 pubDate: 2026-07-07
-updatedDate: 2026-07-07
-canonicalURL: "https://danialasghar.com/blog/idempotent-ai-workers-rails/"
 ogImage: "/og/idempotent-ai-workers-rails.png"
-author: "Danial Asghar"
 category: "background-jobs"
 hasCustomSchema: true
 tags:
@@ -103,23 +100,6 @@ A support ticket comes in: *"I was double-charged $49 for my subscription, pleas
 The fix is **idempotency**: making a background worker safe to run more than once, so that a repeat run produces the same result and the same side effects as a single run — not a second OpenAI charge and not a different classification. A ticket about a duplicate charge, resolved by a system that duplicates its own work: that is the failure this post is about.
 
 Moving an LLM call out of the request path and behind a queue is the right call — it's the core decision in the [AI Support Ticket Triage Engine](/projects/ai-support-ticket-triage-engine), a service I built and open-sourced — and it keeps ticket ingestion fast — a `202 Accepted` in single-digit milliseconds in local measurement (the handler only inserts and enqueues), not a measured production SLA — instead of coupling it to a 1–10 second model call. But that queue changes the reliability contract in a way that's easy to miss: **the moment work runs in a background job, it runs *at least once*, not exactly once.** Every worker has to be safe to run more than one time. With an LLM in the loop, "more than once" isn't just a correctness bug — it's a billing line item and a data-consistency problem.
-
-<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
-  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
-  <ul style="margin:0; padding-left:1.1rem;">
-    <li><a href="#why-an-llm-makes-double-execution-worse">Why an LLM makes double-execution worse</a></li>
-    <li><a href="#what-idempotency-means-for-an-llm-worker">What idempotency means for an LLM worker</a></li>
-    <li><a href="#the-shipped-gate-status-based-idempotency-on-the-uuid">The shipped gate: status-based idempotency on the UUID</a></li>
-    <li><a href="#where-a-status-gate-isnt-enough-the-check-then-act-race">Where a status gate isn't enough: the check-then-act race</a></li>
-    <li><a href="#a-subtle-case-the-model-succeeded-the-write-didnt">A subtle case: the model succeeded, the write didn't</a></li>
-    <li><a href="#common-idempotency-mistakes">Common idempotency mistakes</a></li>
-    <li><a href="#tradeoffs">Tradeoffs</a></li>
-    <li><a href="#failure-modes">Failure modes</a></li>
-    <li><a href="#testing-and-monitoring-idempotent-workers">Testing and monitoring idempotent workers</a></li>
-    <li><a href="#whats-shipped-vs-whats-planned">What's shipped vs. what's planned</a></li>
-    <li><a href="#the-lesson">The lesson</a></li>
-  </ul>
-</nav>
 
 ## Why an LLM makes double-execution worse
 

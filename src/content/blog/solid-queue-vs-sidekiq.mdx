@@ -1,17 +1,11 @@
 ---
 title: "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)"
-slug: "solid-queue-vs-sidekiq"
 seoTitle: "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)"
 description: "Solid Queue vs Sidekiq isn't a throughput threshold — it's about where your complexity lives and whether your database can absorb the queue. A decision framework."
-excerpt: "The Rails 8 default is Solid Queue, but \"use the default\" isn't a decision. Both are at-least-once Active Job backends; the real choice is where you want operational complexity to live — Redis or your database — and whether your DB can take the load. Here's the framework."
-canonicalURL: "https://danialasghar.com/blog/solid-queue-vs-sidekiq/"
-ogTitle: "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)"
-ogDescription: "Not a feature table — a decision framework built on real constraints: Redis dependency, database load, pickup latency, and operational maturity."
 ogImage: "/og/solid-queue-vs-sidekiq.png"
 pubDate: 2026-08-17
-updatedDate: 2026-08-17
-author: "Danial Asghar"
 category: "background-jobs"
+hasCustomSchema: true
 tags:
   - "solid-queue"
   - "sidekiq"
@@ -24,21 +18,60 @@ draft: false
 import PushVsPollComparison from '../../components/diagram/figures/PushVsPollComparison.astro';
 import SolidQueueSidekiqMatrix from '../../components/diagram/figures/SolidQueueSidekiqMatrix.astro';
 
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)",
+  "description": "Solid Queue vs Sidekiq isn't a throughput threshold — it's about where your complexity lives and whether your database can absorb the queue. A decision framework.",
+  "image": "https://danialasghar.com/og/solid-queue-vs-sidekiq.png",
+  "datePublished": "2026-08-17",
+  "dateModified": "2026-08-17",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/" },
+  "keywords": ["solid queue vs sidekiq", "rails 8 background jobs", "sidekiq vs solid queue", "solid queue redis", "active job backend"],
+  "articleSection": "Background Jobs & Async",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is Solid Queue production-ready?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It's the default Active Job backend in new Rails 8 apps, runs on PostgreSQL, MySQL, or SQLite, and handles real production workloads. The main things to plan for are database headroom (the queue adds write and connection load) and pickup latency (it polls rather than pushes)." } },
+    { "@type": "Question", "name": "Does Solid Queue replace Redis?", "acceptedAnswer": { "@type": "Answer", "text": "For background jobs, yes — it removes the need to run Redis solely as a job queue. But if you use Redis for caching, ActionCable, or rate limiting, those needs remain. And the queue's load doesn't vanish; it moves onto your database." } },
+    { "@type": "Question", "name": "Is Solid Queue as fast as Sidekiq?", "acceptedAnswer": { "@type": "Answer", "text": "For ordinary application workloads, its performance is typically sufficient. Sidekiq generally wins on raw pickup latency (push vs poll) and sustained high throughput (in-memory Redis). Rather than trust a benchmark, measure your own peak jobs/minute and p95 enqueue-to-start latency and compare against your requirements." } },
+    { "@type": "Question", "name": "Should I migrate from Sidekiq to Solid Queue?", "acceptedAnswer": { "@type": "Answer", "text": "Only when a constraint justifies it — you're dropping Redis, your database has headroom, or you want to shed paid features. A migration changes your failure semantics, monitoring, and runbook, so it's a real project. Don't switch just because the Rails 8 default changed." } },
+    { "@type": "Question", "name": "Does Solid Queue need a separate database?", "acceptedAnswer": { "@type": "Answer", "text": "No, but it can use one. On a shared database the queue competes with application queries for writes and connections; pointing Solid Queue at a dedicated database isolates that load and is a common choice once traffic is real." } },
+    { "@type": "Question", "name": "When is Sidekiq still the better choice?", "acceptedAnswer": { "@type": "Answer", "text": "When Redis is already in your stack (its marginal cost is near zero), when you need sub-100ms pickup latency, when you run sustained high throughput, when your primary database is already strained, or when you need paid features like batches or rate limiting." } }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)", "item": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/" }
+  ]
+}
+`}</script>
+
 The honest answer to "Solid Queue or Sidekiq?" is not a jobs-per-minute cutoff. Both are mature, at-least-once Active Job backends, and both run real production workloads. The decision is about *where you want your operational complexity to live* — in Redis or in your database — and *whether your database can absorb the queue's load*. On a new Rails 8 app, Solid Queue is the sensible default because it's already there and needs no extra service; you reach for Sidekiq when Redis is already in your stack, when pickup latency has to be minimal, or when you need paid features Solid Queue doesn't have.
 
 Rails 8 ships Solid Queue as the default, which means most teams now inherit a choice they never explicitly made. "It's the default" is a fine reason to *start* there, but it isn't a decision — and treating the question as a benchmark contest ("which is faster?") misses what actually determines the right answer for a given app. This article is a decision framework built on real constraints, not a feature table with a winner circled at the bottom. It stays vendor-neutral: the goal is to help you choose deliberately, not to crown one.
-
-## Table of contents
-
-- [What's actually different: Redis push vs database poll](#whats-actually-different-redis-push-vs-database-poll)
-- [The "no Redis" claim, examined](#the-no-redis-claim-examined)
-- [The decision framework](#the-decision-framework)
-- [The factor that usually decides it: is Redis already in your stack?](#the-factor-that-usually-decides-it-is-redis-already-in-your-stack)
-- [Measure your own numbers](#measure-your-own-numbers)
-- [Who should choose which](#who-should-choose-which)
-- [Before you switch](#before-you-switch)
-- [Key takeaways](#key-takeaways)
-- [FAQ](#faq)
 
 ## What's actually different: Redis push vs database poll
 

@@ -355,6 +355,23 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
    plugin in astro.config.mjs) instead of pushing the page sideways on mobile. */
 .table-scroll { overflow-x: auto; }
 
+/* ---- Heading anchors (rehype-autolink-headings, article prose only) ----
+   A quiet "#" that appears on heading hover/focus so a section can be deep-linked. */
+.prose :is(h2, h3, h4) { position: relative; }
+.prose .heading-anchor {
+	margin-left: .35rem;
+	color: var(--text-faint);
+	font-weight: 400;
+	text-decoration: none;
+	opacity: 0;
+	transition: opacity .15s ease, color .15s ease;
+}
+.prose :is(h2, h3, h4):hover > .heading-anchor,
+.prose .heading-anchor:focus-visible { opacity: 1; }
+.prose .heading-anchor:hover { color: var(--brand); }
+/* Touch devices can't hover — keep anchors faintly visible so they stay reachable. */
+@media (hover: none) { .prose .heading-anchor { opacity: .45; } }
+
 /* ==========================================================================
    Diagram system — theme-aware technical diagrams (see docs/diagrams.md)
    Every node/edge reads from the --dg-* tokens above, so a diagram renders as

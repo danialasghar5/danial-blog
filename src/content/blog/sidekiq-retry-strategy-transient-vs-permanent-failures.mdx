@@ -3,10 +3,7 @@ title: "Sidekiq Retry Strategy: Transient vs Permanent Failures"
 seoTitle: "Sidekiq Retry Strategy: Transient vs Permanent Failures"
 description: "Not every failed job should retry. A practical guide to Sidekiq retry strategy — backoff, error classification, the Dead Set, and when to stop."
 pubDate: 2026-07-30
-updatedDate: 2026-07-30
-canonicalURL: "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/"
 ogImage: "/og/sidekiq-retry-strategy.png"
-author: "Danial Asghar"
 category: "background-jobs"
 hasCustomSchema: true
 tags:
@@ -110,24 +107,6 @@ A good Sidekiq retry strategy retries only *transient* failures — timeouts, ra
 Sidekiq turns retries on by default: 25 attempts spread over about three weeks. That default is fine for a hobby app and quietly dangerous for a production one, because it treats every failure the same. A payment-gateway timeout and a malformed request both get 25 attempts — even though one will probably succeed on attempt two and the other will *never* succeed, no matter how many times you try.
 
 This article is about making that distinction on purpose. If you've already read [why background jobs run at least once](/blog/sidekiq-job-runs-twice-at-least-once-delivery/), you know retries are a feature, not a bug. Here we design the retry itself: what to retry, how to back off, when to stop, and where failed jobs should go.
-
-<nav class="toc" aria-label="Table of contents" style="border:1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); padding: var(--s-2) var(--s-3); margin: 0 0 var(--s-4);">
-  <p style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing:.06em; color: var(--text-muted); margin:0 0 var(--s-1); font-weight:600;">On this page</p>
-  <ul style="margin:0; padding-left:1.1rem;">
-    <li><a href="#the-two-kinds-of-failure">The two kinds of failure</a></li>
-    <li><a href="#why-the-default-sidekiq-retry-is-a-trap">Why the default Sidekiq retry is a trap</a></li>
-    <li><a href="#which-failures-to-retry-and-which-to-discard">Which failures to retry (and which to discard)</a></li>
-    <li><a href="#retrying-transient-failures-the-right-way">Retrying transient failures the right way</a></li>
-    <li><a href="#discarding-permanent-failures">Discarding permanent failures</a></li>
-    <li><a href="#exponential-backoff-and-jitter">Exponential backoff and jitter</a></li>
-    <li><a href="#where-dead-jobs-go-the-dead-set">Where dead jobs go: the Dead Set</a></li>
-    <li><a href="#retries-and-idempotency-go-together">Retries and idempotency go together</a></li>
-    <li><a href="#common-retry-mistakes">Common retry mistakes</a></li>
-    <li><a href="#key-takeaways">Key takeaways</a></li>
-    <li><a href="#faq">FAQ</a></li>
-    <li><a href="#conclusion">Conclusion</a></li>
-  </ul>
-</nav>
 
 ## The two kinds of failure
 

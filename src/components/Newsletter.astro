@@ -1,34 +1,153 @@
 ---
-// EDIT ME: replace YOURNAME with your Buttondown username (or swap for another provider).
-const action = 'https://buttondown.com/api/emails/embed-subscribe/YOURNAME';
+// Provider-agnostic newsletter signup, styled natively from the site's design
+// tokens (no MailerLite CSS/branding). Wiring lives in src/data/newsletter.ts.
+// The provider endpoint sends permissive CORS, so the browser POSTs directly
+// and reads the JSON result for real success/error states — no API key, no
+// server, fully static-deploy compatible.
+import { newsletter, newsletterLive } from '../data/newsletter';
 ---
-<section class="container block">
-  <div class="cta-box">
-    <h2>Get new posts by email</h2>
-    <p>Backend engineering write-ups — Rails, PostgreSQL, background processing, and AI systems. No spam, unsubscribe anytime.</p>
-    <form action={action} method="post" target="_blank">
-      <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
-      <button class="btn btn-primary" type="submit">Subscribe</button>
-    </form>
-  </div>
+<section class="container newsletter" aria-labelledby="nl-heading">
+	<div class="nl-inner">
+		<div class="nl-copy">
+			<h2 id="nl-heading" class="nl-title">Newsletter</h2>
+			<p class="nl-blurb">New technical articles, occasionally. No spam.</p>
+		</div>
+
+		{newsletterLive ? (
+			<form
+				class="nl-form"
+				id="nl-form"
+				action={newsletter.action}
+				method="post"
+				data-email-field={newsletter.emailField}
+				data-hidden={JSON.stringify(newsletter.hiddenFields)}
+				novalidate
+			>
+				<div class="nl-field">
+					<label class="sr-only" for="nl-email">Email address</label>
+					<input
+						id="nl-email"
+						type="email"
+						name={newsletter.emailField}
+						placeholder="you@example.com"
+						autocomplete="email"
+						required
+					/>
+					{/* Honeypot — hidden from people, tempting to bots. Real users leave it blank. */}
+					<input type="text" name="hp-name" class="nl-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+					<button type="submit" class="btn btn-primary nl-submit">Subscribe</button>
+				</div>
+				<p class="nl-status" id="nl-status" role="status" aria-live="polite"></p>
+			</form>
+		) : (
+			<div class="nl-fallback">
+				<a class="btn btn-secondary" href="/rss.xml">Subscribe via RSS</a>
+				<span class="nl-note">Email signup opening soon.</span>
+			</div>
+		)}
+	</div>
 </section>
+
 <style>
-  .block { padding-block: var(--s-6); }
-  .cta-box {
-    padding: var(--s-6) var(--s-4);
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--bg-subtle);
-  }
-  .cta-box h2 { margin: 0 0 .5rem; font-size: var(--fs-2xl); font-weight: 700; }
-  .cta-box p { color: var(--text-muted); margin: 0 auto var(--s-4); font-size: var(--fs-base); max-width: 48ch; }
-  form { display: flex; gap: .5rem; max-width: 460px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
-  input {
-    flex: 1; min-width: 240px; padding: .65rem 1rem;
-    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-    background: var(--card-bg); color: var(--text); outline: none;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+	.newsletter { padding-block: var(--s-8); }
+	.nl-inner {
+		display: grid; grid-template-columns: 1fr; gap: var(--s-3) var(--s-6);
+		align-items: center;
+		padding-top: var(--s-5); border-top: 1px solid var(--border);
+	}
+	@media (min-width: 820px) { .nl-inner { grid-template-columns: 1fr 1fr; } }
+
+	.nl-title { font-size: var(--fs-xl); font-weight: 700; margin: 0 0 var(--s-1); letter-spacing: var(--tracking-tight); }
+	.nl-blurb {
+		font-family: var(--font-prose);
+		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
+		margin: 0; max-width: 46ch;
+	}
+
+	.nl-form { min-width: 0; }
+	.nl-field { display: flex; gap: .5rem; flex-wrap: wrap; }
+	.nl-field input[type="email"] {
+		flex: 1 1 220px; min-width: 0;
+		font-family: var(--font-sans); font-size: var(--fs-base); color: var(--text);
+		padding: 10px 14px;
+		background: var(--card-bg);
+		border: 1px solid var(--border-strong); border-radius: var(--radius);
+		transition: border-color .15s ease, box-shadow .15s ease;
+	}
+	.nl-field input::placeholder { color: var(--text-faint); }
+	.nl-field input:hover { border-color: var(--text-faint); }
+	.nl-field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+	.nl-field input[aria-invalid="true"] { border-color: var(--dg-hazard); }
+
+	.nl-submit { flex: 0 0 auto; }
+	.nl-submit[disabled] { opacity: .6; cursor: progress; }
+
+	/* Honeypot: visually and structurally hidden, still submitted if a bot fills it. */
+	.nl-hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+	.nl-status {
+		font-size: var(--fs-sm); line-height: var(--lh-snug);
+		color: var(--text-muted); margin: var(--s-2) 0 0; min-height: 1.25em;
+	}
+	.nl-status.is-ok { color: var(--brand); font-weight: 500; }
+	.nl-status.is-error { color: var(--dg-hazard); }
+
+	.nl-fallback { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+	.nl-note { font-size: var(--fs-sm); color: var(--text-faint); }
 </style>
+
+<script>
+	// Native, provider-agnostic submit. Reads config off the form's data-*
+	// attributes, POSTs form-encoded, and reflects the JSON result. Without JS the
+	// form still POSTs normally (graceful degradation).
+	const form = document.getElementById('nl-form') as HTMLFormElement | null;
+	const status = document.getElementById('nl-status');
+	const input = document.getElementById('nl-email') as HTMLInputElement | null;
+	const button = form?.querySelector<HTMLButtonElement>('.nl-submit');
+
+	if (form && status && input && button) {
+		const emailField = form.dataset.emailField || 'fields[email]';
+		const hidden: Record<string, string> = JSON.parse(form.dataset.hidden || '{}');
+		const valid = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+
+		const set = (msg: string, kind: 'ok' | 'error' | '') => {
+			status.textContent = msg;
+			status.classList.toggle('is-ok', kind === 'ok');
+			status.classList.toggle('is-error', kind === 'error');
+			input.setAttribute('aria-invalid', String(kind === 'error'));
+		};
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			// Honeypot tripped → silently pretend success, don't call the provider.
+			if ((form.elements.namedItem('hp-name') as HTMLInputElement)?.value) {
+				set("Thanks — check your inbox to confirm your subscription.", 'ok');
+				return;
+			}
+			const email = input.value.trim();
+			if (!valid(email)) { set('Please enter a valid email address.', 'error'); input.focus(); return; }
+
+			const body = new URLSearchParams({ [emailField]: email, ...hidden });
+			button.disabled = true;
+			set('Subscribing…', '');
+			try {
+				const res = await fetch(form.action, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body,
+				});
+				const data = await res.json().catch(() => ({}));
+				if (res.ok && data.success !== false) {
+					form.reset();
+					set("Thanks — check your inbox to confirm your subscription.", 'ok');
+				} else {
+					set('Hmm, that didn’t go through. Please try again.', 'error');
+				}
+			} catch {
+				set('Couldn’t reach the server. Please try again, or subscribe via RSS.', 'error');
+			} finally {
+				button.disabled = false;
+			}
+		});
+	}
+</script>

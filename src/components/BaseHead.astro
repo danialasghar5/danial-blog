@@ -17,11 +17,15 @@ interface Props {
 	suppressArticleSchema?: boolean;
 	// Post-specific OG image (public/ path). Takes precedence over `image`/default.
 	ogImageUrl?: string;
+	// Article dates — used to stamp datePublished/dateModified on the generic
+	// Article fallback (articles with their own TechArticle schema pass none).
+	pubDate?: Date;
+	updatedDate?: Date;
 }
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-const { title, description, image, type = 'website', suppressArticleSchema = false, ogImageUrl } = Astro.props;
+const { title, description, image, type = 'website', suppressArticleSchema = false, ogImageUrl, pubDate, updatedDate } = Astro.props;
 // Post-specific OG image first, then an imported hero, then the branded default.
 const ogImage = ogImageUrl
 	? new URL(ogImageUrl, Astro.site)
@@ -58,6 +62,8 @@ if (type === 'article' && !suppressArticleSchema) {
 		image: ogImage.toString(),
 		url: Astro.url.toString(),
 		mainEntityOfPage: canonicalURL.toString(),
+		...(pubDate && { datePublished: pubDate.toISOString().slice(0, 10) }),
+		...((updatedDate ?? pubDate) && { dateModified: (updatedDate ?? pubDate).toISOString().slice(0, 10) }),
 		author: { '@id': `${site}#person` },
 		publisher: { '@id': `${site}#person` },
 	});

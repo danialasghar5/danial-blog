@@ -1,0 +1,72 @@
+---
+import FormattedDate from './FormattedDate.astro';
+import { readingTime } from '../utils/reading-time';
+import { getTopic } from '../data/topics';
+
+interface Props {
+	post: any;
+	compact?: boolean;
+}
+const { post, compact = false } = Astro.props;
+const { title, description, pubDate, tags = [], category } = post.data;
+const minutes = readingTime(post.body);
+const topic = getTopic(category);
+const label = topic?.title ?? tags[0];
+---
+<article class:list={['post-row', { compact }]} data-category={category ?? ''} data-tags={tags.join(',')}>
+	<a class="row-link" href={`/blog/${post.id}/`}>
+		<div class="row-main">
+			{label && <span class="row-topic">{label}</span>}
+			<h3 class="row-title">{title}</h3>
+			{!compact && <p class="row-dek">{description}</p>}
+		</div>
+		<div class="row-meta">
+			<FormattedDate date={pubDate} />
+			<span class="row-dot">·</span>
+			<span>{minutes}</span>
+		</div>
+	</a>
+</article>
+
+<style>
+	.post-row { border-top: 1px solid var(--border); }
+	.row-link {
+		display: grid; grid-template-columns: 1fr auto; gap: var(--s-1) var(--s-4);
+		align-items: baseline;
+		padding: var(--s-4) 0;
+		text-decoration: none; color: var(--text);
+	}
+	.compact .row-link { padding: var(--s-3) 0; }
+	.row-main { min-width: 0; }
+	.row-topic {
+		display: block; font-size: var(--fs-xs); font-weight: 600;
+		text-transform: uppercase; letter-spacing: var(--tracking-wide);
+		color: var(--brand); margin-bottom: .35rem;
+	}
+	.row-title {
+		font-family: var(--font-sans);
+		font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug);
+		letter-spacing: var(--tracking-tight); margin: 0;
+		transition: color .15s ease;
+	}
+	.compact .row-title { font-size: var(--fs-lg); }
+	.row-link:hover .row-title { color: var(--brand); }
+	.row-dek {
+		font-family: var(--font-prose);
+		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
+		margin: .5rem 0 0; max-width: 68ch;
+	}
+	.row-meta {
+		display: flex; align-items: baseline; gap: .4rem;
+		font-size: var(--fs-sm); color: var(--text-faint);
+		font-variant-numeric: tabular-nums; white-space: nowrap;
+		justify-self: end; text-align: right;
+	}
+	.row-dot { color: var(--text-faint); }
+
+	/* On narrow screens the date drops under the title, left-aligned. */
+	@media (max-width: 640px) {
+		.row-link { grid-template-columns: 1fr; }
+		.row-meta { justify-self: start; text-align: left; order: 3; margin-top: .5rem; }
+	}
+</style>
