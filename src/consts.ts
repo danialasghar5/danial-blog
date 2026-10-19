@@ -23,4 +23,4 @@ export const RESUME_URL = '';
 
 // Consulting booking link: a scheduler URL (Cal.com etc.) or a mailto:. Empty
 // string → the /services CTAs fall back to EMAIL instead of shipping a dead link.
-export const BOOKING_URL = 'mailto:danial@danialasghar.com?subject=Consulting%20Inquiry%20-%20danialasghar.com';
+export const BOOKING_URL = 'mailto:hello@danialasghar.com?subject=Consulting%20Inquiry%20-%20danialasghar.com';
