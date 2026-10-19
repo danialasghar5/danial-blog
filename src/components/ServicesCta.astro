@@ -1,0 +1,38 @@
+---
+// One-line, non-salesy end-of-post CTA routing to /services. The copy follows
+// the post's topic hub (its frontmatter `category`); anything unmapped gets the
+// general reliability line.
+interface Props {
+	category?: string;
+}
+
+const COPY: Record<string, string> = {
+	'background-jobs':
+		'If your queues are doing this in production, a Background Job Reliability Audit finds the root cause fast.',
+	'database-reliability': 'Debugging concurrency issues like this is what I do for teams in production.',
+};
+const DEFAULT_COPY = 'I help Rails teams fix exactly this kind of reliability problem in production.';
+
+const { category } = Astro.props;
+const copy = (category && COPY[category]) || DEFAULT_COPY;
+---
+
+<aside class="services-cta" aria-label="Consulting">
+	<p>{copy}</p>
+	<a class="btn btn-primary" href="/services">See how I can help <span aria-hidden="true">&rarr;</span></a>
+</aside>
+
+<style>
+	.services-cta {
+		display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+		gap: var(--s-2) var(--s-3);
+		padding: var(--s-3);
+		border: 1px solid var(--brand-ring); border-radius: var(--radius-lg);
+		background: var(--brand-soft);
+	}
+	.services-cta p {
+		flex: 1 1 320px; margin: 0;
+		font-size: var(--fs-base); line-height: var(--lh-normal); color: var(--text);
+	}
+	.services-cta .btn { flex: 0 0 auto; }
+</style>

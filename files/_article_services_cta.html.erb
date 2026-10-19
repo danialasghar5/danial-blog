@@ -1,0 +1,29 @@
+<%#
+  app/views/shared/_article_services_cta.html.erb
+
+  One-line, non-salesy contextual CTA routing to /services.
+  Pass a :variant to match the post's topic; defaults to reliability.
+
+    <%= render "shared/article_services_cta", variant: :sidekiq %>
+
+  variants: :reliability (default), :sidekiq, :postgres
+%>
+<%
+  variant ||= :reliability
+  copy = {
+    reliability: "I help Rails teams fix exactly this kind of reliability problem in production.",
+    sidekiq:     "If your queues are doing this in production, a Background Job Reliability Audit finds the root cause fast.",
+    postgres:    "Debugging concurrency issues like this is what I do for teams in production."
+  }.fetch(variant, "I help Rails teams fix exactly this kind of problem in production.")
+%>
+
+<aside class="not-prose my-12 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 sm:flex sm:items-center sm:justify-between sm:gap-4">
+  <p class="text-sm leading-relaxed text-zinc-300">
+    <%= copy %>
+  </p>
+  <a href="/services"
+     class="mt-3 inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-500/90 px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-emerald-400 sm:mt-0">
+    See how I can help
+    <span aria-hidden="true">&rarr;</span>
+  </a>
+</aside>

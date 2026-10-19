@@ -1,0 +1,236 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { NAME, BOOKING_URL, EMAIL } from '../consts';
+
+// ── EDIT ME ────────────────────────────────────────────────────────────────
+// `price` is shown as "Starting at …". Empty string = hidden (no placeholder
+// prices ever ship). Booking link lives in consts.ts (BOOKING_URL).
+const offers = [
+	{
+		name: 'Background Job Reliability Audit',
+		price: '$1,000',
+		summary:
+			'Why your jobs run twice, lose data, or pile up — diagnosed against your real code, with a prioritized remediation plan. Fixed scope, delivered in one week.',
+		includes: [
+			'Idempotency & duplicate-execution review',
+			'Retry, backoff & dead-set strategy',
+			'Prioritized, code-level fix plan',
+		],
+	},
+	{
+		name: 'Sidekiq / Solid Queue Scaling & Tuning',
+		price: '$2,000',
+		summary:
+			'Throughput, queue latency, connection-pool exhaustion, and retry-storm remediation for production queues under real load.',
+		includes: [
+			'Worker/thread & connection-pool sizing',
+			'Queue latency vs execution-time diagnosis',
+			'Backend selection & migration guidance',
+		],
+	},
+	{
+		name: 'Postgres Concurrency & Lock Review',
+		price: '$3,000',
+		summary: 'Race conditions, locking, and deadlocks — found and fixed before they corrupt data.',
+		includes: [
+			'Race-condition & locking audit',
+			'Transaction isolation & deadlock analysis',
+			'Safe-concurrency patterns for your schema',
+		],
+	},
+];
+
+// Proof strip — keep to claims you can verify today (GSC positions drift).
+const proof = {
+	ranking: 'Ranked #1–6',
+	featured: ['Ruby Weekly', 'RubyFlow'],
+};
+// ────────────────────────────────────────────────────────────────────────────
+
+const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent('Rails reliability inquiry')}`;
+const bookHref = BOOKING_URL || mailto;
+const bookExternal = BOOKING_URL.startsWith('http');
+
+const steps = [
+	'A short call to scope the problem and confirm fit.',
+	'A focused audit of your code, config, and production behavior.',
+	'A prioritized written report and the fixes that matter most.',
+];
+
+const site = Astro.site?.toString() ?? 'https://danialasghar.com/';
+const serviceJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Service',
+	serviceType: 'Rails Reliability Engineering Consulting',
+	provider: { '@id': `${site}#person` },
+	areaServed: 'Worldwide',
+	hasOfferCatalog: {
+		'@type': 'OfferCatalog',
+		name: 'Rails Reliability Services',
+		itemListElement: offers.map((o) => ({
+			'@type': 'Offer',
+			itemOffered: { '@type': 'Service', name: o.name, description: o.summary },
+		})),
+	},
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres | ${NAME}`}
+			description="Fixed-scope audits and tuning for production Rails: background-job reliability, Sidekiq/Solid Queue scaling, and Postgres concurrency reviews."
+		/>
+		<script type="application/ld+json" set:html={JSON.stringify(serviceJsonLd)} is:inline />
+	</head>
+	<body>
+		<Header />
+		<main id="main-content" class="container">
+			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Services' }]} />
+
+			<!-- Hero: the client's problem, not a job title -->
+			<section class="hero">
+				<p class="eyebrow">Rails Reliability Consulting</p>
+				<h1>Your Rails background jobs are double-charging customers, losing data, or backing up under load.</h1>
+				<p class="lede">
+					I find the root cause and give you a prioritized fix plan — fast, fixed-scope, and
+					grounded in the exact reliability work I <a href="/blog">write about</a>.
+				</p>
+				<a class="btn btn-primary big" href={bookHref} {...bookExternal && { target: '_blank', rel: 'noopener' }}>
+					{bookExternal ? 'Book a 20-min intro call' : 'Email me about your system'} <span aria-hidden="true">&rarr;</span>
+				</a>
+			</section>
+
+			<!-- Proof strip -->
+			<p class="proof">
+				{proof.ranking} on Google for <a href="/blog/solid-queue-vs-sidekiq/">Solid Queue vs Sidekiq</a> and
+				Sidekiq reliability · Featured in {proof.featured.join(' & ')}
+			</p>
+
+			<!-- Productized offers -->
+			<section class="block" aria-labelledby="offers-h">
+				<div class="section-head"><h2 id="offers-h">How I can help</h2></div>
+				<div class="offers">
+					{offers.map((o) => (
+						<article class="offer">
+							<div class="offer-head">
+								<h3>{o.name}</h3>
+								{o.price && <span class="price">Starting at {o.price}</span>}
+							</div>
+							<p class="offer-summary">{o.summary}</p>
+							<ul class="offer-list">{o.includes.map((i) => <li>{i}</li>)}</ul>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<!-- How it works -->
+			<section class="block" aria-labelledby="how-h">
+				<div class="section-head"><h2 id="how-h">How it works</h2></div>
+				<ol class="steps">
+					{steps.map((s, i) => (
+						<li>
+							<span class="step-n" aria-hidden="true">{i + 1}</span>
+							<p>{s}</p>
+						</li>
+					))}
+				</ol>
+			</section>
+
+			<!-- Who it's for -->
+			<section class="fit">
+				<div>
+					<h3 class="fit-yes">A good fit for</h3>
+					<p>Production Rails teams doing real volume, hitting reliability or concurrency issues under load.</p>
+				</div>
+				<div>
+					<h3 class="fit-no">Not a fit for</h3>
+					<p>Pre-launch MVPs or teams looking for generic Rails feature development.</p>
+				</div>
+			</section>
+
+			<!-- Final CTA -->
+			<section class="final">
+				<h2>Have a reliability problem in production?</h2>
+				<p>Tell me what's breaking. If I can help, I'll say how; if I can't, I'll point you to who can.</p>
+				<a class="btn btn-primary big" href={bookHref} {...bookExternal && { target: '_blank', rel: 'noopener' }}>
+					{bookExternal ? 'Book an intro call' : 'Email me'} <span aria-hidden="true">&rarr;</span>
+				</a>
+				{bookExternal && (
+					<p class="alt">Prefer email? <a href={mailto}>{EMAIL}</a></p>
+				)}
+			</section>
+		</main>
+		<Footer />
+
+		<style>
+			main { padding-block: var(--s-8) var(--s-4); }
+
+			.hero { max-width: 760px; padding-bottom: var(--s-5); }
+			.hero h1 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight); margin: 0 0 var(--s-2); }
+			.lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-4); max-width: 62ch; }
+			.lede a, .proof a, .alt a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+			.lede a:hover, .proof a:hover, .alt a:hover { color: var(--brand); text-decoration-color: var(--brand); }
+			.big { padding: .8rem 1.4rem; font-size: var(--fs-base); }
+
+			.proof {
+				margin: 0; padding: var(--s-2) 0;
+				border-block: 1px solid var(--border);
+				font-size: var(--fs-sm); color: var(--text-muted);
+			}
+
+			.block { padding-top: var(--s-6); }
+
+			.offers { display: grid; gap: var(--s-3); grid-template-columns: 1fr; }
+			@media (min-width: 900px) { .offers { grid-template-columns: repeat(3, 1fr); } }
+			.offer {
+				display: flex; flex-direction: column; gap: var(--s-2);
+				padding: var(--s-3);
+				background: var(--card-bg);
+				border: 1px solid var(--border); border-radius: var(--radius-lg);
+				transition: border-color .15s ease;
+			}
+			.offer:hover { border-color: var(--brand-ring); }
+			.offer-head { display: flex; flex-direction: column; gap: .35rem; }
+			.offer h3 { font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-snug); margin: 0; }
+			.price { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--brand); }
+			.offer-summary { margin: 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: var(--lh-normal); }
+			.offer-list { margin: auto 0 0; padding: var(--s-2) 0 0; border-top: 1px solid var(--border); list-style: none; display: flex; flex-direction: column; gap: .4rem; }
+			.offer-list li { font-size: var(--fs-sm); color: var(--text); padding-left: 1.1rem; position: relative; }
+			.offer-list li::before { content: '✓'; position: absolute; left: 0; color: var(--brand); font-weight: 700; }
+
+			.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); grid-template-columns: 1fr; }
+			@media (min-width: 720px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+			.steps li { display: flex; gap: var(--s-2); align-items: flex-start; }
+			.step-n {
+				flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+				width: 32px; height: 32px; border-radius: 50%;
+				border: 1px solid var(--brand-ring); background: var(--brand-soft);
+				font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--brand);
+			}
+			.steps p { margin: .25rem 0 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: var(--lh-normal); }
+
+			.fit {
+				margin-top: var(--s-6);
+				display: grid; gap: var(--s-3); grid-template-columns: 1fr;
+				padding: var(--s-3);
+				background: var(--bg-subtle);
+				border: 1px solid var(--border); border-radius: var(--radius-lg);
+			}
+			@media (min-width: 720px) { .fit { grid-template-columns: 1fr 1fr; } }
+			.fit h3 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin: 0 0 .4rem; }
+			.fit-yes { color: var(--brand); }
+			.fit-no { color: var(--text-faint); }
+			.fit p { margin: 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: var(--lh-normal); }
+
+			.final { margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--border); text-align: center; }
+			.final h2 { font-size: var(--fs-2xl); margin: 0 0 var(--s-1); letter-spacing: var(--tracking-tight); }
+			.final > p { color: var(--text-muted); max-width: 52ch; margin: 0 auto var(--s-3); line-height: var(--lh-normal); }
+			.alt { margin-top: var(--s-2) !important; font-size: var(--fs-sm); }
+		</style>
+	</body>
+</html>

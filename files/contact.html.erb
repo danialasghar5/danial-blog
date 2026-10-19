@@ -1,0 +1,12 @@
+<%# app/views/pages/contact.html.erb %>
+<main class="mx-auto max-w-xl px-5 py-14">
+  <h1 class="text-2xl font-bold text-zinc-100">Get in touch</h1>
+  <p class="mt-2 text-zinc-400">Tell me what's breaking in production. I reply within 1–2 business days.</p>
+  <% if notice %><p class="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] p-3 text-sm text-emerald-200"><%= notice %></p><% end %>
+  <%= form_with url: contact_path, method: :post, class: "mt-6 space-y-4" do |f| %>
+    <div><%= f.label :name, class: "block text-sm text-zinc-400" %><%= f.text_field :name, required: true, class: "mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none" %></div>
+    <div><%= f.label :email, class: "block text-sm text-zinc-400" %><%= f.email_field :email, required: true, class: "mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none" %></div>
+    <div><%= f.label :message, class: "block text-sm text-zinc-400" %><%= f.text_area :message, rows: 5, required: true, class: "mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none" %></div>
+    <%= f.submit "Send inquiry", class: "rounded-lg bg-emerald-500 px-5 py-2.5 font-medium text-zinc-950 hover:bg-emerald-400 cursor-pointer" %>
+  <% end %>
+</main>

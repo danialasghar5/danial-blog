@@ -19,6 +19,9 @@ const blog = defineCollection({
 			title: z.string(),
 			// Optional keyword-first title for the HTML <title>/SEO (falls back to title).
 			seoTitle: z.string().optional(),
+			// Optional CTR-tuned meta description (falls back to description, which
+			// is also the on-page subtitle).
+			seoDescription: z.string().optional(),
 			// Post-specific OG image path (public/), falls back to the branded default.
 			ogImage: z.string().optional(),
 			description: z.string(),

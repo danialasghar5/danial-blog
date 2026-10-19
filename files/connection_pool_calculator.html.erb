@@ -1,0 +1,205 @@
+<%# app/views/tools/connection_pool_calculator.html.erb %>
+<%#
+  100% client-side. No network calls. Dark + Tailwind, house palette (emerald/clay).
+  Targets "sidekiq connection pool limits" / "rails puma database pool".
+%>
+
+<main class="mx-auto max-w-3xl px-5 py-14">
+  <header class="mb-8">
+    <p class="mb-3 font-mono text-xs uppercase tracking-widest text-emerald-400">Developer Tools</p>
+    <h1 class="text-3xl font-bold text-zinc-100">Sidekiq &amp; Puma Connection Pool Calculator</h1>
+    <p class="mt-3 text-zinc-400">
+      Size your Rails database pool against Puma threads and Sidekiq concurrency —
+      and see before you deploy whether you'll hit
+      <code class="rounded bg-zinc-800 px-1 py-0.5 text-sm text-zinc-300">ActiveRecord::ConnectionTimeoutError</code>
+      or exhaust Postgres connections.
+    </p>
+  </header>
+
+  <!-- Calculator -->
+  <section class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+    <div class="grid gap-5 sm:grid-cols-2">
+      <% [
+        ["Puma workers (processes)", "puma_workers", 2],
+        ["Puma threads per worker",  "puma_threads", 5],
+        ["Sidekiq processes",        "sidekiq_processes", 1],
+        ["Sidekiq concurrency (threads)", "sidekiq_concurrency", 10],
+        ["DB pool size (database.yml)", "db_pool", 5],
+        ["Postgres max_connections", "db_max", 100]
+      ].each do |label, id, default| %>
+        <label class="block">
+          <span class="text-sm text-zinc-400"><%= label %></span>
+          <input type="number" min="1" id="<%= id %>" value="<%= default %>"
+                 class="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none" />
+        </label>
+      <% end %>
+    </div>
+
+    <!-- Live verdict -->
+    <div id="verdict" class="mt-6 rounded-lg border p-4 text-sm"></div>
+
+    <!-- Recommendation + copy -->
+    <div class="mt-4 rounded-lg bg-zinc-950 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wide text-zinc-500">Recommended config/database.yml</span>
+        <button id="copyBtn" class="rounded bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700">Copy</button>
+      </div>
+      <pre id="snippet" class="mt-2 overflow-x-auto font-mono text-xs text-emerald-300"></pre>
+    </div>
+  </section>
+
+  <!-- Funnel links -->
+  <div class="mt-5 flex flex-wrap gap-4 text-sm">
+    <a href="/blog/why-background-jobs-are-slow" class="text-emerald-400 hover:underline">Why this happens &rarr;</a>
+    <a href="/services" class="text-emerald-400 hover:underline">Struggling with this in production? &rarr;</a>
+  </div>
+
+  <!-- Below-the-fold SEO content (this is what ranks) -->
+  <article class="prose prose-invert mt-14 max-w-none">
+    <h2>How to size your Sidekiq connection pool</h2>
+    <p>
+      Every thread that runs a database query needs its own connection from the Rails pool.
+      In a Rails app that means two separate pools to reason about: your web process (Puma)
+      and your worker process (Sidekiq). The pool size is set per process in
+      <code>config/database.yml</code>, and the single most common production error —
+      <em>could not obtain a connection from the pool</em> — happens when a process runs
+      more threads than its pool has connections.
+    </p>
+
+    <h2>The rule: pool size must cover your threads</h2>
+    <p>
+      For the web process, your pool must be at least your Puma thread count. For the worker
+      process, your pool must be at least your Sidekiq concurrency. On Solid Queue the same
+      idea applies, with the guidance to keep worker threads at or below your pool size minus
+      two — two connections are reserved for the queue's own polling and heartbeat. A good
+      default is to set the pool to your thread count plus a small amount of headroom.
+    </p>
+
+    <h2>Don't exceed Postgres max_connections</h2>
+    <p>
+      The second failure mode is global: the sum of all connections across every Puma worker
+      and every Sidekiq process can exceed Postgres's <code>max_connections</code> ceiling.
+      When that happens, new connection attempts are refused database-wide. If your peak
+      total approaches that ceiling, the usual fix is a connection pooler like PgBouncer in
+      front of Postgres, or lowering per-process concurrency.
+    </p>
+
+    <h2>Frequently asked questions</h2>
+    <h3>How many connections does Sidekiq need?</h3>
+    <p>
+      One per running worker thread. If Sidekiq concurrency is 10, its process needs a pool
+      of at least 10 (plus a little headroom) so no job stalls waiting to check out a connection.
+    </p>
+    <h3>Should Puma and Sidekiq share the same pool size?</h3>
+    <p>
+      No. They're separate processes with separate pools. Size each to its own thread count —
+      Puma threads for the web pool, Sidekiq concurrency for the worker pool — which is often
+      different numbers.
+    </p>
+    <h3>What causes ActiveRecord::ConnectionTimeoutError?</h3>
+    <p>
+      A thread asked the pool for a connection and none was free within the timeout. Almost
+      always it means the pool is smaller than the number of threads contending for it —
+      a configuration issue, not a database fault.
+    </p>
+  </article>
+</main>
+
+<%# FAQ schema for the content above %>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How many connections does Sidekiq need?",
+      "acceptedAnswer": { "@type": "Answer", "text": "One per running worker thread. If Sidekiq concurrency is 10, its process needs a pool of at least 10 plus a little headroom so no job stalls waiting to check out a connection." }
+    },
+    {
+      "@type": "Question",
+      "name": "Should Puma and Sidekiq share the same pool size?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. They are separate processes with separate pools. Size each to its own thread count: Puma threads for the web pool, Sidekiq concurrency for the worker pool." }
+    },
+    {
+      "@type": "Question",
+      "name": "What causes ActiveRecord::ConnectionTimeoutError?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A thread asked the pool for a connection and none was free within the timeout. It almost always means the pool is smaller than the number of threads contending for it, which is a configuration issue rather than a database fault." }
+    }
+  ]
+}
+</script>
+
+<%# SoftwareApplication schema for the app rich result %>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Sidekiq & Puma Connection Pool Calculator",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var ids = ["puma_workers","puma_threads","sidekiq_processes","sidekiq_concurrency","db_pool","db_max"];
+  var el = {}; ids.forEach(function (id) { el[id] = document.getElementById(id); });
+  var verdict = document.getElementById("verdict");
+  var snippet = document.getElementById("snippet");
+
+  function val(id) { var n = parseInt(el[id].value, 10); return (isNaN(n) || n < 1) ? 1 : n; }
+
+  function compute() {
+    var pumaW = val("puma_workers"), pumaT = val("puma_threads");
+    var skP = val("sidekiq_processes"), skC = val("sidekiq_concurrency");
+    var pool = val("db_pool"), dbMax = val("db_max");
+
+    // A pool must cover the threads in its own process. Headroom of 2 is a safe default.
+    var minWebPool = pumaT + 2;
+    var minWorkerPool = skC + 2;
+    var recommendedPool = Math.max(minWebPool, minWorkerPool);
+
+    // Peak connections across ALL processes (worst case: every thread active).
+    var totalPeak = (pumaW * pumaT) + (skP * skC);
+
+    var problems = [];
+    if (pool < pumaT)  problems.push("Web pool (" + pool + ") is smaller than Puma threads (" + pumaT + ") — web requests will hit ConnectionTimeoutError.");
+    if (pool < skC)    problems.push("Worker pool (" + pool + ") is smaller than Sidekiq concurrency (" + skC + ") — jobs will stall waiting for a connection.");
+    if (totalPeak > dbMax) problems.push("Peak connections (" + totalPeak + ") can exceed Postgres max_connections (" + dbMax + ") — add PgBouncer or lower concurrency.");
+
+    if (problems.length === 0) {
+      verdict.className = "mt-6 rounded-lg border border-emerald-500/40 bg-emerald-500/[0.06] p-4 text-sm text-emerald-200";
+      verdict.innerHTML = "&#10003; Safe. Pool covers your threads, and peak connections (" +
+        totalPeak + ") stay within Postgres's limit of " + dbMax + ".";
+    } else {
+      verdict.className = "mt-6 rounded-lg border p-4 text-sm";
+      verdict.style.borderColor = "rgba(196,122,99,0.5)";
+      verdict.style.background = "rgba(196,122,99,0.08)";
+      verdict.style.color = "#e0aa98";
+      verdict.innerHTML = "&#10007; Risk:<ul class='mt-2 list-disc pl-5 space-y-1'>" +
+        problems.map(function (p) { return "<li>" + p + "</li>"; }).join("") + "</ul>";
+    }
+
+    snippet.textContent =
+      "production:\n" +
+      "  adapter: postgresql\n" +
+      "  # set pool >= threads in THIS process (web or worker)\n" +
+      "  pool: <%%= ENV.fetch(\"RAILS_MAX_THREADS\") { " + recommendedPool + " } %%>\n" +
+      "  # peak across all processes: " + totalPeak + " / " + dbMax + " Postgres connections";
+  }
+
+  ids.forEach(function (id) { el[id].addEventListener("input", compute); });
+
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    navigator.clipboard.writeText(snippet.textContent).then(function () {
+      var b = document.getElementById("copyBtn");
+      b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500);
+    });
+  });
+
+  compute();
+})();
+</script>
