@@ -85,11 +85,11 @@ const isActive = (link) =>
   .header-inner {
     max-width: var(--container);
     margin-inline: auto;
-    padding-inline: var(--s-3);
+    padding-inline: var(--space-6);
     height: var(--header-h);
     display: flex;
     align-items: center;
-    gap: var(--s-2);
+    gap: var(--space-4);
   }
 
   /* Brand */
@@ -116,7 +116,7 @@ const isActive = (link) =>
   .nav-link.active { color: var(--brand); font-weight: 600; background: var(--brand-soft); }
 
   /* Actions */
-  .actions { display: flex; align-items: center; gap: .5rem; margin-left: var(--s-2); }
+  .actions { display: flex; align-items: center; gap: .5rem; margin-left: var(--space-4); }
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 38px; height: 38px; border-radius: var(--radius-sm);
@@ -139,11 +139,11 @@ const isActive = (link) =>
   .nav-mobile { display: none; border-top: 1px solid var(--border); background: var(--bg); }
   .nav-mobile ul {
     list-style: none; margin: 0;
-    padding: var(--s-1) var(--s-3) var(--s-3);
+    padding: var(--space-2) var(--space-6) var(--space-6);
     display: flex; flex-direction: column; gap: .15rem;
   }
   .nav-mobile .nav-link { padding: .8rem .75rem; font-size: 1rem; }
-  .cta-mobile { margin-top: var(--s-1); width: 100%; }
+  .cta-mobile { margin-top: var(--space-2); width: 100%; }
 
   @media (max-width: 780px) {
     .nav-desktop, .cta-desktop { display: none; }

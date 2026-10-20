@@ -1,35 +1,22 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Page from '../layouts/Page.astro';
+import PageHeader from '../components/PageHeader.astro';
 import Projects from '../components/Projects.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { SITE_TITLE } from '../consts';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={`Projects — ${SITE_TITLE}`} description="Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS." />
-	</head>
-	<body>
-		<Header />
-		<main id="main-content" class="container">
-			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Projects' }]} />
-			<div class="projects-header">
-				<p class="eyebrow">Portfolio</p>
-				<h1 class="projects-title">Things I've built</h1>
-				<p class="projects-subtitle">A selection of applications, tools, and SaaS extensions I've designed, built, and shipped to production.</p>
-			</div>
-			<Projects showAll={true} withHeader={false} />
-		</main>
-		<Footer />
+<Page title={`Projects — ${SITE_TITLE}`} description="Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS." mainClass="container">
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Projects' }]} />
+	<PageHeader class="projects-header" eyebrow="Portfolio" title="Things I've built">
+		<p class="page-lede projects-subtitle">A selection of applications, tools, and SaaS extensions I've designed, built, and shipped to production.</p>
+	</PageHeader>
+	<Projects showAll={true} withHeader={false} />
+</Page>
 
-		<style>
-			main { padding-block: var(--s-6) 0; }
-			.projects-header { padding-bottom: var(--s-4); border-bottom: 1px solid var(--border); }
-			.projects-title { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-1); }
-			.projects-subtitle { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; max-width: 62ch; }
-		</style>
-	</body>
-</html>
+<style>
+	main { padding-block: var(--space-12) 0; }
+	.projects-header { padding-bottom: var(--space-8); border-bottom: 1px solid var(--border); }
+	.projects-header :global(.page-title) { margin-bottom: var(--space-2); }
+	.projects-subtitle { max-width: 62ch; }
+</style>

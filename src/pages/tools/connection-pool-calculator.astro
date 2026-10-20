@@ -1,7 +1,6 @@
 ---
-import BaseHead from '../../components/BaseHead.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
+import Page from '../../layouts/Page.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { NAME } from '../../consts';
 
@@ -59,259 +58,242 @@ const jsonLd = [
 ];
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead
-			title={`Sidekiq Connection Pool Calculator — Fix Pool Exhaustion | ${NAME}`}
-			description="Free calculator: size your Rails database pool against Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres connection exhaustion."
-		/>
+<Page title={`Sidekiq Connection Pool Calculator — Fix Pool Exhaustion | ${NAME}`}
+	description="Free calculator: size your Rails database pool against Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres connection exhaustion." mainClass="container">
+	<Fragment slot="head">
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
-	</head>
-	<body>
-		<Header />
-		<main id="main-content" class="container">
-			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools' }, { label: 'Connection Pool Calculator' }]} />
+	</Fragment>
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools' }, { label: 'Connection Pool Calculator' }]} />
 
-			<header class="tool-header">
-				<p class="eyebrow">Developer Tools</p>
-				<h1>{TITLE}</h1>
-				<p class="lede">
-					Size your Rails database pool against Puma threads and Sidekiq concurrency — and see
-					before you deploy whether you'll hit <code>ActiveRecord::ConnectionTimeoutError</code>
-					or exhaust Postgres connections. Runs entirely in your browser.
-				</p>
-			</header>
+	<PageHeader class="tool-header" eyebrow="Developer Tools" title={TITLE}>
+		<p class="page-lede lede">
+			Size your Rails database pool against Puma threads and Sidekiq concurrency — and see
+			before you deploy whether you'll hit <code>ActiveRecord::ConnectionTimeoutError</code>
+			or exhaust Postgres connections. Runs entirely in your browser.
+		</p>
+	</PageHeader>
 
-			<section class="calc" aria-label="Calculator">
-				<div class="fields">
-					{fields.map((f) => (
-						<label class="field">
-							<span>{f.label}</span>
-							<input type="number" inputmode="numeric" min="1" step="1" id={f.id} value={f.value} />
-						</label>
-					))}
-				</div>
+	<section class="calc" aria-label="Calculator">
+		<div class="fields">
+			{fields.map((f) => (
+				<label class="field">
+					<span>{f.label}</span>
+					<input type="number" inputmode="numeric" min="1" step="1" id={f.id} value={f.value} />
+				</label>
+			))}
+		</div>
 
-				<div id="verdict" class="verdict" role="status" aria-live="polite"></div>
+		<div id="verdict" class="verdict" role="status" aria-live="polite"></div>
 
-				<div class="snippet">
-					<div class="snippet-head">
-						<span>Recommended config/database.yml</span>
-						<button id="copy-btn" class="btn btn-secondary btn-sm" type="button">Copy</button>
-					</div>
-					<pre id="snippet"></pre>
-				</div>
-			</section>
+		<div class="snippet">
+			<div class="snippet-head">
+				<span>Recommended config/database.yml</span>
+				<button id="copy-btn" class="btn btn-secondary btn-sm" type="button">Copy</button>
+			</div>
+			<pre id="snippet"></pre>
+		</div>
+	</section>
 
-			<nav class="funnel" aria-label="Related">
-				<a href="/blog/why-background-jobs-are-slow/">Why this happens &rarr;</a>
-				<a href="/services">Struggling with this in production? &rarr;</a>
-			</nav>
+	<nav class="funnel" aria-label="Related">
+		<a href="/blog/why-background-jobs-are-slow/">Why this happens &rarr;</a>
+		<a href="/services">Struggling with this in production? &rarr;</a>
+	</nav>
 
-			<!-- Below-the-fold content: answers the search intent this page targets. -->
-			<article class="content">
-				<h2>How to size your Sidekiq connection pool</h2>
-				<p>
-					Every thread that runs a database query needs its own connection from the Rails pool.
-					In a Rails app that means two separate pools to reason about: your web process (Puma)
-					and your worker process (Sidekiq). The pool size is set per process in
-					<code>config/database.yml</code>, and the single most common production error —
-					<em>could not obtain a connection from the pool</em> — happens when a process runs
-					more threads than its pool has connections.
-				</p>
+	<!-- Below-the-fold content: answers the search intent this page targets. -->
+	<article class="content prose">
+		<h2>How to size your Sidekiq connection pool</h2>
+		<p>
+			Every thread that runs a database query needs its own connection from the Rails pool.
+			In a Rails app that means two separate pools to reason about: your web process (Puma)
+			and your worker process (Sidekiq). The pool size is set per process in
+			<code>config/database.yml</code>, and the single most common production error —
+			<em>could not obtain a connection from the pool</em> — happens when a process runs
+			more threads than its pool has connections.
+		</p>
 
-				<h2>The rule: pool size must cover your threads</h2>
-				<p>
-					For the web process, your pool must be at least your Puma thread count. For the worker
-					process, your pool must be at least your Sidekiq concurrency. On Solid Queue the same
-					idea applies, with the guidance to keep worker threads at or below your pool size minus
-					two — two connections are reserved for the queue's own polling and heartbeat. A good
-					default is to set the pool to your thread count plus a small amount of headroom.
-				</p>
-				<p>
-					A common trap: the default Rails <code>database.yml</code> sizes the pool from
-					<code>RAILS_MAX_THREADS</code>. If that variable is set to your Puma thread count and
-					your Sidekiq process inherits it, the worker gets a web-sized pool. Size the pool from a
-					variable you set per process — or give it a default large enough for the biggest one.
-				</p>
+		<h2>The rule: pool size must cover your threads</h2>
+		<p>
+			For the web process, your pool must be at least your Puma thread count. For the worker
+			process, your pool must be at least your Sidekiq concurrency. On Solid Queue the same
+			idea applies, with the guidance to keep worker threads at or below your pool size minus
+			two — two connections are reserved for the queue's own polling and heartbeat. A good
+			default is to set the pool to your thread count plus a small amount of headroom.
+		</p>
+		<p>
+			A common trap: the default Rails <code>database.yml</code> sizes the pool from
+			<code>RAILS_MAX_THREADS</code>. If that variable is set to your Puma thread count and
+			your Sidekiq process inherits it, the worker gets a web-sized pool. Size the pool from a
+			variable you set per process — or give it a default large enough for the biggest one.
+		</p>
 
-				<h2>Don't exceed Postgres max_connections</h2>
-				<p>
-					The second failure mode is global: the sum of all connections across every Puma worker
-					and every Sidekiq process can exceed Postgres's <code>max_connections</code> ceiling
-					(minus the few slots Postgres reserves for superusers — three by default). When that
-					happens, new connection attempts are refused database-wide. If your peak total
-					approaches that ceiling, the usual fix is a connection pooler like PgBouncer in front of
-					Postgres, or lowering per-process concurrency.
-				</p>
+		<h2>Don't exceed Postgres max_connections</h2>
+		<p>
+			The second failure mode is global: the sum of all connections across every Puma worker
+			and every Sidekiq process can exceed Postgres's <code>max_connections</code> ceiling
+			(minus the few slots Postgres reserves for superusers — three by default). When that
+			happens, new connection attempts are refused database-wide. If your peak total
+			approaches that ceiling, the usual fix is a connection pooler like PgBouncer in front of
+			Postgres, or lowering per-process concurrency.
+		</p>
 
-				<h2>Frequently asked questions</h2>
-				{faqs.map((f) => (
-					<>
-						<h3>{f.q}</h3>
-						<p>{f.a}</p>
-					</>
-				))}
-			</article>
-		</main>
-		<Footer />
+		<h2>Frequently asked questions</h2>
+		{faqs.map((f) => (
+			<>
+				<h3>{f.q}</h3>
+				<p>{f.a}</p>
+			</>
+		))}
+	</article>
 
-		<style>
-			main { padding-block: var(--s-8) var(--s-4); max-width: var(--container-prose); }
+	<script>
+		// 100% client-side — no network calls. Two failure modes:
+		//   1. per process: pool < threads in that process → ConnectionTimeoutError
+		//   2. global: peak connections across all processes > usable Postgres slots
+		const RESERVED = 3; // Postgres superuser_reserved_connections default
+		const HEADROOM = 2;
+		const ids = ['puma_workers', 'puma_threads', 'sidekiq_processes', 'sidekiq_concurrency', 'db_pool', 'db_max'] as const;
+		type Id = (typeof ids)[number];
 
-			.tool-header h1 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight); margin: 0 0 var(--s-2); }
-			.lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-5); max-width: 66ch; }
+		const inputs = Object.fromEntries(
+			ids.map((id) => [id, document.getElementById(id) as HTMLInputElement])
+		) as Record<Id, HTMLInputElement>;
+		const verdict = document.getElementById('verdict')!;
+		const snippet = document.getElementById('snippet')!;
+		const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
 
-			.calc {
-				padding: var(--s-3);
-				background: var(--card-bg);
-				border: 1px solid var(--border); border-radius: var(--radius-lg);
-			}
-			.fields { display: grid; gap: var(--s-2) var(--s-3); grid-template-columns: 1fr; }
-			@media (min-width: 620px) { .fields { grid-template-columns: 1fr 1fr; } }
-			.field { display: flex; flex-direction: column; gap: .35rem; }
-			.field span { font-size: var(--fs-sm); color: var(--text-muted); }
-			.field input {
-				font-family: var(--font-mono); font-size: var(--fs-base); color: var(--text);
-				padding: 9px 12px;
-				background: var(--bg);
-				border: 1px solid var(--border-strong); border-radius: var(--radius);
-				transition: border-color .15s ease, box-shadow .15s ease;
-			}
-			.field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+		const val = (id: Id) => {
+			const n = parseInt(inputs[id].value, 10);
+			return Number.isFinite(n) && n >= 1 ? n : 1;
+		};
 
-			.verdict {
-				margin-top: var(--s-3); padding: var(--s-2);
-				border: 1px solid var(--border); border-radius: var(--radius);
-				font-size: var(--fs-sm); line-height: var(--lh-normal);
-			}
-			.verdict.is-ok { border-color: var(--brand-ring); background: var(--brand-soft); color: var(--text); }
-			.verdict.is-risk { border-color: color-mix(in srgb, var(--dg-hazard) 45%, transparent); background: var(--dg-hazard-fill); color: var(--text); }
-			.verdict :global(strong) { font-weight: 700; }
-			.verdict.is-ok :global(strong) { color: var(--brand); }
-			.verdict.is-risk :global(strong) { color: var(--dg-hazard); }
-			.verdict :global(ul) { margin: .4rem 0 0; padding-left: 1.2rem; }
-			.verdict :global(li) { margin-bottom: .25rem; }
-			.verdict :global(.note) { margin: .4rem 0 0; color: var(--text-muted); }
+		function compute() {
+			const pumaW = val('puma_workers'), pumaT = val('puma_threads');
+			const skP = val('sidekiq_processes'), skC = val('sidekiq_concurrency');
+			const pool = val('db_pool'), dbMax = val('db_max');
 
-			.snippet { margin-top: var(--s-2); }
-			.snippet-head {
-				display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
-				margin-bottom: .5rem;
-				font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-faint); font-weight: 600;
-			}
-			.snippet pre { margin: 0; font-size: var(--fs-xs); white-space: pre; overflow-x: auto; }
+			const webPool = pumaT + HEADROOM;
+			const workerPool = skC + HEADROOM;
+			const recommendedPool = Math.max(webPool, workerPool);
+			// Worst case: every thread in every process holds a connection.
+			const totalPeak = pumaW * pumaT + skP * skC;
+			const usable = Math.max(dbMax - RESERVED, 0);
 
-			.funnel { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); margin-top: var(--s-3); font-size: var(--fs-sm); font-weight: 600; }
+			const problems: string[] = [];
+			if (pool < pumaT)
+				problems.push(`Web pool (${pool}) is smaller than Puma threads (${pumaT}) — web requests will hit ConnectionTimeoutError.`);
+			if (pool < skC)
+				problems.push(`Worker pool (${pool}) is smaller than Sidekiq concurrency (${skC}) — jobs will stall waiting for a connection.`);
+			if (totalPeak > usable)
+				problems.push(`Peak connections (${totalPeak}) exceed the ${usable} usable Postgres connections (max_connections ${dbMax} − ${RESERVED} reserved) — add PgBouncer or lower concurrency.`);
 
-			.content {
-				margin-top: var(--s-8); padding-top: var(--s-4);
-				border-top: 1px solid var(--border);
-				font-family: var(--font-prose); font-size: var(--fs-lg); line-height: var(--lh-prose);
-			}
-			.content h2 { font-family: var(--font-sans); font-size: var(--fs-2xl); font-weight: 700; letter-spacing: var(--tracking-tight); margin: var(--s-5) 0 var(--s-2); }
-			.content h2:first-child { margin-top: 0; }
-			.content h3 { font-family: var(--font-sans); font-size: var(--fs-xl); font-weight: 700; margin: var(--s-4) 0 var(--s-1); }
-			.content p { margin: 0 0 var(--s-3); }
-		</style>
-
-		<script>
-			// 100% client-side — no network calls. Two failure modes:
-			//   1. per process: pool < threads in that process → ConnectionTimeoutError
-			//   2. global: peak connections across all processes > usable Postgres slots
-			const RESERVED = 3; // Postgres superuser_reserved_connections default
-			const HEADROOM = 2;
-			const ids = ['puma_workers', 'puma_threads', 'sidekiq_processes', 'sidekiq_concurrency', 'db_pool', 'db_max'] as const;
-			type Id = (typeof ids)[number];
-
-			const inputs = Object.fromEntries(
-				ids.map((id) => [id, document.getElementById(id) as HTMLInputElement])
-			) as Record<Id, HTMLInputElement>;
-			const verdict = document.getElementById('verdict')!;
-			const snippet = document.getElementById('snippet')!;
-			const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
-
-			const val = (id: Id) => {
-				const n = parseInt(inputs[id].value, 10);
-				return Number.isFinite(n) && n >= 1 ? n : 1;
-			};
-
-			function compute() {
-				const pumaW = val('puma_workers'), pumaT = val('puma_threads');
-				const skP = val('sidekiq_processes'), skC = val('sidekiq_concurrency');
-				const pool = val('db_pool'), dbMax = val('db_max');
-
-				const webPool = pumaT + HEADROOM;
-				const workerPool = skC + HEADROOM;
-				const recommendedPool = Math.max(webPool, workerPool);
-				// Worst case: every thread in every process holds a connection.
-				const totalPeak = pumaW * pumaT + skP * skC;
-				const usable = Math.max(dbMax - RESERVED, 0);
-
-				const problems: string[] = [];
-				if (pool < pumaT)
-					problems.push(`Web pool (${pool}) is smaller than Puma threads (${pumaT}) — web requests will hit ConnectionTimeoutError.`);
-				if (pool < skC)
-					problems.push(`Worker pool (${pool}) is smaller than Sidekiq concurrency (${skC}) — jobs will stall waiting for a connection.`);
-				if (totalPeak > usable)
-					problems.push(`Peak connections (${totalPeak}) exceed the ${usable} usable Postgres connections (max_connections ${dbMax} − ${RESERVED} reserved) — add PgBouncer or lower concurrency.`);
-
-				verdict.replaceChildren();
-				if (problems.length === 0) {
-					verdict.className = 'verdict is-ok';
-					const p = document.createElement('p');
-					p.style.margin = '0';
-					p.innerHTML = `<strong>✓ Safe.</strong> `;
-					p.append(`Pool covers your threads, and peak connections (${totalPeak}) stay within the ${usable} usable Postgres connections.`);
-					verdict.append(p);
-					if (totalPeak > usable * 0.8) {
-						const note = document.createElement('p');
-						note.className = 'note';
-						note.textContent = `Close to the ceiling (${Math.round((totalPeak / usable) * 100)}%). Consoles, migrations, and deploy overlap (old + new processes) also need connections.`;
-						verdict.append(note);
-					}
-				} else {
-					verdict.className = 'verdict is-risk';
-					const head = document.createElement('strong');
-					head.textContent = '✗ Risk';
-					const ul = document.createElement('ul');
-					for (const msg of problems) {
-						const li = document.createElement('li');
-						li.textContent = msg;
-						ul.append(li);
-					}
-					verdict.append(head, ul);
+			verdict.replaceChildren();
+			if (problems.length === 0) {
+				verdict.className = 'verdict is-ok';
+				const p = document.createElement('p');
+				p.style.margin = '0';
+				p.innerHTML = `<strong>✓ Safe.</strong> `;
+				p.append(`Pool covers your threads, and peak connections (${totalPeak}) stay within the ${usable} usable Postgres connections.`);
+				verdict.append(p);
+				if (totalPeak > usable * 0.8) {
+					const note = document.createElement('p');
+					note.className = 'note';
+					note.textContent = `Close to the ceiling (${Math.round((totalPeak / usable) * 100)}%). Consoles, migrations, and deploy overlap (old + new processes) also need connections.`;
+					verdict.append(note);
 				}
-
-				const web = `web (Puma, ${pumaT} threads)`;
-				const worker = `worker (Sidekiq, concurrency ${skC})`;
-				const w = Math.max(web.length, worker.length);
-				snippet.textContent = [
-					'production:',
-					'  adapter: postgresql',
-					'  # One pool per process: size it to the threads in THAT process + 2.',
-					`  #   ${web.padEnd(w)} → DB_POOL=${webPool}`,
-					`  #   ${worker.padEnd(w)} → DB_POOL=${workerPool}`,
-					'  # Use a dedicated var, not RAILS_MAX_THREADS, so Sidekiq never inherits a web-sized pool.',
-					`  pool: <%= ENV.fetch("DB_POOL", ${recommendedPool}) %>`,
-					`  # Peak across all processes: ${totalPeak} of ${usable} usable Postgres connections`,
-				].join('\n');
+			} else {
+				verdict.className = 'verdict is-risk';
+				const head = document.createElement('strong');
+				head.textContent = '✗ Risk';
+				const ul = document.createElement('ul');
+				for (const msg of problems) {
+					const li = document.createElement('li');
+					li.textContent = msg;
+					ul.append(li);
+				}
+				verdict.append(head, ul);
 			}
 
-			ids.forEach((id) => inputs[id].addEventListener('input', compute));
+			const web = `web (Puma, ${pumaT} threads)`;
+			const worker = `worker (Sidekiq, concurrency ${skC})`;
+			const w = Math.max(web.length, worker.length);
+			snippet.textContent = [
+				'production:',
+				'  adapter: postgresql',
+				'  # One pool per process: size it to the threads in THAT process + 2.',
+				`  #   ${web.padEnd(w)} → DB_POOL=${webPool}`,
+				`  #   ${worker.padEnd(w)} → DB_POOL=${workerPool}`,
+				'  # Use a dedicated var, not RAILS_MAX_THREADS, so Sidekiq never inherits a web-sized pool.',
+				`  pool: <%= ENV.fetch("DB_POOL", ${recommendedPool}) %>`,
+				`  # Peak across all processes: ${totalPeak} of ${usable} usable Postgres connections`,
+			].join('\n');
+		}
 
-			copyBtn.addEventListener('click', async () => {
-				try {
-					await navigator.clipboard.writeText(snippet.textContent ?? '');
-					copyBtn.textContent = 'Copied';
-				} catch {
-					copyBtn.textContent = 'Copy failed';
-				}
-				setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
-			});
+		ids.forEach((id) => inputs[id].addEventListener('input', compute));
 
-			compute();
-		</script>
-	</body>
-</html>
+		copyBtn.addEventListener('click', async () => {
+			try {
+				await navigator.clipboard.writeText(snippet.textContent ?? '');
+				copyBtn.textContent = 'Copied';
+			} catch {
+				copyBtn.textContent = 'Copy failed';
+			}
+			setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+		});
+
+		compute();
+	</script>
+</Page>
+
+<style>
+	main { padding-block: var(--space-16) var(--space-8); max-width: var(--container-prose); }
+
+	.lede { margin: 0 0 var(--space-10); max-width: 66ch; }
+
+	.calc {
+		padding: var(--space-6);
+		background: var(--card-bg);
+		border: 1px solid var(--border); border-radius: var(--radius-lg);
+	}
+	.fields { display: grid; gap: var(--space-4) var(--space-6); grid-template-columns: 1fr; }
+	@media (min-width: 620px) { .fields { grid-template-columns: 1fr 1fr; } }
+	.field { display: flex; flex-direction: column; gap: .35rem; }
+	.field span { font-size: var(--fs-sm); color: var(--text-muted); }
+	.field input {
+		font-family: var(--font-mono); font-size: var(--fs-base); color: var(--text);
+		padding: 9px 12px;
+		background: var(--bg);
+		border: 1px solid var(--border-strong); border-radius: var(--radius);
+		transition: border-color .15s ease, box-shadow .15s ease;
+	}
+	.field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+
+	.verdict {
+		margin-top: var(--space-6); padding: var(--space-4);
+		border: 1px solid var(--border); border-radius: var(--radius);
+		font-size: var(--fs-sm); line-height: var(--lh-normal);
+	}
+	.verdict.is-ok { border-color: var(--brand-ring); background: var(--brand-soft); color: var(--text); }
+	.verdict.is-risk { border-color: color-mix(in srgb, var(--dg-hazard) 45%, transparent); background: var(--dg-hazard-fill); color: var(--text); }
+	.verdict :global(strong) { font-weight: 700; }
+	.verdict.is-ok :global(strong) { color: var(--brand); }
+	.verdict.is-risk :global(strong) { color: var(--dg-hazard); }
+	.verdict :global(ul) { margin: .4rem 0 0; padding-left: 1.2rem; }
+	.verdict :global(li) { margin-bottom: .25rem; }
+	.verdict :global(.note) { margin: .4rem 0 0; color: var(--text-muted); }
+
+	.snippet { margin-top: var(--space-4); }
+	.snippet-head {
+		display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+		margin-bottom: .5rem;
+		font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-faint); font-weight: 600;
+	}
+	.snippet pre { margin: 0; font-size: var(--fs-xs); white-space: pre; overflow-x: auto; }
+
+	.funnel { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); margin-top: var(--space-6); font-size: var(--fs-sm); font-weight: 600; }
+
+	/* Typography from the global .prose; only this page's tighter heading rhythm here. */
+	.content { margin-top: var(--space-16); padding-top: var(--space-8); border-top: 1px solid var(--border); }
+	.content h2 { margin: var(--space-10) 0 var(--space-4); }
+	.content h2:first-child { margin-top: 0; }
+	.content h3 { margin: var(--space-8) 0 var(--space-2); }
+</style>

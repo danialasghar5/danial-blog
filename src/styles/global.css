@@ -41,28 +41,21 @@
 	--dg-decision: #EFEFEA;
 	--dg-future: #8A8A83;
 
-	/* ---- Spacing: 4px base (canonical) ---- */
+	/* ---- Spacing: one linear scale, --space-N = N × 4px ----
+	   Steps follow the Tailwind numbering, so the name always tells the size. */
 	--space-1: 4px;
 	--space-2: 8px;
 	--space-3: 12px;
 	--space-4: 16px;
-	--space-5: 24px;
-	--space-6: 32px;
-	--space-7: 48px;
-	--space-8: 64px;
-	--space-9: 96px;
-	--space-10: 128px;
-
-	/* Back-compat aliases → mapped onto the canonical scale (existing components use --s-*) */
-	--s-1: var(--space-2);   /*  8 */
-	--s-2: var(--space-4);   /* 16 */
-	--s-3: var(--space-5);   /* 24 */
-	--s-4: var(--space-6);   /* 32 */
-	--s-5: 40px;             /* 40 (between grid steps) */
-	--s-6: var(--space-7);   /* 48 */
-	--s-8: var(--space-8);   /* 64 */
-	--s-10: 80px;            /* 80 (between grid steps) */
-	--s-12: var(--space-9);  /* 96 */
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-10: 40px;
+	--space-12: 48px;
+	--space-16: 64px;
+	--space-20: 80px;
+	--space-24: 96px;
+	--space-32: 128px;
 
 	/* ---- Type scale ---- */
 	--fs-xs: 0.8125rem;
@@ -170,7 +163,7 @@ body {
 /* ---- Headings ---- */
 h1, h2, h3, h4, h5, h6 {
 	font-family: var(--font-sans);
-	margin: 0 0 var(--s-2) 0;
+	margin: 0 0 var(--space-4) 0;
 	color: var(--text);
 	line-height: var(--lh-tight);
 	letter-spacing: var(--tracking-tight);
@@ -182,7 +175,7 @@ h3 { font-size: var(--fs-2xl); }
 h4 { font-size: var(--fs-xl); }
 h5 { font-size: var(--fs-lg); }
 
-p { margin: 0 0 var(--s-2) 0; }
+p { margin: 0 0 var(--space-4) 0; }
 
 a {
 	color: var(--brand);
@@ -206,10 +199,10 @@ main { display: block; }
 	width: 100%;
 	max-width: var(--container);
 	margin-inline: auto;
-	padding-inline: var(--s-3);
+	padding-inline: var(--space-6);
 }
 
-.section { padding-block: var(--s-8); }
+.section { padding-block: var(--space-16); }
 
 /* ---- Buttons ---- */
 .btn {
@@ -249,8 +242,12 @@ main { display: block; }
 	font-size: var(--fs-xs);
 	letter-spacing: var(--tracking-wide);
 	text-transform: uppercase;
-	margin: 0 0 var(--s-1);
+	margin: 0 0 var(--space-2);
 }
+
+/* ---- Page header (PageHeader.astro) ---- */
+.page-title { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--space-4); }
+.page-lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; }
 
 /* ---- Chips ---- */
 .chip {
@@ -266,9 +263,9 @@ main { display: block; }
 /* ---- Section head (title + link) ---- */
 .section-head {
 	display: flex; justify-content: space-between; align-items: baseline;
-	gap: var(--s-2);
-	margin-bottom: var(--s-4);
-	padding-bottom: var(--s-2);
+	gap: var(--space-4);
+	margin-bottom: var(--space-8);
+	padding-bottom: var(--space-4);
 	border-bottom: 1px solid var(--border);
 }
 .section-head h2 { font-size: var(--fs-2xl); margin: 0; }
@@ -279,7 +276,7 @@ main { display: block; }
 .grid-cards {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: var(--s-3);
+	gap: var(--space-6);
 }
 @media (min-width: 640px) { .grid-cards { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 960px) { .grid-cards { grid-template-columns: repeat(3, 1fr); } }
@@ -299,7 +296,7 @@ code {
    the light theme by default, swapped to dark tokens under [data-theme="dark"]. */
 pre {
 	font-family: var(--font-mono);
-	padding: var(--space-5);
+	padding: var(--space-6);
 	border-radius: var(--radius);
 	border: 1px solid var(--border);
 	background: var(--bg-subtle) !important;
@@ -323,11 +320,11 @@ pre code {
 
 blockquote {
 	border-left: 3px solid var(--brand);
-	padding: 0 0 0 var(--s-2);
+	padding: 0 0 0 var(--space-4);
 	margin: 0;
 	color: var(--text-muted);
 }
-hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
+hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0; }
 
 /* ---- Theme toggle icon visibility (must be global: [data-theme] is on <html>) ---- */
 .theme-toggle .icon-moon { display: none; }
@@ -355,6 +352,59 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
    plugin in astro.config.mjs) instead of pushing the page sideways on mobile. */
 .table-scroll { overflow-x: auto; }
 
+/* ---- Prose: long-form reading text ----
+   The single source for article typography. Used by BlogPost and CaseStudy
+   (MDX bodies), and by page-level long-form sections (privacy, tool docs). */
+.prose {
+	font-family: var(--font-prose);
+	color: var(--text);
+	font-size: var(--fs-lg);
+	line-height: var(--lh-prose);
+}
+.prose p { margin: 0 0 var(--space-6); }
+.prose h2 { font-size: var(--fs-2xl); font-weight: 700; margin: var(--space-12) 0 var(--space-4); letter-spacing: var(--tracking-tight); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose h3 { font-size: var(--fs-xl); font-weight: 700; margin: var(--space-10) 0 var(--space-4); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose h4 { scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose ul, .prose ol { margin: 0 0 var(--space-6); padding-left: var(--space-6); }
+.prose li { margin-bottom: .5rem; }
+.prose img { border-radius: var(--radius); margin: var(--space-4) 0; }
+.prose a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+.prose a:hover { text-decoration-color: var(--brand); }
+.prose blockquote {
+	border-left: 3px solid var(--brand);
+	padding: var(--space-2) var(--space-6);
+	margin: var(--space-6) 0;
+	color: var(--text-muted); font-style: italic;
+	background: var(--bg-subtle);
+	border-radius: 0 var(--radius) var(--radius) 0;
+}
+.prose pre { margin: 0 0 var(--space-6); }
+.prose hr { margin: var(--space-10) 0; }
+.prose img { display: block; max-width: 100%; margin-inline: auto; }
+/* Figures/diagrams fill the reading column so they align with the text edges */
+.prose img.diagram { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+/* Tables: clean editorial style (sans, zebra rows, header rule) */
+.prose table {
+	width: 100%; border-collapse: collapse;
+	font-family: var(--font-sans); font-size: var(--fs-sm);
+	line-height: var(--lh-snug);
+	border: 1px solid var(--border); border-radius: var(--radius);
+	overflow: hidden; margin: var(--space-4) 0 var(--space-6);
+}
+.prose thead th {
+	text-align: left; font-weight: 600; color: var(--text);
+	background: var(--bg-subtle);
+	padding: var(--space-4) var(--space-6);
+	border-bottom: 1px solid var(--border-strong);
+	white-space: nowrap;
+}
+.prose tbody td {
+	padding: var(--space-4) var(--space-6); vertical-align: top;
+	color: var(--text-muted); border-top: 1px solid var(--border);
+}
+.prose tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
+.prose td code, .prose th code { white-space: nowrap; }
+
 /* ---- Heading anchors (rehype-autolink-headings, article prose only) ----
    A quiet "#" that appears on heading hover/focus so a section can be deep-linked. */
 .prose :is(h2, h3, h4) { position: relative; }
@@ -378,23 +428,23 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s-4) 0; }
    a schematic-on-ink in dark and a blueprint-on-paper in light. Architecture
    only: no decorative graphics.
    ========================================================================== */
-.dg-figure { margin: var(--s-4) 0; }
+.dg-figure { margin: var(--space-8) 0; }
 .dg-canvas {
 	background: var(--dg-canvas);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
-	padding: var(--s-3);
+	padding: var(--space-6);
 }
 .dg-canvas.dg-scroll { overflow-x: auto; }
 .dg-canvas-label {
 	font-family: var(--font-mono); font-size: var(--fs-xs);
 	letter-spacing: .08em; text-transform: uppercase;
-	color: var(--dg-accent); margin: 0 0 var(--s-2);
+	color: var(--dg-accent); margin: 0 0 var(--space-4);
 }
 .dg-svg { display: block; width: 100%; height: auto; }
 .dg-caption {
 	font-family: var(--font-sans); font-size: var(--fs-sm);
-	color: var(--text-muted); line-height: var(--lh-snug); margin-top: var(--s-2);
+	color: var(--text-muted); line-height: var(--lh-snug); margin-top: var(--space-4);
 }
 /* One arrowhead marker per diagram; context-stroke makes it match each edge's
    colour in both themes. Edges reference it through the --dg-marker variable. */

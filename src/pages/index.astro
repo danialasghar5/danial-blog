@@ -1,7 +1,5 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Page from '../layouts/Page.astro';
 import Hero from '../components/Hero.astro';
 import PostListItem from '../components/PostListItem.astro';
 import Projects from '../components/Projects.astro';
@@ -24,77 +22,72 @@ const featured = posts.find((p) => p.id === FEATURED_ID) ?? posts[0];
 const recent = posts.filter((p) => p.id !== featured?.id).slice(0, 5);
 const featuredTopic = getTopic(featured?.data.category);
 ---
-<html lang="en">
-  <head><BaseHead title={`${SITE_TITLE} — ${ROLE}`} description={SITE_DESCRIPTION} /></head>
-  <body>
-    <Header />
-    <main id="main-content">
-      <Hero />
 
-      {featured && (
-        <section class="container featured">
-          <div class="featured-inner">
-            <div class="featured-text">
-              <p class="eyebrow">Featured writing</p>
-              <h2 class="featured-title"><a href={`/blog/${featured.id}/`}>{featured.data.title}</a></h2>
-              <p class="featured-dek">{featured.data.description}</p>
-              <div class="featured-meta">
-                {featuredTopic && <span>{featuredTopic.title}</span>}
-                {featuredTopic && <span class="dot">·</span>}
-                <FormattedDate date={featured.data.pubDate} />
-                <span class="dot">·</span>
-                <span>{readingTime(featured.body)}</span>
-              </div>
-              <a class="featured-cta" href={`/blog/${featured.id}/`}>Read the article →</a>
-            </div>
-            <div class="featured-figure" aria-hidden="false">
-              <AtLeastOnceLoop />
-            </div>
-          </div>
-        </section>
-      )}
+<Page title={`${SITE_TITLE} — ${ROLE}`} description={SITE_DESCRIPTION}>
+	<Hero />
 
-      {recent.length > 0 && (
-        <section class="container block">
-          <div class="section-head">
-            <h2>Recent writing</h2>
-            <a class="more" href="/blog">All posts &rarr;</a>
-          </div>
-          <div class="home-list">
-            {recent.map((post) => <PostListItem post={post} compact />)}
-          </div>
-        </section>
-      )}
+	{featured && (
+	  <section class="container featured">
+	    <div class="featured-inner">
+	      <div class="featured-text">
+	        <p class="eyebrow">Featured writing</p>
+	        <h2 class="featured-title"><a href={`/blog/${featured.id}/`}>{featured.data.title}</a></h2>
+	        <p class="featured-dek">{featured.data.description}</p>
+	        <div class="featured-meta">
+	          {featuredTopic && <span>{featuredTopic.title}</span>}
+	          {featuredTopic && <span class="dot">·</span>}
+	          <FormattedDate date={featured.data.pubDate} />
+	          <span class="dot">·</span>
+	          <span>{readingTime(featured.body)}</span>
+	        </div>
+	        <a class="featured-cta" href={`/blog/${featured.id}/`}>Read the article →</a>
+	      </div>
+	      <div class="featured-figure" aria-hidden="false">
+	        <AtLeastOnceLoop />
+	      </div>
+	    </div>
+	  </section>
+	)}
 
-      <Projects
-        heading="Selected work"
-        blurb="Open-source systems and experiments behind the ideas I write about."
-      />
-      <Newsletter />
-    </main>
-    <Footer />
-  </body>
-</html>
+	{recent.length > 0 && (
+	  <section class="container block">
+	    <div class="section-head">
+	      <h2>Recent writing</h2>
+	      <a class="more" href="/blog">All posts &rarr;</a>
+	    </div>
+	    <div class="home-list">
+	      {recent.map((post) => <PostListItem post={post} compact />)}
+	    </div>
+	  </section>
+	)}
+
+	<Projects
+	  heading="Selected work"
+	  blurb="Open-source systems and experiments behind the ideas I write about."
+	/>
+	<Newsletter />
+</Page>
+
 <style>
-  .block { padding-block: var(--s-6); }
+  .block { padding-block: var(--space-12); }
 
   /* Featured lead — an editorial pairing of the cornerstone piece and its
      diagram. A top rule, not a heavy card, so it reads as writing, not product. */
-  .featured { padding-block: var(--s-6); }
+  .featured { padding-block: var(--space-12); }
   .featured-inner {
-    display: grid; grid-template-columns: 1fr; gap: var(--s-5);
-    padding-top: var(--s-5); border-top: 1px solid var(--border);
+    display: grid; grid-template-columns: 1fr; gap: var(--space-10);
+    padding-top: var(--space-10); border-top: 1px solid var(--border);
     align-items: center;
   }
   @media (min-width: 900px) {
-    .featured-inner { grid-template-columns: 1fr 1fr; gap: var(--s-8); }
+    .featured-inner { grid-template-columns: 1fr 1fr; gap: var(--space-16); }
   }
   .featured-text { min-width: 0; }
-  .featured-title { font-size: var(--fs-2xl); font-weight: 800; line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); margin: var(--s-1) 0 var(--s-2); max-width: 20ch; }
+  .featured-title { font-size: var(--fs-2xl); font-weight: 800; line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); margin: var(--space-2) 0 var(--space-4); max-width: 20ch; }
   .featured-title a { color: var(--text); }
   .featured-title a:hover { color: var(--brand); }
-  .featured-dek { font-family: var(--font-prose); font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-3); max-width: 54ch; }
-  .featured-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--text-faint); margin-bottom: var(--s-3); }
+  .featured-dek { font-family: var(--font-prose); font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--space-6); max-width: 54ch; }
+  .featured-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--text-faint); margin-bottom: var(--space-6); }
   .featured-meta .dot { color: var(--text-faint); }
   .featured-cta { font-weight: 600; font-size: var(--fs-base); color: var(--brand); }
   .featured-cta:hover { color: var(--brand-hover); }

@@ -1,7 +1,6 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Page from '../layouts/Page.astro';
+import PageHeader from '../components/PageHeader.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { SITE_TITLE, EMAIL, SOCIALS } from '../consts';
 
@@ -12,65 +11,54 @@ const channels = [
 ];
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={`Contact — ${SITE_TITLE}`} description={`Get in touch with ${SITE_TITLE} about freelance and contract engineering work.`} />
-	</head>
-	<body>
-		<Header />
-		<main id="main-content" class="container">
-			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
-			<section class="contact">
-				<p class="eyebrow">Contact</p>
-				<h1>Let's build something.</h1>
-				<p class="lede">
-					I'm open to freelance and contract work on Rails, Shopify, and AWS projects.
-					Tell me what you're building and I'll get back to you.
-				</p>
-				<p class="lede-sub">
-					Fighting a reliability problem in production? See the fixed-scope
-					<a href="/services">Rails reliability services</a>.
-				</p>
+<Page title={`Contact — ${SITE_TITLE}`} description={`Get in touch with ${SITE_TITLE} about freelance and contract engineering work.`} mainClass="container">
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
+	<section class="contact">
+		<PageHeader eyebrow="Contact" title="Let's build something.">
+			<p class="page-lede lede">
+				I'm open to freelance and contract work on Rails, Shopify, and AWS projects.
+				Tell me what you're building and I'll get back to you.
+			</p>
+			<p class="lede-sub">
+				Fighting a reliability problem in production? See the fixed-scope
+				<a href="/services">Rails reliability services</a>.
+			</p>
+		</PageHeader>
 
-				<div class="channels">
-					{channels.map((c) => (
-						<a class="channel" href={c.href} target={c.href.startsWith('mailto') ? undefined : '_blank'} rel="noopener">
-							<div>
-								<span class="ch-label">{c.label}</span>
-								<span class="ch-value">{c.value}</span>
-							</div>
-							<span class="ch-note">{c.note}</span>
-						</a>
-					))}
-				</div>
+		<div class="channels">
+			{channels.map((c) => (
+				<a class="channel" href={c.href} target={c.href.startsWith('mailto') ? undefined : '_blank'} rel="noopener">
+					<div>
+						<span class="ch-label">{c.label}</span>
+						<span class="ch-value">{c.value}</span>
+					</div>
+					<span class="ch-note">{c.note}</span>
+				</a>
+			))}
+		</div>
 
-				<a class="btn btn-primary big" href={`mailto:${EMAIL}`}>Email me &rarr;</a>
-			</section>
-		</main>
-		<Footer />
+		<a class="btn btn-primary big" href={`mailto:${EMAIL}`}>Email me &rarr;</a>
+	</section>
+</Page>
 
-		<style>
-			main { padding-block: var(--s-10) var(--s-6); }
-			.contact { max-width: var(--container-prose); margin-inline: auto; }
-			.contact h1 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-2); }
-			.lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--s-2); }
-			.lede-sub { color: var(--text-muted); margin: 0 0 var(--s-5); }
-			.lede-sub a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
-			.channels { display: grid; gap: var(--s-2); margin-bottom: var(--s-5); }
-			.channel {
-				display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
-				padding: var(--s-3); border: 1px solid var(--border); border-radius: var(--radius);
-				background: var(--card-bg); color: var(--text);
-				transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
-			}
-			.channel:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow); }
-			.channel > div { display: flex; flex-direction: column; gap: .2rem; }
-			.ch-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
-			.ch-value { font-weight: 600; }
-			.ch-note { font-size: var(--fs-sm); color: var(--text-muted); text-align: right; }
-			.big { padding: .8rem 1.4rem; font-size: var(--fs-base); }
-			@media (max-width: 480px) { .ch-note { display: none; } }
-		</style>
-	</body>
-</html>
+<style>
+	main { padding-block: var(--space-20) var(--space-12); }
+	.contact { max-width: var(--container-prose); margin-inline: auto; }
+	.lede { margin: 0 0 var(--space-4); }
+	.lede-sub { color: var(--text-muted); margin: 0 0 var(--space-10); }
+	.lede-sub a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+	.channels { display: grid; gap: var(--space-4); margin-bottom: var(--space-10); }
+	.channel {
+		display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+		padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius);
+		background: var(--card-bg); color: var(--text);
+		transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+	}
+	.channel:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow); }
+	.channel > div { display: flex; flex-direction: column; gap: .2rem; }
+	.ch-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+	.ch-value { font-weight: 600; }
+	.ch-note { font-size: var(--fs-sm); color: var(--text-muted); text-align: right; }
+	.big { padding: .8rem 1.4rem; font-size: var(--fs-base); }
+	@media (max-width: 480px) { .ch-note { display: none; } }
+</style>

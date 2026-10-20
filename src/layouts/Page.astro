@@ -1,0 +1,46 @@
+---
+// Shared page frame: document shell, <head> (BaseHead + optional extras), site
+// header, <main>, and footer. Every page and layout renders through this.
+//
+// Slots:
+//   default        → inside <main id="main-content">
+//   "head"         → extra <head> content (e.g. page-specific JSON-LD)
+//   "before-main"  → between the header and <main> (e.g. reading-progress bar)
+//   "after-main"   → between </main> and the footer (e.g. newsletter, projects)
+//
+// The calling page's style-scope attribute (data-astro-cid-*) is forwarded onto
+// <main>, so a page's own scoped `main { … }` rules keep applying to it.
+import type { ComponentProps } from 'astro/types';
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+type Props = ComponentProps<typeof BaseHead> & {
+	/** Class(es) for <main>, e.g. "container". */
+	mainClass?: string;
+};
+
+const { mainClass, ...rest } = Astro.props;
+const scope: Record<string, unknown> = {};
+const head: Record<string, unknown> = {};
+for (const [key, value] of Object.entries(rest)) {
+	(key.startsWith('data-astro-cid-') ? scope : head)[key] = value;
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead {...(head as ComponentProps<typeof BaseHead>)} />
+		<slot name="head" />
+	</head>
+	<body>
+		<Header />
+		<slot name="before-main" />
+		<main id="main-content" class={mainClass} {...scope}>
+			<slot />
+		</main>
+		<slot name="after-main" />
+		<Footer />
+	</body>
+</html>

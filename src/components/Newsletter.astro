@@ -49,15 +49,15 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 </section>
 
 <style>
-	.newsletter { padding-block: var(--s-8); }
+	.newsletter { padding-block: var(--space-16); }
 	.nl-inner {
-		display: grid; grid-template-columns: 1fr; gap: var(--s-3) var(--s-6);
+		display: grid; grid-template-columns: 1fr; gap: var(--space-6) var(--space-12);
 		align-items: center;
-		padding-top: var(--s-5); border-top: 1px solid var(--border);
+		padding-top: var(--space-10); border-top: 1px solid var(--border);
 	}
 	@media (min-width: 820px) { .nl-inner { grid-template-columns: 1fr 1fr; } }
 
-	.nl-title { font-size: var(--fs-xl); font-weight: 700; margin: 0 0 var(--s-1); letter-spacing: var(--tracking-tight); }
+	.nl-title { font-size: var(--fs-xl); font-weight: 700; margin: 0 0 var(--space-2); letter-spacing: var(--tracking-tight); }
 	.nl-blurb {
 		font-family: var(--font-prose);
 		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
@@ -87,12 +87,12 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 
 	.nl-status {
 		font-size: var(--fs-sm); line-height: var(--lh-snug);
-		color: var(--text-muted); margin: var(--s-2) 0 0; min-height: 1.25em;
+		color: var(--text-muted); margin: var(--space-4) 0 0; min-height: 1.25em;
 	}
 	.nl-status.is-ok { color: var(--brand); font-weight: 500; }
 	.nl-status.is-error { color: var(--dg-hazard); }
 
-	.nl-fallback { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+	.nl-fallback { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; }
 	.nl-note { font-size: var(--fs-sm); color: var(--text-faint); }
 </style>
 

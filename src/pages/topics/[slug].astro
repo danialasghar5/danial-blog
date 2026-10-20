@@ -1,8 +1,7 @@
 ---
+import Page from '../../layouts/Page.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import { getCollection } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import PostListItem from '../../components/PostListItem.astro';
 import TopicChip from '../../components/TopicChip.astro';
@@ -70,109 +69,93 @@ const jsonLd = {
 };
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={`${topic.title} — ${SITE_TITLE}`} description={topic.blurb} />
+<Page title={`${topic.title} — ${SITE_TITLE}`} description={topic.blurb} mainClass="container">
+	<Fragment slot="head">
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
-	</head>
-	<body>
-		<Header />
-		<main id="main-content" class="container">
-			<Breadcrumbs items={[
-				{ label: 'Home', href: '/' },
-				{ label: 'Topics', href: '/topics/' },
-				{ label: topic.title },
-			]} />
+	</Fragment>
+	<Breadcrumbs items={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Topics', href: '/topics/' },
+		{ label: topic.title },
+	]} />
 
-			<header class="hub-header">
-				<p class="eyebrow">Topic</p>
-				<h1 class="hub-title">{topic.title}</h1>
-				<div class="hub-intro">
-					{topic.intro.map((para) => <p set:html={para} />)}
+	<PageHeader class="hub-header" eyebrow="Topic" title={topic.title}>
+		<div class="hub-intro">
+			{topic.intro.map((para) => <p set:html={para} />)}
+		</div>
+	</PageHeader>
+
+	{startHerePost && (
+		<section class="start-here" aria-label="Start here">
+			<p class="section-eyebrow">Start here</p>
+			<a class="start-card" href={`/blog/${startHerePost.id}/`}>
+				<h2>{startHerePost.data.title}</h2>
+				<p class="start-desc">{startHerePost.data.description}</p>
+				<div class="start-meta">
+					<FormattedDate date={startHerePost.data.pubDate} />
+					<span class="dot">·</span>
+					<span>{readingTime(startHerePost.body)}</span>
 				</div>
-			</header>
+			</a>
+		</section>
+	)}
 
-			{startHerePost && (
-				<section class="start-here" aria-label="Start here">
-					<p class="section-eyebrow">Start here</p>
-					<a class="start-card" href={`/blog/${startHerePost.id}/`}>
-						<h2>{startHerePost.data.title}</h2>
-						<p class="start-desc">{startHerePost.data.description}</p>
-						<div class="start-meta">
-							<FormattedDate date={startHerePost.data.pubDate} />
-							<span class="dot">·</span>
-							<span>{readingTime(startHerePost.body)}</span>
-						</div>
-					</a>
-				</section>
-			)}
+	{posts.length > 0 && (
+		<section class="hub-list" aria-label="More articles">
+			<p class="section-eyebrow">More articles</p>
+			<div class="post-list">
+				{posts.filter((p) => p.id !== topic.startHere).map((post) => <PostListItem post={post} />)}
+			</div>
+		</section>
+	)}
 
-			{posts.length > 0 && (
-				<section class="hub-list" aria-label="More articles">
-					<p class="section-eyebrow">More articles</p>
-					<div class="post-list">
-						{posts.filter((p) => p.id !== topic.startHere).map((post) => <PostListItem post={post} />)}
-					</div>
-				</section>
-			)}
+	{relatedLive.length > 0 && (
+		<section class="related" aria-label="Related topics">
+			<p class="section-eyebrow">Related topics</p>
+			<div class="related-chips">
+				{relatedLive.map((t) => <TopicChip slug={t!.slug} arrow />)}
+			</div>
+		</section>
+	)}
+</Page>
 
-			{relatedLive.length > 0 && (
-				<section class="related" aria-label="Related topics">
-					<p class="section-eyebrow">Related topics</p>
-					<div class="related-chips">
-						{relatedLive.map((t) => <TopicChip slug={t!.slug} arrow />)}
-					</div>
-				</section>
-			)}
-		</main>
-		<Footer />
+<style>
+	main { padding-block: var(--space-12) var(--space-8); }
 
-		<style>
-			main { padding-block: var(--s-6) var(--s-4); }
+	.hub-header { margin-bottom: var(--space-12); }
+	.hub-header :global(.eyebrow) { font-size: var(--fs-sm); font-weight: 600; }
+	.hub-header :global(.page-title) { margin-bottom: var(--space-6); max-width: 24ch; }
+	.hub-intro {
+		font-family: var(--font-prose);
+		font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text);
+		max-width: 68ch;
+	}
+	.hub-intro :global(p) { margin: 0 0 var(--space-6); }
+	.hub-intro :global(p:last-child) { margin-bottom: 0; }
 
-			.hub-header { margin-bottom: var(--s-6); }
-			.eyebrow {
-				font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase;
-				letter-spacing: .06em; color: var(--brand); margin: 0 0 var(--s-1);
-			}
-			.hub-title {
-				font-size: var(--fs-3xl); font-weight: 800;
-				letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-3); max-width: 24ch;
-			}
-			.hub-intro {
-				font-family: var(--font-prose);
-				font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text);
-				max-width: 68ch;
-			}
-			.hub-intro :global(p) { margin: 0 0 var(--s-3); }
-			.hub-intro :global(p:last-child) { margin-bottom: 0; }
+	.section-eyebrow {
+		font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em;
+		color: var(--text-muted); font-weight: 600; margin: 0 0 var(--space-4);
+		padding-bottom: var(--space-4); border-bottom: 1px solid var(--border);
+	}
 
-			.section-eyebrow {
-				font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em;
-				color: var(--text-muted); font-weight: 600; margin: 0 0 var(--s-2);
-				padding-bottom: var(--s-2); border-bottom: 1px solid var(--border);
-			}
+	.start-here { margin-bottom: var(--space-12); }
+	.start-card {
+		display: block; text-decoration: none; color: var(--text);
+		border: 1px solid var(--border); border-left: 3px solid var(--brand);
+		border-radius: var(--radius); background: var(--card-bg);
+		padding: var(--space-6) var(--space-8);
+		transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+	}
+	.start-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
+	.start-card h2 { margin: 0 0 var(--space-2); font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug); }
+	.start-card:hover h2 { color: var(--brand); }
+	.start-desc { margin: 0 0 var(--space-4); color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
+	.start-meta { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-xs); color: var(--text-faint); }
+	.dot { color: var(--text-faint); }
 
-			.start-here { margin-bottom: var(--s-6); }
-			.start-card {
-				display: block; text-decoration: none; color: var(--text);
-				border: 1px solid var(--border); border-left: 3px solid var(--brand);
-				border-radius: var(--radius); background: var(--card-bg);
-				padding: var(--s-3) var(--s-4);
-				transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-			}
-			.start-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
-			.start-card h2 { margin: 0 0 var(--s-1); font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug); }
-			.start-card:hover h2 { color: var(--brand); }
-			.start-desc { margin: 0 0 var(--s-2); color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
-			.start-meta { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-xs); color: var(--text-faint); }
-			.dot { color: var(--text-faint); }
+	.hub-list { margin-bottom: var(--space-12); }
+	.hub-list .post-list { border-bottom: 1px solid var(--border); }
 
-			.hub-list { margin-bottom: var(--s-6); }
-			.hub-list .post-list { border-bottom: 1px solid var(--border); }
-
-			.related-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
-		</style>
-	</body>
-</html>
+	.related-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+</style>

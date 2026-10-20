@@ -31,12 +31,12 @@ const label = topic?.title ?? tags[0];
 <style>
 	.post-row { border-top: 1px solid var(--border); }
 	.row-link {
-		display: grid; grid-template-columns: 1fr auto; gap: var(--s-1) var(--s-4);
+		display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-8);
 		align-items: baseline;
-		padding: var(--s-4) 0;
+		padding: var(--space-8) 0;
 		text-decoration: none; color: var(--text);
 	}
-	.compact .row-link { padding: var(--s-3) 0; }
+	.compact .row-link { padding: var(--space-6) 0; }
 	.row-main { min-width: 0; }
 	.row-topic {
 		display: block; font-size: var(--fs-xs); font-weight: 600;

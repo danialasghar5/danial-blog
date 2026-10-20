@@ -1,7 +1,6 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Page from '../layouts/Page.astro';
+import PageHeader from '../components/PageHeader.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { NAME, EMAIL } from '../consts';
 
@@ -9,56 +8,51 @@ import { NAME, EMAIL } from '../consts';
 const LAST_UPDATED = 'October 2026';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={`Privacy Policy — ${NAME}`} description={`How ${NAME}'s site handles analytics, newsletter sign-ups, and the in-browser developer tools.`} />
-	</head>
-	<body>
-		<Header />
-		<main id="main-content" class="container">
-			<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Privacy' }]} />
-			<article class="policy">
-				<h1>Privacy Policy</h1>
-				<p class="updated">Last updated: {LAST_UPDATED}</p>
+<Page title={`Privacy Policy — ${NAME}`} description={`How ${NAME}'s site handles analytics, newsletter sign-ups, and the in-browser developer tools.`} mainClass="container">
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Privacy' }]} />
+	<article class="policy">
+		<PageHeader class="policy-header" title="Privacy Policy">
+			<p class="updated">Last updated: {LAST_UPDATED}</p>
+		</PageHeader>
+		<div class="prose">
+			<h2>What this site collects</h2>
+			<p>
+				This site uses Cloudflare Web Analytics to count page views, referrers, and countries so
+				I can see which writing is useful. It is cookieless and does not track you across
+				sites. I don't sell personal data.
+			</p>
 
-				<h2>What this site collects</h2>
-				<p>
-					This site uses Cloudflare Web Analytics to count page views, referrers, and countries so
-					I can see which writing is useful. It is cookieless and does not track you across
-					sites. I don't sell personal data.
-				</p>
+			<h2>Newsletter</h2>
+			<p>
+				If you subscribe, your email address is stored by MailerLite, the newsletter provider,
+				and used only to send new articles. Every email has an unsubscribe link.
+			</p>
 
-				<h2>Newsletter</h2>
-				<p>
-					If you subscribe, your email address is stored by MailerLite, the newsletter provider,
-					and used only to send new articles. Every email has an unsubscribe link.
-				</p>
+			<h2>Cookies</h2>
+			<p>
+				The site sets no tracking cookies. Your light/dark theme choice is saved in your
+				browser's local storage and never leaves your device. Fonts are self-hosted, so no
+				font requests go to third parties.
+			</p>
 
-				<h2>Cookies</h2>
-				<p>
-					The site sets no tracking cookies. Your light/dark theme choice is saved in your
-					browser's local storage and never leaves your device. Fonts are self-hosted, so no
-					font requests go to third parties.
-				</p>
+			<h2>The tools</h2>
+			<p>The developer tools on this site run entirely in your browser. Values you enter are never sent to a server.</p>
 
-				<h2>The tools</h2>
-				<p>The developer tools on this site run entirely in your browser. Values you enter are never sent to a server.</p>
+			<h2>Contact</h2>
+			<p>Questions about privacy: email <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
+		</div>
+	</article>
+</Page>
 
-				<h2>Contact</h2>
-				<p>Questions about privacy: email <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
-			</article>
-		</main>
-		<Footer />
-
-		<style>
-			main { padding-block: var(--s-8) var(--s-4); }
-			.policy { max-width: 68ch; }
-			.policy h1 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--s-1); }
-			.updated { color: var(--text-faint); font-size: var(--fs-sm); margin: 0 0 var(--s-4); }
-			.policy h2 { font-size: var(--fs-xl); font-weight: 700; margin: var(--s-4) 0 var(--s-1); }
-			.policy p { font-family: var(--font-prose); font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text); margin: 0 0 var(--s-2); }
-			.policy a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
-		</style>
-	</body>
-</html>
+<style>
+	main { padding-block: var(--space-16) var(--space-8); }
+	.policy { max-width: 68ch; }
+	.policy-header :global(.page-title) { margin-bottom: var(--space-2); }
+	/* Body typography from the global .prose; this page runs a smaller heading scale. */
+	.policy h2 { font-size: var(--fs-xl); margin: var(--space-8) 0 var(--space-2); }
+	.policy p { margin: 0 0 var(--space-4); }
+	/* PHASE-0 PARITY: the old `.policy p` rule out-ranked `.updated`, so this line has
+	   always rendered as body text. Reproduced exactly; Phase 1 restores the intended
+	   small, faint label. */
+	.updated { font-family: var(--font-prose); font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text); }
+</style>

@@ -1,0 +1,22 @@
+---
+// Standard page header: optional eyebrow, the page <h1>, then whatever the page
+// slots in after it (lede, meta line, CTA). Typography comes from the global
+// .page-header / .page-title / .page-lede classes in global.css, so slotted
+// content (rendered in the page's own style scope) picks it up too.
+//
+// The calling page's style-scope attribute is forwarded onto the root, so a page
+// can tune its header with `.my-header :global(.page-title) { … }`.
+interface Props {
+	title: string;
+	eyebrow?: string;
+	class?: string;
+}
+
+const { title, eyebrow, class: className, ...scope } = Astro.props;
+---
+
+<header class:list={['page-header', className]} {...scope}>
+	{eyebrow && <p class="eyebrow">{eyebrow}</p>}
+	<h1 class="page-title">{title}</h1>
+	<slot />
+</header>
