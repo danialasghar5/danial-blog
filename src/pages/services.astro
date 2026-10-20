@@ -2,7 +2,7 @@
 import Page from '../layouts/Page.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { NAME, BOOKING_URL, EMAIL } from '../consts';
+import { BOOKING_URL, EMAIL } from '../consts';
 
 // ── EDIT ME ────────────────────────────────────────────────────────────────
 // `price` is shown as "Starting at …". Empty string = hidden (no placeholder
@@ -77,7 +77,7 @@ const serviceJsonLd = {
 };
 ---
 
-<Page title={`Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres | ${NAME}`}
+<Page title="Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres"
 	description="Fixed-scope audits and tuning for production Rails: background-job reliability, Sidekiq/Solid Queue scaling, and Postgres concurrency reviews." mainClass="container">
 	<Fragment slot="head">
 		<script type="application/ld+json" set:html={JSON.stringify(serviceJsonLd)} is:inline />
@@ -88,7 +88,7 @@ const serviceJsonLd = {
 	<PageHeader class="hero" eyebrow="Rails Reliability Consulting" title="Your Rails background jobs are double-charging customers, losing data, or backing up under load.">
 		<p class="page-lede lede">
 			I find the root cause and give you a prioritized fix plan — fast, fixed-scope, and
-			grounded in the exact reliability work I <a href="/blog">write about</a>.
+			grounded in the exact reliability work I <a href="/blog/">write about</a>.
 		</p>
 		<a class="btn btn-primary big" href={bookHref} {...bookExternal && { target: '_blank', rel: 'noopener' }}>
 			{bookExternal ? 'Book a 20-min intro call' : 'Email me about your system'} <span aria-hidden="true">&rarr;</span>

@@ -17,7 +17,7 @@ const usedCategories = new Set(posts.map((p) => p.data.category).filter(Boolean)
 const topics = liveTopics().filter((t) => usedCategories.has(t.slug));
 ---
 
-<Page title={`Writing — ${SITE_TITLE}`} description="Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends." mainClass="container">
+<Page title={`Writing on Rails Reliability & Background Jobs — ${SITE_TITLE}`} description="Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends." mainClass="container">
 	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Writing' }]} />
 	<PageHeader class="blog-header" eyebrow="Writing" title="Notes on shipping production software">
 		<p class="page-lede">Deep dives on Rails architecture, background processing, database reliability, and AI-powered backends — each one grounded in systems I build and ship.</p>

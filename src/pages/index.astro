@@ -9,7 +9,7 @@ import AtLeastOnceLoop from '../components/diagram/figures/AtLeastOnceLoop.astro
 import { getCollection } from 'astro:content';
 import { readingTime } from '../utils/reading-time';
 import { getTopic } from '../data/topics';
-import { SITE_TITLE, SITE_DESCRIPTION, ROLE } from '../consts';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.draft)
@@ -23,7 +23,7 @@ const recent = posts.filter((p) => p.id !== featured?.id).slice(0, 5);
 const featuredTopic = getTopic(featured?.data.category);
 ---
 
-<Page title={`${SITE_TITLE} — ${ROLE}`} description={SITE_DESCRIPTION}>
+<Page title={`${SITE_TITLE} — Reliability Engineering for Rails & AI Backends`} description={SITE_DESCRIPTION}>
 	<Hero />
 
 	{featured && (
@@ -53,7 +53,7 @@ const featuredTopic = getTopic(featured?.data.category);
 	  <section class="container block">
 	    <div class="section-head">
 	      <h2>Recent writing</h2>
-	      <a class="more" href="/blog">All posts &rarr;</a>
+	      <a class="more" href="/blog/">All posts &rarr;</a>
 	    </div>
 	    <div class="home-list">
 	      {recent.map((post) => <PostListItem post={post} compact />)}

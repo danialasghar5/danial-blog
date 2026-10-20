@@ -50,7 +50,7 @@ const jsonLd = {
 	<Fragment slot="head">
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 	</Fragment>
-	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Topics' }]} />
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Topics' }]} schema={false} />
 
 	<PageHeader class="topics-header" eyebrow="Browse" title="Topics">
 		<p class="page-lede topics-subtitle">How this blog is organized — each hub is a focused body of work on one part of backend reliability engineering.</p>

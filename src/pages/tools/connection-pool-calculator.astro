@@ -2,7 +2,6 @@
 import Page from '../../layouts/Page.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import { NAME } from '../../consts';
 
 const TITLE = 'Sidekiq & Puma Connection Pool Calculator';
 
@@ -58,12 +57,12 @@ const jsonLd = [
 ];
 ---
 
-<Page title={`Sidekiq Connection Pool Calculator — Fix Pool Exhaustion | ${NAME}`}
-	description="Free calculator: size your Rails database pool against Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres connection exhaustion." mainClass="container">
+<Page title="Sidekiq Connection Pool Calculator — Fix Pool Exhaustion"
+	description="Free calculator: size your Rails database pool for Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres exhaustion." mainClass="container">
 	<Fragment slot="head">
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 	</Fragment>
-	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools' }, { label: 'Connection Pool Calculator' }]} />
+	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools/' }, { label: 'Connection Pool Calculator' }]} />
 
 	<PageHeader class="tool-header" eyebrow="Developer Tools" title={TITLE}>
 		<p class="page-lede lede">
@@ -96,7 +95,7 @@ const jsonLd = [
 
 	<nav class="funnel" aria-label="Related">
 		<a href="/blog/why-background-jobs-are-slow/">Why this happens &rarr;</a>
-		<a href="/services">Struggling with this in production? &rarr;</a>
+		<a href="/services/">Struggling with this in production? &rarr;</a>
 	</nav>
 
 	<!-- Below-the-fold content: answers the search intent this page targets. -->

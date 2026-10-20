@@ -8,3 +8,6 @@ compatibility_date = "2026-07-07"
 
 [assets]
 directory = "./dist"
+# Serve dist/404.html with a real 404 status for unknown paths (instead of an
+# empty 404), so crawlers get the right signal and people get the site's page.
+not_found_handling = "404-page"

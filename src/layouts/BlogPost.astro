@@ -63,8 +63,12 @@ const related = category
 			.slice(0, 3)
 	: [];
 
-// Keyword-first SEO title when provided; brand suffix kept for recognition.
-const pageTitle = `${seoTitle ?? title} — Danial Asghar`;
+// Keyword-first SEO title. The brand suffix is added only when the whole title
+// still fits Google's ~60-character display; otherwise it would push the keyword
+// text into the truncated "…" (Google shows the site name separately anyway).
+const baseTitle = seoTitle ?? title;
+const BRAND_SUFFIX = ' — Danial Asghar';
+const pageTitle = baseTitle.length + BRAND_SUFFIX.length <= 60 ? baseTitle + BRAND_SUFFIX : baseTitle;
 
 // Show "Updated" only when the post was genuinely revised on a later calendar
 // day than it was published (compared in UTC, matching our date semantics).
@@ -78,7 +82,7 @@ const showUpdated =
 		<div class="read-progress" aria-hidden="true"><span id="read-progress-bar"></span></div>
 	</Fragment>
 	<article class="blog-post reading-column">
-		<a class="back" href="/blog">&larr; Writing</a>
+		<a class="back" href="/blog/">&larr; Writing</a>
 
 		<header class="post-header">
 			<h1 class="post-title">{title}</h1>

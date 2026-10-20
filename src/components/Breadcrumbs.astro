@@ -1,9 +1,11 @@
 ---
 // Breadcrumb trail. Pass items oldest → current; the last item renders as the
 // current page (no link). One quiet line: the trail itself is the way back.
-interface Crumb { label: string; href?: string; }
-interface Props { items: Crumb[]; }
-const { items } = Astro.props;
+// Also emits matching BreadcrumbList JSON-LD unless the page supplies its own
+// (schema={false}), so the visible trail and the structured data never drift.
+import { breadcrumbJsonLd, type Crumb } from '../utils/breadcrumbs';
+interface Props { items: Crumb[]; schema?: boolean; }
+const { items, schema = true } = Astro.props;
 ---
 <nav class="breadcrumbs" aria-label="Breadcrumb">
   <ol>
@@ -17,6 +19,7 @@ const { items } = Astro.props;
     ))}
   </ol>
 </nav>
+{schema && <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd(items, Astro.site, Astro.url))} is:inline />}
 
 <style>
   .breadcrumbs { margin-bottom: var(--space-8); }

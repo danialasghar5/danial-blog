@@ -5,6 +5,20 @@ import sitemap from '@astrojs/sitemap';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { defineConfig, fontProviders } from 'astro/config';
+import { readdirSync, readFileSync } from 'node:fs';
+
+// Post slug → last-modified date (updatedDate, else pubDate), read from the
+// MDX frontmatter so the sitemap can carry accurate <lastmod> values.
+const postDates = new Map(
+	readdirSync('./src/content/blog')
+		.filter((f) => /\.mdx?$/.test(f))
+		.map((f) => {
+			const fm = readFileSync(`./src/content/blog/${f}`, 'utf8').split('---')[1] ?? '';
+			const date = (key) => fm.match(new RegExp(`^${key}:\\s*["']?([0-9-]+)`, 'm'))?.[1];
+			return [f.replace(/\.mdx?$/, ''), date('updatedDate') ?? date('pubDate')];
+		})
+		.filter(([, d]) => d),
+);
 
 // Append a subtle, hoverable "#" anchor to each article heading so readers can
 // deep-link a section. rehypeHeadingIds runs first to assign the same
@@ -46,15 +60,27 @@ function rehypeWrapTables() {
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://danialasghar.com',
-	integrations: [mdx(), sitemap()],
+	integrations: [
+		mdx(),
+		sitemap({
+			// Accurate <lastmod> for articles helps Google prioritise recrawls.
+			serialize(item) {
+				const slug = item.url.match(/\/blog\/([^/]+)\/$/)?.[1];
+				const date = slug && postDates.get(slug);
+				return date ? { ...item, lastmod: new Date(date).toISOString() } : item;
+			},
+		}),
+	],
 	// Hide the Astro dev toolbar (dev-only UI; never shipped to production anyway).
 	devToolbar: { enabled: false },
-	// Dual-theme syntax highlighting: readable light theme by default, dark theme
-	// swapped in via [data-theme="dark"] (see global.css .astro-code overrides).
+	// Dual-theme syntax highlighting: light theme by default, dark theme swapped in
+	// via [data-theme="dark"] (see global.css .astro-code overrides). The
+	// high-contrast GitHub variants keep every token ≥4.5:1 on our code surface
+	// (the standard ones drop to 3.2:1 for some colours).
 	markdown: {
 		rehypePlugins: [rehypeWrapTables, rehypeHeadingIds, [rehypeAutolinkHeadings, autolinkOptions]],
 		shikiConfig: {
-			themes: { light: 'github-light', dark: 'github-dark' },
+			themes: { light: 'github-light-high-contrast', dark: 'github-dark-high-contrast' },
 			wrap: true,
 		},
 	},

@@ -2,6 +2,7 @@
 import Page from './Page.astro';
 import type { CollectionEntry } from 'astro:content';
 import { SITE_TITLE } from '../consts';
+import { breadcrumbJsonLd } from '../utils/breadcrumbs';
 
 type Data = CollectionEntry<'projects'>['data'];
 interface Props extends Data {}
@@ -22,8 +23,11 @@ const meta = [role, timeframe].filter(Boolean);
 ---
 
 <Page title={`${title} — ${SITE_TITLE}`} description={problem} type="article">
+	<Fragment slot="head">
+		<script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd([{ label: 'Home', href: '/' }, { label: 'Projects', href: '/projects/' }, { label: title }], Astro.site, Astro.url))} is:inline />
+	</Fragment>
 	<article class="case-study reading-column">
-		<a class="back" href="/projects">&larr; Projects</a>
+		<a class="back" href="/projects/">&larr; Projects</a>
 
 		<header class="cs-header">
 			<h1 class="cs-title">{title}</h1>
