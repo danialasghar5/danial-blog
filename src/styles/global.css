@@ -421,14 +421,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0
    One centred column at the reading measure. It takes the prose font so `ch`
    resolves against Source Serif — every child (title, meta, prose, footer)
    then shares one left edge. Non-prose children reset to the UI font.
-   Code, diagrams and tables break out symmetrically to --measure-wide. */
+   Code blocks and tables stay in the column (one left edge for reading);
+   only diagrams break out symmetrically to --measure-wide. */
 .reading-column {
 	font-family: var(--font-prose); font-size: var(--fs-lg);
 	width: min(100%, var(--measure));
 	margin-inline: auto;
 }
 .reading-column > :not(.prose) { font-family: var(--font-sans); font-size: var(--fs-base); }
-.reading-column .prose > :is(pre, .dg-figure, .table-scroll, img.diagram) {
+.reading-column .prose > :is(.dg-figure, img.diagram) {
 	--breakout: min(var(--measure-wide), 100vw - 2 * var(--space-6));
 	width: var(--breakout); max-width: none;
 	margin-inline: calc((100% - var(--breakout)) / 2);
