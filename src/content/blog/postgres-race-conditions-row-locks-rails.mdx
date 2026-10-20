@@ -1,0 +1,225 @@
+---
+title: "Fixing Postgres Race Conditions & Row-Level Deadlocks in Production Rails"
+seoTitle: "Postgres Concurrency in Rails: Row Locks & Deadlocks (2026)"
+description: "Why read-modify-write leaks race conditions in Rails, how SELECT FOR UPDATE blocks, and when to use advisory locks — with real production code."
+pubDate: 2026-10-20
+category: "database-reliability"
+tags: ["rails", "postgres", "sidekiq", "database", "concurrency"]
+draft: false
+---
+
+High-concurrency Rails applications often fail in subtle, silent ways long before they crash outright. You notice double-processed payments, inventory overselling by a few units, or transient `ActiveRecord::StatementInvalid: PG::DeadlockDetected: ERROR: deadlock detected (40P01)` errors appearing sporadically in your error tracker under peak traffic.
+
+The root cause is almost always a mismatch between Rails application logic and PostgreSQL's concurrency controls. Standard Active Record validations cannot prevent race conditions across parallel threads or background workers.
+
+In this deep-dive, we will break down why standard Active Record read-modify-write patterns fail, evaluate pessimistic vs. optimistic row locking, explore PostgreSQL transaction-level advisory locks, and establish the golden rules for eliminating `40P01` deadlocks.
+
+---
+
+## 1. The Flaw in "Read-Modify-Write"
+
+Consider a typical account balance deduction or inventory claim method in a Rails service object:
+
+```ruby
+class ClaimRewardService
+  def call(user_id, reward_id)
+    reward = Reward.find(reward_id)
+
+    # Race condition window: Read, Decide, Write
+    if reward.available_inventory > 0
+      reward.update!(available_inventory: reward.available_inventory - 1)
+      UserReward.create!(user_id: user_id, reward_id: reward_id)
+    else
+      raise "Reward out of stock"
+    end
+  end
+end
+```
+
+### Why Active Record Validations Fail
+
+If two concurrent Sidekiq threads execute `ClaimRewardService` for the same `reward_id` simultaneously when `available_inventory == 1`:
+
+1. **Thread A** reads `available_inventory` as `1`.
+2. **Thread B** reads `available_inventory` as `1` before Thread A commits.
+3. Both threads pass the condition `reward.available_inventory > 0`.
+4. Both threads execute `UPDATE rewards SET available_inventory = 0`.
+5. Both create a `UserReward` record.
+
+The inventory becomes `-1` logically, violating domain invariants despite your Ruby-level checks. Even adding `validates :available_inventory, numericality: { greater_than_or_equal_to: 0 }` inside the model fails because both threads validate against the uncommitted snapshot in their respective database transactions before writing.
+
+---
+
+## 2. Level 1: Pessimistic Row Locking (`SELECT FOR UPDATE`)
+
+To force serial execution at the database layer, PostgreSQL provides row-level locking via `SELECT FOR UPDATE`.
+
+When an Active Record query includes `.lock`, PostgreSQL acquires an Exclusive Lock on the matched rows. Any concurrent transaction attempting to lock or mutate those same rows will block until the holding transaction commits or rolls back.
+
+```ruby
+class ClaimRewardService
+  def call(user_id, reward_id)
+    Reward.transaction do
+      # Issues: SELECT * FROM rewards WHERE id = ? FOR UPDATE
+      reward = Reward.lock("FOR UPDATE").find(reward_id)
+
+      if reward.available_inventory > 0
+        reward.update!(available_inventory: reward.available_inventory - 1)
+        UserReward.create!(user_id: user_id, reward_id: reward_id)
+      else
+        raise "Reward out of stock"
+      end
+    end
+  end
+end
+```
+
+### Avoiding Lock Escalation: `FOR NO KEY UPDATE`
+
+In PostgreSQL, a standard `FOR UPDATE` lock blocks concurrent reads that attempt `FOR SHARE` or `FOR KEY SHARE` locks (such as foreign key checks on child table writes).
+
+If you are updating columns that do **not** participate in unique indexes or foreign keys (e.g., counters, timestamps, status flags), use `FOR NO KEY UPDATE`:
+
+```ruby
+# Less restrictive row lock; allows concurrent foreign key checks
+reward = Reward.lock("FOR NO KEY UPDATE").find(reward_id)
+```
+
+---
+
+## 3. Level 2: Optimistic Locking (`lock_version`)
+
+Pessimistic locking holds active database connections open while waiting for locks. Under heavy queue depth, this can exhaust your Rails database connection pool.
+
+**Optimistic locking** avoids database locks during reads. Instead, it checks whether another process updated the record while the current process was preparing its update.
+
+### Schema Setup
+
+Add a `lock_version` integer column (defaulting to 0) to your table migration:
+
+```ruby
+class AddLockVersionToRewards < ActiveRecord::Migration[7.1]
+  def change
+    add_column :rewards, :lock_version, :integer, default: 0, null: false
+  end
+end
+```
+
+Active Record automatically increments `lock_version` on every save and appends `WHERE id = ? AND lock_version = ?` to SQL `UPDATE` queries.
+
+If another worker updated the row in the interim, the affected rows count returns `0`, and Active Record raises `ActiveRecord::StaleObjectError`.
+
+### Resilient Retry Pattern
+
+```ruby
+class ClaimRewardService
+  MAX_RETRIES = 3
+
+  def call(user_id, reward_id)
+    retries = 0
+
+    begin
+      reward = Reward.find(reward_id)
+
+      if reward.available_inventory > 0
+        reward.update!(available_inventory: reward.available_inventory - 1)
+        UserReward.create!(user_id: user_id, reward_id: reward_id)
+      end
+    rescue ActiveRecord::StaleObjectError
+      retries += 1
+      if retries <= MAX_RETRIES
+        sleep(rand(0.01..0.05)) # Jitter to prevent stampeding herd
+        retry
+      else
+        raise "High contention: reward update failed after #{MAX_RETRIES} attempts"
+      end
+    end
+  end
+end
+```
+
+---
+
+## 4. Level 3: PostgreSQL Advisory Locks (`pg_advisory_xact_lock`)
+
+Sometimes you need to serialize operations across a cluster based on an arbitrary domain key (like a `user_id` or `merchant_account_id`) where no specific database row exists to lock yet.
+
+While many teams reach for Redis-based distributed locks (e.g., Redlock), Redis locks risk becoming orphaned if a worker crashes or encounters network partitions before executing the unlock command.
+
+PostgreSQL **Advisory Locks** are application-level locks stored natively inside PostgreSQL. Transaction-level advisory locks (`pg_advisory_xact_lock`) are **automatically released by Postgres when the transaction terminates**, making them completely crash-safe.
+
+```ruby
+class ProcessUserPayoutService
+  def call(user_id, amount)
+    User.transaction do
+      # Convert integer user_id into a Postgres transaction advisory lock
+      ActiveRecord::Base.connection.execute(
+        ActiveRecord::Base.sanitize_sql_array([
+          "SELECT pg_advisory_xact_lock(?)", user_id
+        ])
+      )
+
+      # Guaranteed single-threaded processing per user_id across the entire cluster
+      payout = PayoutCalculator.compute(user_id, amount)
+      payout.process!
+    end # Lock is automatically released here by Postgres
+  end
+end
+```
+
+---
+
+## 5. Eliminating Postgres Deadlocks (`40P01`)
+
+Pessimistic locking solves race conditions, but if locks are requested in inconsistent orders across different parts of your codebase, PostgreSQL will abort transactions with a `40P01` deadlock error.
+
+### How a Deadlock Occurs
+
+1. **Transaction A** locks Row 1 (`Account #10`).
+2. **Transaction B** locks Row 2 (`Account #20`).
+3. **Transaction A** attempts to lock Row 2 (`Account #20`) → *Blocks waiting for B*.
+4. **Transaction B** attempts to lock Row 1 (`Account #10`) → *Blocks waiting for A*.
+
+Postgres detects the cycle and aborts one of the transactions with `PG::DeadlockDetected`.
+
+### The Golden Rule: Deterministic Lock Ordering
+
+Always sort primary keys or lock identifiers before acquiring row locks in multi-record operations:
+
+```ruby
+# WRONG: Unordered array can cause deadlocks if callers pass [10, 20] vs [20, 10]
+def transfer_funds(from_id, to_id, amount)
+  Account.transaction do
+    from_acc = Account.lock.find(from_id)
+    to_acc   = Account.lock.find(to_id)
+    # ...
+  end
+end
+
+# RIGHT: Always lock in deterministic ID order
+def transfer_funds(from_id, to_id, amount)
+  Account.transaction do
+    # Fetch and lock both accounts in strictly ascending primary key order.
+    # ORDER BY is what fixes the lock order: Postgres locks rows in the order
+    # the query returns them, not the order of the IN (...) list.
+    accounts = Account.where(id: [from_id, to_id]).order(:id).lock("FOR UPDATE").index_by(&:id)
+
+    from_acc = accounts[from_id]
+    to_acc   = accounts[to_id]
+
+    from_acc.update!(balance: from_acc.balance - amount)
+    to_acc.update!(balance: to_acc.balance + amount)
+  end
+end
+```
+
+---
+
+## Summary Checklist for Rails Concurrency
+
+| Use Case | Recommended Solution | Trade-off / Benefit |
+| --- | --- | --- |
+| **Low contention updates** | Optimistic Locking (`lock_version`) | No DB blocking; requires retry loops for `StaleObjectError`. |
+| **High contention row mutation** | `SELECT FOR UPDATE` / `FOR NO KEY UPDATE` | Guarantees consistency; holds active DB connection. |
+| **Cluster-wide worker synchronization** | `pg_advisory_xact_lock` | Crash-safe; no Redis dependencies. |
+| **Multi-record updates** | Deterministic ID Sorting (`.order(:id)`) | Prevents `40P01` Postgres deadlocks completely. |
