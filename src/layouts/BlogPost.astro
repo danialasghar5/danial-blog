@@ -7,6 +7,7 @@ import Newsletter from '../components/Newsletter.astro';
 import ServicesCta from '../components/ServicesCta.astro';
 import { readingTime } from '../utils/reading-time';
 import { getTopic, topicUrl } from '../data/topics';
+import { breadcrumbJsonLd } from '../utils/breadcrumbs';
 
 type PostLink = { slug: string; title: string } | null;
 type Heading = { depth: number; slug: string; text: string };
@@ -78,6 +79,12 @@ const showUpdated =
 ---
 
 <Page title={pageTitle} description={seoDescription ?? description} type="article" suppressArticleSchema={hasCustomSchema} ogImageUrl={ogImage} pubDate={pubDate} updatedDate={updatedDate}>
+	{!hasCustomSchema && (
+		<Fragment slot="head">
+			{/* Posts with their own JSON-LD (hasCustomSchema) already include a BreadcrumbList. */}
+			<script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd([{ label: 'Home', href: '/' }, { label: 'Writing', href: '/blog/' }, { label: title }], Astro.site, Astro.url))} is:inline />
+		</Fragment>
+	)}
 	<Fragment slot="before-main">
 		<div class="read-progress" aria-hidden="true"><span id="read-progress-bar"></span></div>
 	</Fragment>
