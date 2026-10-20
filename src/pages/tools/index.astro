@@ -24,7 +24,7 @@ const tools = [
 	<ul class="tools">
 		{tools.map((t) => (
 			<li>
-				<a class="card tool" href={t.href}>
+				<a class="tool" href={t.href}>
 					<h2>{t.title}</h2>
 					<p>{t.blurb}</p>
 					<span class="go">Open tool &rarr;</span>
@@ -37,10 +37,20 @@ const tools = [
 <style>
 	main { padding-block: var(--space-16) var(--space-8); }
 	.lede { margin: 0 0 var(--space-10); max-width: 62ch; }
-	.tools { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); grid-template-columns: 1fr; }
-	@media (min-width: 760px) { .tools { grid-template-columns: repeat(2, 1fr); } }
-	.tool { display: flex; flex-direction: column; gap: var(--space-2); height: 100%; padding: var(--space-6); color: var(--text); text-decoration: none; }
-	.tool h2 { font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-snug); margin: 0; }
-	.tool p { margin: 0; font-size: var(--fs-sm); color: var(--text-muted); line-height: var(--lh-normal); }
-	.go { margin-top: auto; padding-top: var(--space-2); font-size: var(--fs-sm); font-weight: 600; color: var(--brand); }
+	/* Tool rows: name and summary on the left, the action on the right. */
+	.tools { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--border); }
+	.tools li { border-top: 1px solid var(--border); }
+	.tool {
+		display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-8);
+		align-items: baseline; padding: var(--space-6) 0;
+		color: var(--text); text-decoration: none;
+	}
+	.tool h2 { grid-column: 1; font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-snug); margin: 0; transition: color .15s ease; }
+	.tool p { grid-column: 1; margin: 0; max-width: 68ch; font-size: var(--fs-base); color: var(--text-muted); line-height: var(--lh-normal); }
+	.go { grid-column: 2; grid-row: 1; white-space: nowrap; font-size: var(--fs-sm); font-weight: 600; color: var(--brand); }
+	.tool:hover h2 { color: var(--brand); }
+	@media (max-width: 560px) {
+		.tool { grid-template-columns: 1fr; }
+		.go { grid-column: 1; grid-row: auto; }
+	}
 </style>

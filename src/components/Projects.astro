@@ -6,8 +6,12 @@ interface Props {
   heading?: string;
   blurb?: string;
   withHeader?: boolean;
+  /** Render without the container/section padding (inside a page that has its own). */
+  bare?: boolean;
 }
-const { showAll = false, heading, blurb, withHeader = true } = Astro.props;
+const { showAll = false, heading, blurb, withHeader = true, bare = false } = Astro.props;
+// Keep the arrow attached to the title's last word so it never wraps alone.
+const splitTitle = (t: string) => { const i = t.lastIndexOf(' '); return i < 0 ? ['', t] : [t.slice(0, i + 1), t.slice(i + 1)]; };
 
 const all = (await getCollection('projects'))
   .filter((p) => !p.data.draft)
@@ -15,7 +19,7 @@ const all = (await getCollection('projects'))
 const displayProjects = showAll ? all : all.filter((p) => p.data.featured);
 const title = heading ?? (showAll ? 'All projects' : 'Featured work');
 ---
-<section class="projects container block">
+<section class:list={['projects', { 'container block': !bare }]}>
   {withHeader && (
     <div class="section-head">
       <h2>{title}</h2>
@@ -23,44 +27,58 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
     </div>
   )}
   {blurb && <p class="section-blurb">{blurb}</p>}
-  <div class="grid-cards">
+  <ul class="proj-list">
     {displayProjects.map((p) => (
-      <a class="proj" href={`/projects/${p.id}/`}>
-        <div class="proj-top">
-          <h3>{p.data.title}</h3>
-          <svg class="arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </div>
-        <p class="desc">{p.data.problem}</p>
-        <ul class="tech">{p.data.tech.map((t) => <li>{t}</li>)}</ul>
-      </a>
+      <li>
+        <a class="proj" href={`/projects/${p.id}/`}>
+          <h3 class="proj-title">
+            {splitTitle(p.data.title)[0]}<span class="nowrap">{splitTitle(p.data.title)[1]}<svg class="arrow" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </h3>
+          <div class="proj-body">
+            <p class="desc">{p.data.problem}</p>
+            {p.data.tech.length > 0 && <p class="tech">{p.data.tech.join(' · ')}</p>}
+          </div>
+        </a>
+      </li>
     ))}
-  </div>
+  </ul>
 </section>
 
 <style>
   .block { padding-block: var(--space-12); }
   /* When a blurb follows the header row, tighten the rule→dek gap so they read
-     as one header block, consistent with the section rhythm. */
+     as one header block. */
   .section-head:has(+ .section-blurb) { margin-bottom: var(--space-4); }
   .section-blurb {
-    margin: 0 0 var(--space-8);
+    margin: 0 0 var(--space-6);
     color: var(--text-muted); font-size: var(--fs-base);
     line-height: var(--lh-normal); max-width: 62ch;
   }
+
+  /* Project rows: title on the left, the problem and stack on the right,
+     hairlines between rows — the same rhythm as the writing index. */
+  .proj-list { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--border); }
+  .proj-list li { border-top: 1px solid var(--border); }
+  /* Under a section head (which draws its own hairline) the first row needs none. */
+  .section-head ~ .proj-list li:first-child,
+  .section-blurb + .proj-list li:first-child { border-top: 0; }
   .proj {
-    display: flex; flex-direction: column; gap: .5rem;
-    padding: var(--space-6);
-    border: 1px solid var(--border); border-radius: var(--radius-lg);
-    background: var(--card-bg); color: var(--text); text-decoration: none;
-    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2);
+    padding: var(--space-6) 0;
+    color: var(--text); text-decoration: none;
   }
-  .proj:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
-  .proj-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-  .proj h3 { margin: 0; font-size: var(--fs-lg); font-weight: 700; }
-  .proj:hover h3 { color: var(--brand); }
-  .arrow { color: var(--text-faint); flex-shrink: 0; transition: transform .2s ease, color .2s ease; }
+  @media (min-width: 760px) {
+    .proj { grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-8); align-items: baseline; }
+  }
+  .nowrap { white-space: nowrap; }
+  .proj-title {
+    margin: 0; font-size: var(--fs-lg); font-weight: 600; line-height: var(--lh-snug);
+    letter-spacing: var(--tracking-tight); transition: color .15s ease;
+  }
+  /* Inline, so on a wrapped title it follows the last word. */
+  .arrow { display: inline; margin-left: .4rem; vertical-align: -1px; color: var(--text-faint); transition: transform .15s ease, color .15s ease; }
+  .proj:hover .proj-title { color: var(--brand); }
   .proj:hover .arrow { color: var(--brand); transform: translateX(2px); }
-  .desc { color: var(--text-muted); font-size: var(--fs-sm); line-height: var(--lh-normal); margin: 0; }
-  .tech { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem; }
-  .tech li { font-size: var(--fs-xs); padding: .2rem .55rem; border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); background: var(--bg-subtle); }
+  .desc { margin: 0; max-width: 68ch; color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
+  .tech { margin: var(--space-2) 0 0; font-size: var(--fs-sm); color: var(--text-faint); }
 </style>

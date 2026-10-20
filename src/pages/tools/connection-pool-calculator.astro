@@ -77,7 +77,7 @@ const jsonLd = [
 		<div class="fields">
 			{fields.map((f) => (
 				<label class="field">
-					<span>{f.label}</span>
+					<span class="field-label">{f.label}</span>
 					<input type="number" inputmode="numeric" min="1" step="1" id={f.id} value={f.value} />
 				</label>
 			))}
@@ -87,7 +87,7 @@ const jsonLd = [
 
 		<div class="snippet">
 			<div class="snippet-head">
-				<span>Recommended config/database.yml</span>
+				<span>Recommended <code>config/database.yml</code></span>
 				<button id="copy-btn" class="btn btn-secondary btn-sm" type="button">Copy</button>
 			</div>
 			<pre id="snippet"></pre>
@@ -105,9 +105,7 @@ const jsonLd = [
 		<p>
 			Every thread that runs a database query needs its own connection from the Rails pool.
 			In a Rails app that means two separate pools to reason about: your web process (Puma)
-			and your worker process (Sidekiq). The pool size is set per process in
-			<code>config/database.yml</code>, and the single most common production error —
-			<em>could not obtain a connection from the pool</em> — happens when a process runs
+			and your worker process (Sidekiq). The pool size is set per process in <code>config/database.yml</code>, and the single most common production error — <em>could not obtain a connection from the pool</em> — happens when a process runs
 			more threads than its pool has connections.
 		</p>
 
@@ -120,8 +118,7 @@ const jsonLd = [
 			default is to set the pool to your thread count plus a small amount of headroom.
 		</p>
 		<p>
-			A common trap: the default Rails <code>database.yml</code> sizes the pool from
-			<code>RAILS_MAX_THREADS</code>. If that variable is set to your Puma thread count and
+			A common trap: the default Rails <code>database.yml</code> sizes the pool from <code>RAILS_MAX_THREADS</code>. If that variable is set to your Puma thread count and
 			your Sidekiq process inherits it, the worker gets a web-sized pool. Size the pool from a
 			variable you set per process — or give it a default large enough for the biggest one.
 		</p>
@@ -249,51 +246,65 @@ const jsonLd = [
 
 	.lede { margin: 0 0 var(--space-10); max-width: 66ch; }
 
+	/* The one raised panel on the site: it is an instrument, not reading. */
 	.calc {
-		padding: var(--space-6);
+		padding: var(--space-2) var(--space-6) var(--space-6);
 		background: var(--card-bg);
 		border: 1px solid var(--border); border-radius: var(--radius-lg);
 	}
-	.fields { display: grid; gap: var(--space-4) var(--space-6); grid-template-columns: 1fr; }
-	@media (min-width: 620px) { .fields { grid-template-columns: 1fr 1fr; } }
-	.field { display: flex; flex-direction: column; gap: .35rem; }
-	.field span { font-size: var(--fs-sm); color: var(--text-muted); }
+	/* Inputs read like a table: label left, value right, hairline rows. */
+	.fields { display: grid; grid-template-columns: 1fr; column-gap: var(--space-10); }
+	@media (min-width: 720px) { .fields { grid-template-columns: 1fr 1fr; } }
+	.field {
+		display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+		padding: var(--space-3) 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.field-label { font-size: var(--fs-sm); color: var(--text-muted); }
 	.field input {
+		width: 6.5rem; flex: 0 0 auto; text-align: right;
 		font-family: var(--font-mono); font-size: var(--fs-base); color: var(--text);
-		padding: 9px 12px;
+		font-variant-numeric: tabular-nums;
+		padding: 7px 10px;
 		background: var(--bg);
-		border: 1px solid var(--border-strong); border-radius: var(--radius);
+		border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
 		transition: border-color .15s ease, box-shadow .15s ease;
 	}
+	.field input:hover { border-color: var(--text-faint); }
 	.field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
 
+	/* Verdict: a full-width strip with a 2px state bar on the left. */
 	.verdict {
-		margin-top: var(--space-6); padding: var(--space-4);
-		border: 1px solid var(--border); border-radius: var(--radius);
-		font-size: var(--fs-sm); line-height: var(--lh-normal);
+		margin-top: var(--space-6); padding: var(--space-4) var(--space-5);
+		border-left: 2px solid var(--border-strong);
+		background: var(--bg-subtle);
+		font-size: var(--fs-sm); line-height: var(--lh-normal); color: var(--text);
 	}
-	.verdict.is-ok { border-color: var(--brand-ring); background: var(--brand-soft); color: var(--text); }
-	.verdict.is-risk { border-color: color-mix(in srgb, var(--dg-hazard) 45%, transparent); background: var(--dg-hazard-fill); color: var(--text); }
-	.verdict :global(strong) { font-weight: 700; }
+	.verdict.is-ok { border-left-color: var(--brand); background: var(--brand-soft); }
+	.verdict.is-risk { border-left-color: var(--dg-hazard); background: var(--dg-hazard-fill); }
+	.verdict :global(strong) { font-weight: 600; }
 	.verdict.is-ok :global(strong) { color: var(--brand); }
 	.verdict.is-risk :global(strong) { color: var(--dg-hazard); }
 	.verdict :global(ul) { margin: .4rem 0 0; padding-left: 1.2rem; }
 	.verdict :global(li) { margin-bottom: .25rem; }
 	.verdict :global(.note) { margin: .4rem 0 0; color: var(--text-muted); }
 
-	.snippet { margin-top: var(--space-4); }
+	.snippet { margin-top: var(--space-6); }
 	.snippet-head {
 		display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
-		margin-bottom: .5rem;
-		font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--text-faint); font-weight: 600;
+		margin-bottom: var(--space-2);
+		font-size: var(--fs-sm); font-weight: 600; color: var(--text);
 	}
 	.snippet pre { margin: 0; font-size: var(--fs-xs); white-space: pre; overflow-x: auto; }
 
-	.funnel { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); margin-top: var(--space-6); font-size: var(--fs-sm); font-weight: 600; }
+	.funnel { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-8); margin-top: var(--space-6); font-size: var(--fs-sm); font-weight: 600; }
+	.funnel a { text-decoration: none; }
 
 	/* Typography from the global .prose; only this page's tighter heading rhythm here. */
 	.content { margin-top: var(--space-16); padding-top: var(--space-8); border-top: 1px solid var(--border); }
 	.content h2 { margin: var(--space-10) 0 var(--space-4); }
 	.content h2:first-child { margin-top: 0; }
 	.content h3 { margin: var(--space-8) 0 var(--space-2); }
+	/* Explainer text at the reading measure (ch resolves per element). */
+	.content > * { max-width: var(--measure); }
 </style>

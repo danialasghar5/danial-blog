@@ -20,8 +20,7 @@ const channels = [
 				Tell me what you're building and I'll get back to you.
 			</p>
 			<p class="lede-sub">
-				Fighting a reliability problem in production? See the fixed-scope
-				<a href="/services">Rails reliability services</a>.
+				Fighting a reliability problem in production? See the fixed-scope <a href="/services">Rails reliability services</a>.
 			</p>
 		</PageHeader>
 
@@ -42,23 +41,29 @@ const channels = [
 </Page>
 
 <style>
-	main { padding-block: var(--space-20) var(--space-12); }
-	.contact { max-width: var(--container-prose); margin-inline: auto; }
+	main { padding-block: var(--space-16) var(--space-12); }
+	/* Left-aligned with the breadcrumb, like every other page. */
+	.contact { max-width: var(--container-prose); }
 	.lede { margin: 0 0 var(--space-4); }
 	.lede-sub { color: var(--text-muted); margin: 0 0 var(--space-10); }
-	.lede-sub a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
-	.channels { display: grid; gap: var(--space-4); margin-bottom: var(--space-10); }
+	.lede-sub a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); }
+	.lede-sub a:hover { color: var(--brand); text-decoration-color: var(--brand); }
+
+	/* Channels: hairline rows, no cards. */
+	.channels { margin-bottom: var(--space-10); border-bottom: 1px solid var(--border); }
 	.channel {
-		display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
-		padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius);
-		background: var(--card-bg); color: var(--text);
-		transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+		display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) auto; align-items: baseline; gap: var(--space-6);
+		padding: var(--space-5) 0; border-top: 1px solid var(--border);
+		color: var(--text); text-decoration: none;
 	}
-	.channel:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow); }
-	.channel > div { display: flex; flex-direction: column; gap: .2rem; }
-	.ch-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
-	.ch-value { font-weight: 600; }
+	.channel > div { display: contents; }
+	.ch-label { font-size: var(--fs-sm); color: var(--text-faint); }
+	.ch-value { font-weight: 600; transition: color .15s ease; }
+	.channel:hover .ch-value { color: var(--brand); }
 	.ch-note { font-size: var(--fs-sm); color: var(--text-muted); text-align: right; }
 	.big { padding: .8rem 1.4rem; font-size: var(--fs-base); }
-	@media (max-width: 480px) { .ch-note { display: none; } }
+	@media (max-width: 560px) {
+		.channel { grid-template-columns: 1fr; gap: .15rem; }
+		.ch-note { display: none; }
+	}
 </style>

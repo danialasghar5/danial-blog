@@ -133,29 +133,24 @@ const jsonLd = {
 	.hub-intro :global(p) { margin: 0 0 var(--space-6); }
 	.hub-intro :global(p:last-child) { margin-bottom: 0; }
 
-	.section-eyebrow {
-		font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em;
-		color: var(--text-muted); font-weight: 600; margin: 0 0 var(--space-4);
-		padding-bottom: var(--space-4); border-bottom: 1px solid var(--border);
-	}
+	/* Section label; the list below supplies the hairline. */
+	.section-eyebrow { font-size: var(--fs-sm); font-weight: 600; color: var(--text); margin: 0 0 var(--space-3); }
 
 	.start-here { margin-bottom: var(--space-12); }
+	/* The cornerstone post: a larger row between hairlines, no box. */
 	.start-card {
 		display: block; text-decoration: none; color: var(--text);
-		border: 1px solid var(--border); border-left: 3px solid var(--brand);
-		border-radius: var(--radius); background: var(--card-bg);
-		padding: var(--space-6) var(--space-8);
-		transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+		padding: var(--space-6) 0;
+		border-block: 1px solid var(--border);
 	}
-	.start-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
-	.start-card h2 { margin: 0 0 var(--space-2); font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug); }
+	.start-card h2 { margin: 0 0 var(--space-2); font-size: var(--fs-2xl); font-weight: 600; line-height: var(--lh-snug); letter-spacing: var(--tracking-tight); transition: color .15s ease; }
 	.start-card:hover h2 { color: var(--brand); }
-	.start-desc { margin: 0 0 var(--space-4); color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
-	.start-meta { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-xs); color: var(--text-faint); }
+	.start-desc { margin: 0 0 var(--space-3); font-family: var(--font-prose); color: var(--text-muted); font-size: var(--fs-lg); line-height: var(--lh-normal); max-width: 68ch; }
+	.start-meta { display: flex; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--text-faint); }
 	.dot { color: var(--text-faint); }
 
 	.hub-list { margin-bottom: var(--space-12); }
 	.hub-list .post-list { border-bottom: 1px solid var(--border); }
 
-	.related-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+	.related-chips { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
 </style>

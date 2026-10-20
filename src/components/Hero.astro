@@ -1,49 +1,44 @@
 ---
-import { NAME, ROLE, SOCIALS } from '../consts';
+import { SOCIALS } from '../consts';
 ---
 <section class="hero container">
-  <p class="hero-kicker">{NAME} · {ROLE}</p>
   <h1 class="hero-thesis">Reliability engineering for Rails and AI backends.</h1>
   <p class="hero-lede">
     I write about the systems that have to stay correct when things go wrong —
     background jobs, databases, and AI backends — with each piece grounded in
     open-source code I build and ship, not just opinions.
   </p>
-  <div class="hero-actions">
-    <a class="btn btn-primary hero-cta" href="/blog">Read the writing →</a>
-    <nav class="hero-links" aria-label="Quick links">
-      <a href="/about">About</a>
-      <a href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
-      <a href="/rss.xml">RSS</a>
-    </nav>
-  </div>
+  <nav class="hero-links" aria-label="Quick links">
+    <a class="hero-primary" href="/blog">Read the writing <span aria-hidden="true">&rarr;</span></a>
+    <a href="/about">About</a>
+    <a href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
+    <a href="/rss.xml">RSS</a>
+  </nav>
 </section>
 
 <style>
-  .hero { padding-block: var(--space-16) var(--space-12); }
-  .hero-kicker {
-    font-size: var(--fs-sm); font-weight: 600;
-    letter-spacing: var(--tracking-wide); text-transform: uppercase;
-    color: var(--brand); margin: 0 0 var(--space-4);
-  }
+  /* A statement, not a banner: big type, a serif lede at the reading measure,
+     one row of quiet links. The header's Services button stays the page's only
+     filled button. */
+  .hero { padding-block: var(--space-24) var(--space-16); }
   .hero-thesis {
-    font-size: var(--fs-3xl); line-height: var(--lh-tight);
-    margin: 0 0 var(--space-6); letter-spacing: var(--tracking-tighter); font-weight: 800;
-    max-width: 22ch;
+    font-size: clamp(2.5rem, 1.6rem + 4vw, 4.25rem); font-weight: 700;
+    line-height: 1.05; letter-spacing: -0.03em;
+    margin: 0 0 var(--space-8); max-width: 16ch;
   }
   .hero-lede {
     font-family: var(--font-prose);
-    font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text-muted);
-    max-width: 60ch; margin: 0 0 var(--space-8);
+    font-size: var(--fs-xl); line-height: var(--lh-normal); color: var(--text-muted);
+    max-width: var(--measure); margin: 0 0 var(--space-10);
   }
-  /* Spacing via margins (not flex `gap`) so it holds up everywhere. */
-  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; }
-  .hero-cta { font-size: var(--fs-base); margin: 0 var(--space-8) var(--space-4) 0; }
-  .hero-links { display: flex; flex-wrap: wrap; align-items: center; }
-  .hero-links a {
-    font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted);
-    margin: 0 1.5rem var(--space-4) 0;
-  }
-  .hero-links a:last-child { margin-right: 0; }
+  .hero-links { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-8); }
+  .hero-links a { font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted); text-decoration: none; }
   .hero-links a:hover { color: var(--text); }
+  .hero-links .hero-primary { font-size: var(--fs-base); font-weight: 600; color: var(--brand); }
+  .hero-links .hero-primary:hover { color: var(--brand-hover); }
+
+  @media (max-width: 560px) {
+    .hero { padding-block: var(--space-16) var(--space-12); }
+    .hero-lede { font-size: var(--fs-lg); }
+  }
 </style>

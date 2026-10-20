@@ -11,12 +11,12 @@ import { SITE_TITLE } from '../consts';
 	<PageHeader class="projects-header" eyebrow="Portfolio" title="Things I've built">
 		<p class="page-lede projects-subtitle">A selection of applications, tools, and SaaS extensions I've designed, built, and shipped to production.</p>
 	</PageHeader>
-	<Projects showAll={true} withHeader={false} />
+	<Projects showAll={true} withHeader={false} bare />
 </Page>
 
 <style>
 	main { padding-block: var(--space-12) 0; }
-	.projects-header { padding-bottom: var(--space-8); border-bottom: 1px solid var(--border); }
+	.projects-header { padding-bottom: var(--space-10); }
 	.projects-header :global(.page-title) { margin-bottom: var(--space-2); }
 	.projects-subtitle { max-width: 62ch; }
 </style>

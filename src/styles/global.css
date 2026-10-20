@@ -417,6 +417,23 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0
 .prose tbody tr:nth-child(even) { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
 .prose td code, .prose th code { white-space: nowrap; }
 
+/* ---- Reading column (articles, case studies) ----
+   One centred column at the reading measure. It takes the prose font so `ch`
+   resolves against Source Serif — every child (title, meta, prose, footer)
+   then shares one left edge. Non-prose children reset to the UI font.
+   Code, diagrams and tables break out symmetrically to --measure-wide. */
+.reading-column {
+	font-family: var(--font-prose); font-size: var(--fs-lg);
+	width: min(100%, var(--measure));
+	margin-inline: auto;
+}
+.reading-column > :not(.prose) { font-family: var(--font-sans); font-size: var(--fs-base); }
+.reading-column .prose > :is(pre, .dg-figure, .table-scroll, img.diagram) {
+	--breakout: min(var(--measure-wide), 100vw - 2 * var(--space-6));
+	width: var(--breakout); max-width: none;
+	margin-inline: calc((100% - var(--breakout)) / 2);
+}
+
 /* ---- Heading anchors (rehype-autolink-headings, article prose only) ----
    A quiet "#" that appears on heading hover/focus so a section can be deep-linked. */
 .prose :is(h2, h3, h4) { position: relative; }
