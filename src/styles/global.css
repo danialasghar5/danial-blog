@@ -1,45 +1,50 @@
 /*
-  Design system — danialasghar.com  (Phase 2A/2B)
-  One source of truth: editorial color palette, 4px-based spacing, type scale, layout.
-  Headings/UI: IBM Plex Sans · Body/articles: Source Serif 4 · Code: JetBrains Mono.
+  Design system — danialasghar.com  ("Ink & Signal")
+  Near-monochrome surfaces; one forest-green accent for links, current state and
+  the primary action; clay only for hazards. Hierarchy comes from type and space.
+
+  Type roles (enforced through the --font-* tokens; never name a font directly):
+    --font-sans  IBM Plex Sans    headings, navigation, UI, labels
+    --font-prose Source Serif 4   long-form reading text (.prose, ledes, deks)
+    --font-mono  JetBrains Mono   code, numbers in tools, diagram labels
 */
 
 :root {
-	/* ---- Color: light (editorial) ---- */
-	--bg: #FBFBFA;
-	--card-bg: #FFFFFF;       /* surface */
-	--bg-subtle: #F4F4F2;
+	/* ---- Color: light ("crisp paper") ---- */
+	--bg: #FCFCFB;            /* page */
+	--card-bg: #FFFFFF;       /* surface: raised panels, code */
+	--bg-subtle: #F5F5F3;     /* surface-2: inline code, hover */
 	--bg-elevated: #FFFFFF;
-	--text: #1A1A18;          /* primary */
-	--text-muted: #5C5C57;    /* secondary */
-	--text-faint: #8A8A83;    /* muted */
-	--border: #E6E6E1;
-	--border-strong: #D8D8D2;
+	--text: #0B0B0C;          /* primary */
+	--text-muted: #55555C;    /* secondary: subtitles, captions */
+	--text-faint: #6B6B71;    /* meta: ≥4.5:1 on every light surface */
+	--border: #E7E7E4;        /* hairline */
+	--border-strong: #D6D6D2; /* inputs, table header rule */
 
-	--brand: #2F5E4E;         /* accent */
-	--brand-hover: #274F42;
+	--brand: #1F6F55;         /* forest green: links, current state, primary action */
+	--brand-hover: #185A45;
 	--brand-contrast: #FFFFFF;
 	--brand-soft: color-mix(in srgb, var(--brand) 10%, transparent);
 	--brand-ring: color-mix(in srgb, var(--brand) 28%, transparent);
 
 	/* ---- Diagram system: light ("blueprint on paper") ----
-	   sage = guarantees/correct paths · clay = failures/hazards · grey = infra */
-	--dg-canvas: #F7F7F5;
+	   green = guarantees/correct paths · clay = failures/hazards · grey = infra */
+	--dg-canvas: #F7F7F6;
 	--dg-surface: #FFFFFF;
-	--dg-boundary: #F0F0EC;
-	--dg-stroke: #D8D8D2;
-	--dg-stroke-2: #BDBDB5;
-	--dg-label: #1A1A18;
-	--dg-sub: #5C5C57;
-	--dg-mono: #5C5C57;
-	--dg-flow: #A9A9A2;
-	--dg-accent: #2F5E4E;
-	--dg-accent-fill: #E8F0EC;
+	--dg-boundary: #F1F1EF;
+	--dg-stroke: #D6D6D2;
+	--dg-stroke-2: #B9B9B4;
+	--dg-label: #0B0B0C;
+	--dg-sub: #55555C;
+	--dg-mono: #55555C;
+	--dg-flow: #A3A3A0;
+	--dg-accent: #1F6F55;
+	--dg-accent-fill: #E5F1EB;
 	--dg-accent-ink: #FFFFFF;
-	--dg-hazard: #9E4F44;
-	--dg-hazard-fill: #F6EAE8;
-	--dg-decision: #EFEFEA;
-	--dg-future: #8A8A83;
+	--dg-hazard: #B4432F;     /* clay: also the calculator's risk state */
+	--dg-hazard-fill: #FBEDEA;
+	--dg-decision: #F0F0EE;
+	--dg-future: #6B6B71;
 
 	/* ---- Spacing: one linear scale, --space-N = N × 4px ----
 	   Steps follow the Tailwind numbering, so the name always tells the size. */
@@ -56,6 +61,12 @@
 	--space-20: 80px;
 	--space-24: 96px;
 	--space-32: 128px;
+
+	/* ---- Reading measure ----
+	   ch is relative to the element's own font, so apply --measure on the text
+	   element itself (e.g. .prose), not on a sans-serif wrapper. */
+	--measure: 68ch;          /* body text column (≈683px at 19px Source Serif) */
+	--measure-wide: 880px;    /* code blocks, diagrams, tables */
 
 	/* ---- Type scale ---- */
 	--fs-xs: 0.8125rem;
@@ -99,37 +110,38 @@
 }
 
 [data-theme="dark"] {
-	--bg: #0E0F0D;
-	--card-bg: #161714;       /* surface */
-	--bg-subtle: #1A1B17;
-	--bg-elevated: #161714;
-	--text: #ECECE6;
-	--text-muted: #A6A69E;
-	--text-faint: #8A8A82;   /* ≥4.5:1 on --bg for small meta text (was #71716A ≈ 3.7:1) */
-	--border: #262723;
-	--border-strong: #33342E;
+	/* ---- Color: dark ("obsidian") ---- */
+	--bg: #0A0A0B;            /* page */
+	--card-bg: #111113;       /* surface: raised panels, code */
+	--bg-subtle: #18181B;     /* surface-2: inline code, hover */
+	--bg-elevated: #111113;
+	--text: #EDEDEF;
+	--text-muted: #A1A1AA;
+	--text-faint: #8B8B94;    /* meta: ≥4.5:1 on every dark surface */
+	--border: #1F1F23;        /* hairline */
+	--border-strong: #2A2A30;
 
-	--brand: #6FB39A;
-	--brand-hover: #86C3AC;
-	--brand-contrast: #0E0F0D;
+	--brand: #62C9A0;
+	--brand-hover: #7DD6B2;
+	--brand-contrast: #0A0A0B;
 
 	/* ---- Diagram system: dark ("schematic on ink") ---- */
-	--dg-canvas: #0E0F0D;
-	--dg-surface: #161714;
-	--dg-boundary: #111512;
-	--dg-stroke: #2E332C;
-	--dg-stroke-2: #4A4E45;
-	--dg-label: #ECECE6;
-	--dg-sub: #A6A69E;
-	--dg-mono: #A6A69E;
-	--dg-flow: #6E6E67;
-	--dg-accent: #6FB39A;
-	--dg-accent-fill: #182420;
-	--dg-accent-ink: #0E0F0D;
-	--dg-hazard: #B5675C;
-	--dg-hazard-fill: #2A1A18;
-	--dg-decision: #15130E;
-	--dg-future: #8A8A82;
+	--dg-canvas: #0A0A0B;
+	--dg-surface: #111113;
+	--dg-boundary: #0E0E10;
+	--dg-stroke: #2A2A30;
+	--dg-stroke-2: #45454D;
+	--dg-label: #EDEDEF;
+	--dg-sub: #A1A1AA;
+	--dg-mono: #A1A1AA;
+	--dg-flow: #6B6B73;
+	--dg-accent: #62C9A0;
+	--dg-accent-fill: #11251D;
+	--dg-accent-ink: #0A0A0B;
+	--dg-hazard: #F08A6E;
+	--dg-hazard-fill: #2A1714;
+	--dg-decision: #141416;
+	--dg-future: #8B8B94;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
 	--shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .45);

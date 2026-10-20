@@ -50,9 +50,7 @@ const LAST_UPDATED = 'October 2026';
 	.policy-header :global(.page-title) { margin-bottom: var(--space-2); }
 	/* Body typography from the global .prose; this page runs a smaller heading scale. */
 	.policy h2 { font-size: var(--fs-xl); margin: var(--space-8) 0 var(--space-2); }
-	.policy p { margin: 0 0 var(--space-4); }
-	/* PHASE-0 PARITY: the old `.policy p` rule out-ranked `.updated`, so this line has
-	   always rendered as body text. Reproduced exactly; Phase 1 restores the intended
-	   small, faint label. */
-	.updated { font-family: var(--font-prose); font-size: var(--fs-lg); line-height: var(--lh-prose); color: var(--text); }
+	.prose p { margin: 0 0 var(--space-4); }
+	/* Meta line under the title: small, faint, UI type (not body text). */
+	.updated { color: var(--text-faint); font-size: var(--fs-sm); margin: 0 0 var(--space-8); }
 </style>
