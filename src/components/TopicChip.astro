@@ -23,22 +23,16 @@ const topic = getTopic(slug);
 )}
 
 <style>
+	/* A topic link: plain text with a trailing arrow, accent on hover. */
 	.topic-chip {
 		display: inline-flex; align-items: center; gap: .35rem;
 		font-size: var(--fs-sm); font-weight: 500;
-		padding: .35rem .8rem;
-		border: 1px solid var(--border);
-		border-radius: 999px;
-		color: var(--text-muted);
-		background: var(--bg-subtle);
-		text-decoration: none;
-		transition: color .15s ease, background .15s ease, border-color .15s ease;
+		color: var(--text); text-decoration: none;
+		padding-block: .2rem;
+		border-bottom: 1px solid var(--border-strong);
+		transition: color .15s ease, border-color .15s ease;
 	}
-	.topic-chip:hover {
-		color: var(--brand);
-		background: var(--brand-soft);
-		border-color: var(--brand-ring);
-	}
+	.topic-chip:hover { color: var(--brand); border-color: var(--brand); }
 	.arrow { transition: transform .15s ease; }
 	.topic-chip:hover .arrow { transform: translateX(2px); }
 </style>

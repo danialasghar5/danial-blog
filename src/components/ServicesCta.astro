@@ -19,16 +19,18 @@ const copy = (category && COPY[category]) || DEFAULT_COPY;
 
 <aside class="services-cta" aria-label="Consulting">
 	<p>{copy}</p>
-	<a class="btn btn-primary" href="/services">See how I can help <span aria-hidden="true">&rarr;</span></a>
+	<a class="btn btn-secondary" href="/services">See how I can help <span aria-hidden="true">&rarr;</span></a>
 </aside>
 
 <style>
+	/* End-of-post note: a hairline above, no filled box; the section that follows
+	   (related posts / prev-next) supplies the line below. The secondary button
+	   keeps the header's Services button the page's only primary action. */
 	.services-cta {
 		display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-		gap: var(--space-4) var(--space-6);
-		padding: var(--space-6);
-		border: 1px solid var(--brand-ring); border-radius: var(--radius-lg);
-		background: var(--brand-soft);
+		gap: var(--space-4) var(--space-8);
+		padding-block: var(--space-6);
+		border-top: 1px solid var(--border);
 	}
 	.services-cta p {
 		flex: 1 1 320px; margin: 0;

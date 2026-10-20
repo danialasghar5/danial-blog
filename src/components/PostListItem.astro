@@ -5,6 +5,7 @@ import { getTopic } from '../data/topics';
 
 interface Props {
 	post: any;
+	/** Title-only row (homepage); the full index also shows the description. */
 	compact?: boolean;
 }
 const { post, compact = false } = Astro.props;
@@ -15,37 +16,39 @@ const label = topic?.title ?? tags[0];
 ---
 <article class:list={['post-row', { compact }]} data-category={category ?? ''} data-tags={tags.join(',')}>
 	<a class="row-link" href={`/blog/${post.id}/`}>
+		<span class="row-date"><FormattedDate date={pubDate} /></span>
 		<div class="row-main">
-			{label && <span class="row-topic">{label}</span>}
 			<h3 class="row-title">{title}</h3>
 			{!compact && <p class="row-dek">{description}</p>}
-		</div>
-		<div class="row-meta">
-			<FormattedDate date={pubDate} />
-			<span class="row-dot">·</span>
-			<span>{minutes}</span>
+			<p class="row-meta">
+				{label && <span>{label}</span>}
+				{label && <span class="row-dot" aria-hidden="true">·</span>}
+				<span>{minutes}</span>
+			</p>
 		</div>
 	</a>
 </article>
 
 <style>
+	/* Index row: a faint date column on the left, the title and its meta on the
+	   right, separated from the next row by a hairline. No cards, no colour until
+	   hover. */
 	.post-row { border-top: 1px solid var(--border); }
 	.row-link {
-		display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-8);
+		display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-1) var(--space-6);
 		align-items: baseline;
-		padding: var(--space-8) 0;
+		padding: var(--space-6) 0;
 		text-decoration: none; color: var(--text);
 	}
-	.compact .row-link { padding: var(--space-6) 0; }
-	.row-main { min-width: 0; }
-	.row-topic {
-		display: block; font-size: var(--fs-xs); font-weight: 600;
-		text-transform: uppercase; letter-spacing: var(--tracking-wide);
-		color: var(--brand); margin-bottom: .35rem;
+	.compact .row-link { padding: var(--space-5) 0; }
+	.row-date {
+		font-size: var(--fs-sm); color: var(--text-faint);
+		font-variant-numeric: tabular-nums; white-space: nowrap;
 	}
+	.row-main { min-width: 0; }
 	.row-title {
 		font-family: var(--font-sans);
-		font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-snug);
+		font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-snug);
 		letter-spacing: var(--tracking-tight); margin: 0;
 		transition: color .15s ease;
 	}
@@ -54,19 +57,16 @@ const label = topic?.title ?? tags[0];
 	.row-dek {
 		font-family: var(--font-prose);
 		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
-		margin: .5rem 0 0; max-width: 68ch;
+		margin: var(--space-2) 0 0; max-width: 68ch;
 	}
 	.row-meta {
-		display: flex; align-items: baseline; gap: .4rem;
+		display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem;
+		margin: var(--space-2) 0 0;
 		font-size: var(--fs-sm); color: var(--text-faint);
-		font-variant-numeric: tabular-nums; white-space: nowrap;
-		justify-self: end; text-align: right;
 	}
-	.row-dot { color: var(--text-faint); }
 
-	/* On narrow screens the date drops under the title, left-aligned. */
+	/* Narrow screens: the date moves above the title. */
 	@media (max-width: 640px) {
 		.row-link { grid-template-columns: 1fr; }
-		.row-meta { justify-self: start; text-align: left; order: 3; margin-top: .5rem; }
 	}
 </style>

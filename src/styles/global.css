@@ -106,7 +106,7 @@
 	/* ---- Layout ---- */
 	--container: 1120px;
 	--container-prose: 920px;   /* centered article reading column (text + code + tables); responsive below via padding */
-	--header-h: 64px;
+	--header-h: 56px;
 }
 
 [data-theme="dark"] {

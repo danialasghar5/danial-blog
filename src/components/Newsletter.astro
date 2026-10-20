@@ -49,7 +49,8 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 </section>
 
 <style>
-	.newsletter { padding-block: var(--space-16); }
+	/* No bottom padding: the footer's top margin provides the gap below. */
+	.newsletter { padding-block: var(--space-16) 0; }
 	.nl-inner {
 		display: grid; grid-template-columns: 1fr; gap: var(--space-6) var(--space-12);
 		align-items: center;
@@ -57,7 +58,7 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 	}
 	@media (min-width: 820px) { .nl-inner { grid-template-columns: 1fr 1fr; } }
 
-	.nl-title { font-size: var(--fs-xl); font-weight: 700; margin: 0 0 var(--space-2); letter-spacing: var(--tracking-tight); }
+	.nl-title { font-size: var(--fs-xl); font-weight: 600; margin: 0 0 var(--space-2); letter-spacing: var(--tracking-tight); }
 	.nl-blurb {
 		font-family: var(--font-prose);
 		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);

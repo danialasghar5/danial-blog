@@ -24,16 +24,13 @@ const topic = getTopic(Astro.props.category);
 	.filed-under {
 		margin: 0;
 		font-size: var(--fs-sm);
-		color: var(--text-muted);
+		color: var(--text-faint);
 	}
-	.filed-under a, .filed-under .topic-name {
-		font-weight: 600;
-		color: var(--brand);
-	}
+	.filed-under a, .filed-under .topic-name { color: var(--text-muted); font-weight: 500; }
 	.filed-under a {
 		text-decoration: underline;
 		text-underline-offset: 3px;
-		text-decoration-color: var(--brand-ring);
+		text-decoration-color: var(--border-strong);
 	}
-	.filed-under a:hover { text-decoration-color: var(--brand); }
+	.filed-under a:hover { color: var(--brand); text-decoration-color: var(--brand); }
 </style>
