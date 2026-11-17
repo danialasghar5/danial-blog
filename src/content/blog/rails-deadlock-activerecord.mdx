@@ -4,6 +4,7 @@ seoTitle: "Fix ActiveRecord::Deadlocked (40P01) in Rails"
 description: "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live."
 pubDate: 2026-11-17
 category: "database-reliability"
+hasCustomSchema: true
 tags:
   - "postgres"
   - "rails"
@@ -12,6 +13,122 @@ tags:
   - "locking"
 draft: false
 ---
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production",
+  "description": "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live.",
+  "image": "https://danialasghar.com/og-default.png",
+  "datePublished": "2026-11-17",
+  "dateModified": "2026-11-17",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about/",
+    "sameAs": [
+      "https://github.com/danialasghar5",
+      "https://www.linkedin.com/in/danial-asghar5/"
+    ]
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Danial Asghar"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://danialasghar.com/blog/rails-deadlock-activerecord/"
+  },
+  "keywords": [
+    "activerecord deadlocked",
+    "rails deadlock",
+    "pg trdeadlockdetected",
+    "postgres deadlock detected 40P01",
+    "postgres lock ordering",
+    "pg_blocking_pids"
+  ],
+  "articleSection": "Database Reliability",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is ActiveRecord::Deadlocked?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It's the Rails exception wrapping Postgres error 40P01 (PG::TRDeadlockDetected). Postgres detected two transactions each holding a lock the other needs — a cycle — and killed one of them so the other could proceed. The killed transaction raises this error."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do deadlocks only happen under load?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A deadlock requires two transactions to run concurrently and acquire locks in conflicting orders. At low traffic they rarely overlap in the exact window needed to form a cycle; under load, overlapping transactions become common, so the latent lock-ordering inconsistency finally surfaces."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I prevent Rails deadlocks?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Acquire locks in a consistent, deterministic order everywhere. When locking multiple rows, add .order(:id) to your locking query so every transaction locks the same row first. Keep transactions short and never hold a lock across a network call."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I retry a deadlocked transaction?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. A deadlock victim is a transient failure — rerun the whole transaction (with bounded retries) and it will usually succeed once the conflicting transaction has committed. But retrying only masks a persistent lock-ordering bug; fix the order as well."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I find which queries are deadlocking?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Read the Postgres server log (not just the Rails exception) — the deadlock report lists the statement each process was waiting on. For live contention, join pg_blocking_pids(pid) to pg_stat_activity to see which backend is blocking which, and enable log_lock_waits to log long waits."
+      }
+    }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://danialasghar.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://danialasghar.com/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production",
+      "item": "https://danialasghar.com/blog/rails-deadlock-activerecord/"
+    }
+  ]
+}
+`}</script>
 
 Your app has been running fine for months. Then, under a traffic spike, your error tracker lights up with `ActiveRecord::Deadlocked: PG::TRDeadlockDetected: ERROR: deadlock detected`. One request died; the others went through. You restart nothing, the spike passes, and it disappears — until the next spike. A deadlock isn't a bug you can reproduce by clicking around, which is why it's one of the most disorienting production errors in Rails. It's also one of the most *solvable*, once you understand that Postgres didn't malfunction: it did exactly what it's designed to do.
 
