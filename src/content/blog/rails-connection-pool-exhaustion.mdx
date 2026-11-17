@@ -1,0 +1,277 @@
+---
+title: "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError"
+seoTitle: "Rails ConnectionTimeoutError: Fix Connection Pool Exhaustion"
+description: "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections."
+pubDate: 2026-11-17
+category: "database-reliability"
+hasCustomSchema: true
+tags:
+  - "rails"
+  - "postgres"
+  - "activerecord"
+  - "sidekiq"
+  - "puma"
+  - "database"
+draft: false
+---
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError",
+  "description": "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections.",
+  "image": "https://danialasghar.com/og-default.png",
+  "datePublished": "2026-11-17",
+  "dateModified": "2026-11-17",
+  "author": {
+    "@type": "Person",
+    "name": "Danial Asghar",
+    "jobTitle": "Senior Backend Engineer",
+    "url": "https://danialasghar.com/about/",
+    "sameAs": ["https://github.com/danialasghar5", "https://www.linkedin.com/in/danial-asghar5/"]
+  },
+  "publisher": { "@type": "Person", "name": "Danial Asghar" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/" },
+  "keywords": ["activerecord connectiontimeouterror", "rails connection pool exhaustion", "could not obtain a connection from the pool", "rails database pool size", "sidekiq database pool", "postgres max_connections rails"],
+  "articleSection": "Database Reliability",
+  "inLanguage": "en"
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What causes ActiveRecord::ConnectionTimeoutError?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A thread asked its process's connection pool for a database connection and none became free within checkout_timeout (5 seconds by default). It almost always means more threads are contending for the pool than it has connections, or connections are being held too long. It is a pool-sizing or connection-hygiene problem, not a database outage."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How big should the Rails database pool be?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "At least the number of threads in that process that can touch the database, plus a little headroom for anything that checks out connections on its own threads, such as load_async or Action Cable. Size each process type separately: the web pool follows Puma threads, the worker pool follows Sidekiq concurrency or Solid Queue worker threads."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should Puma and Sidekiq use the same pool size?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Not necessarily. Each process has its own pool, sized to its own thread count, and those counts usually differ. A single database.yml can serve both if the pool reads from an environment variable you set per process, rather than RAILS_MAX_THREADS, which usually reflects the web server's thread count."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between ConnectionTimeoutError and too many clients already?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ConnectionTimeoutError is raised inside one Rails process when its own pool is exhausted. PG::ConnectionBad with FATAL: sorry, too many clients already comes from Postgres when the total number of connections across every process has reached max_connections. The first is fixed per process; the second is fixed by reducing the total or putting a pooler such as PgBouncer in front of Postgres."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does PgBouncer fix connection pool exhaustion in Rails?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It fixes the global limit, not the per-process one. PgBouncer lets many application connections share fewer Postgres connections, so you stay under max_connections. Each Rails process still needs a pool large enough for its own threads, and transaction pooling mode breaks session-level features such as session advisory locks."
+      }
+    }
+  ]
+}
+`}</script>
+
+<script type="application/ld+json">{`
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://danialasghar.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://danialasghar.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError", "item": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/" }
+  ]
+}
+`}</script>
+
+Under load, a Rails app that ran fine in staging starts throwing this:
+
+```text
+ActiveRecord::ConnectionTimeoutError: could not obtain a connection
+from the pool within 5.000 seconds (waited 5.001 seconds);
+all pooled connections were in use
+```
+
+Postgres is healthy. CPU is fine. The database isn't the problem — the **pool** is. Every Rails process keeps its own small pool of database connections, and a thread that can't check one out within `checkout_timeout` gives up with this error. Fixing it means getting two numbers right: connections **per process**, and connections **in total**. This article covers both, the hidden consumers that break the arithmetic, and how to see exactly what's happening in production.
+
+If you want the numbers for your own setup first, the [connection pool calculator](/tools/connection-pool-calculator/) checks both limits in your browser.
+
+## What the error actually means
+
+Active Record's connection pool is per process. Each Puma worker, each Sidekiq process, each Solid Queue worker has its own pool, sized by `pool` in `config/database.yml`. Connections open lazily and are reused: a thread checks one out when it needs the database and returns it when it's done.
+
+`ConnectionTimeoutError` fires when a thread asks for a connection, every connection in *its* pool is checked out, and none comes back within `checkout_timeout` (5 seconds by default). Two different problems produce two different errors, and they need different fixes:
+
+| | `ConnectionTimeoutError` | `too many clients already` |
+| --- | --- | --- |
+| **Raised by** | One Rails process (Active Record) | Postgres (`PG::ConnectionBad`) |
+| **Limit hit** | That process's `pool` | `max_connections`, across *all* processes |
+| **Fix** | Pool ≥ threads; release connections sooner | Fewer total connections, or a pooler |
+
+Raising `pool` fixes the first and makes the second more likely. That's why you size both together.
+
+## Rule 1: the pool must cover the threads in its process
+
+Every thread that can touch the database needs its own connection at that moment. So the floor for each process is its thread count:
+
+- **Web (Puma):** pool ≥ threads per Puma worker. Puma *workers* are separate processes, each with its own pool, so the worker count doesn't change the pool — it multiplies the total.
+- **Sidekiq:** pool ≥ the process's concurrency.
+- **Solid Queue:** pool ≥ worker threads, plus room for the process's own polling and heartbeat queries. Solid Queue's guidance is to keep worker threads at or below the pool size minus two. [How Solid Queue works under the hood](/blog/how-solid-queue-works/) explains where those extra connections go.
+
+The most common production bug is a shared `database.yml` that sizes every process the same way:
+
+```yaml
+production:
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+```
+
+`RAILS_MAX_THREADS` is usually set for Puma. If the Sidekiq process inherits it — say 5 — while running with a concurrency of 10, five of its threads are always waiting for a connection. Give the pool its own variable and set it per process:
+
+```yaml
+production:
+  # Set per process: web = Puma threads + 2,
+  # worker = Sidekiq concurrency + 2.
+  pool: <%= ENV.fetch("DB_POOL", 12) %>
+```
+
+The `+ 2` is headroom, not magic: it covers the occasional connection checked out outside your main threads, which is the next rule.
+
+## Rule 2: count the hidden connection consumers
+
+Your thread count is a floor, not the whole bill. These also check out connections from the same pool:
+
+- **`load_async`.** Async queries run on a separate executor's threads, and each in-flight query holds its own connection while the request thread may hold another.
+- **Threads you start yourself.** A `Thread.new` or a concurrent future inside a request or job checks out a connection on first use. If nothing returns it, it stays checked out until the thread ends. Wrap that work so the connection goes back immediately:
+
+  ```ruby
+  ActiveRecord::Base.connection_pool.with_connection do
+    Report.refresh!(account_id)
+  end
+  ```
+
+- **Action Cable.** Channel callbacks run on the cable server's own worker pool, and those threads share the process's database pool.
+
+If your error rate rises when you enable one of these, that's the clue: add their concurrency to the pool for that process.
+
+## Rule 3: don't hold a connection while waiting on something else
+
+A connection is busy for as long as a thread holds it, not just while SQL runs. Two patterns quietly multiply how long that is:
+
+**A transaction around a slow external call.** The connection, and every row lock taken inside the transaction, is held for the full duration of the HTTP request:
+
+```ruby
+# Holds a connection (and row locks) for the whole API call
+Order.transaction do
+  order.update!(status: "charging")
+  PaymentGateway.charge!(order)          # 2 seconds on a bad day
+  order.update!(status: "paid")
+end
+
+# Better: keep the network call outside the transaction
+order.update!(status: "charging")
+result = PaymentGateway.charge!(order)
+order.update!(status: "paid", charge_id: result.id)
+```
+
+The second version needs its own guard against double-charging, because the state change and the charge are no longer atomic. [Fixing Postgres race conditions and row-level deadlocks](/blog/postgres-race-conditions-row-locks-rails/) covers the locking side, and why long-held row locks turn into contention.
+
+**Slow queries.** A query that takes two seconds holds a connection for two seconds. In a worker process this shows up as jobs *waiting* longer before they start — queue latency, not execution time — which is why [diagnosing slow background jobs](/blog/why-background-jobs-are-slow/) starts by splitting the two.
+
+## Rule 4: stay under Postgres `max_connections`
+
+The total is a separate limit. Add up the worst case across every process that connects:
+
+```text
+web:    2 servers × 2 Puma workers × pool 7   = 28
+sidekiq: 3 processes            × pool 12  = 36
+                                     total = 64
+```
+
+Then compare it with what Postgres will actually accept: `max_connections` minus `superuser_reserved_connections` (3 by default), minus anything else that connects — consoles, migrations, cron tasks, monitoring.
+
+Two things push the real number higher than the table suggests:
+
+- **Deploy overlap.** During a rolling deploy, old and new processes run side by side. For a moment, the total can approach double.
+- **Autoscaling.** Every extra web or worker process brings a full pool with it.
+
+When the honest total doesn't fit, the answer is a connection pooler such as PgBouncer in transaction mode: many application connections share a smaller set of Postgres connections. It solves the *global* limit only — each Rails process still needs a pool sized by Rule 1 — and transaction mode breaks session-level features: session advisory locks, `SET` without `LOCAL`, and `LISTEN`/`NOTIFY`. Transaction-scoped advisory locks (`pg_advisory_xact_lock`) keep working. Older PgBouncer versions also need `prepared_statements: false` in `database.yml`; recent versions can track prepared statements in transaction mode.
+
+## Diagnose it in production
+
+Don't guess which rule you broke. Rails exposes the pool's state directly:
+
+```ruby
+ActiveRecord::Base.connection_pool.stat
+# => { size: 5, connections: 5, busy: 5, dead: 0,
+#      idle: 0, waiting: 3, checkout_timeout: 5.0 }
+```
+
+`waiting` above zero means threads are queued for a connection right now. `busy` equal to `size` with `waiting` growing is Rule 1 or Rule 2. `busy` high while traffic is low points at Rule 3: something is holding connections.
+
+On the Postgres side, give each process type a name so you can tell them apart:
+
+```yaml
+production:
+  application_name: <%= ENV.fetch("APP_ROLE", "web") %>
+```
+
+```sql
+SELECT application_name, state, count(*)
+FROM pg_stat_activity
+WHERE datname = current_database()
+GROUP BY application_name, state
+ORDER BY count(*) DESC;
+```
+
+Watch for `idle in transaction`: a connection that opened a transaction and is doing nothing. That's a connection held hostage, usually by the Rule 3 pattern. Postgres's `idle_in_transaction_session_timeout` setting can terminate those sessions so a bug can't hold connections forever.
+
+## Key takeaways
+
+- `ConnectionTimeoutError` is a **per-process** problem: a thread waited for a connection in its own pool and gave up.
+- **Pool ≥ threads in that process**, sized per process type. Don't let Sidekiq inherit Puma's `RAILS_MAX_THREADS`.
+- **Count hidden consumers** — `load_async`, threads you start, Action Cable — and release ad-hoc connections with `with_connection`.
+- **Don't hold connections across slow work**: no HTTP calls inside transactions, and treat slow queries as connection hogs.
+- **The total must fit under `max_connections`** with room for deploys and autoscaling. If it can't, add a pooler — and know what transaction mode breaks.
+- Measure before changing anything: `connection_pool.stat` in Rails, `pg_stat_activity` in Postgres.
+
+## FAQ
+
+### What causes ActiveRecord::ConnectionTimeoutError?
+
+A thread asked its process's connection pool for a database connection and none became free within checkout_timeout (5 seconds by default). It almost always means more threads are contending for the pool than it has connections, or connections are being held too long. It is a pool-sizing or connection-hygiene problem, not a database outage.
+
+### How big should the Rails database pool be?
+
+At least the number of threads in that process that can touch the database, plus a little headroom for anything that checks out connections on its own threads, such as load_async or Action Cable. Size each process type separately: the web pool follows Puma threads, the worker pool follows Sidekiq concurrency or Solid Queue worker threads.
+
+### Should Puma and Sidekiq use the same pool size?
+
+Not necessarily. Each process has its own pool, sized to its own thread count, and those counts usually differ. A single database.yml can serve both if the pool reads from an environment variable you set per process, rather than RAILS_MAX_THREADS, which usually reflects the web server's thread count.
+
+### What is the difference between ConnectionTimeoutError and too many clients already?
+
+ConnectionTimeoutError is raised inside one Rails process when its own pool is exhausted. PG::ConnectionBad with FATAL: sorry, too many clients already comes from Postgres when the total number of connections across every process has reached max_connections. The first is fixed per process; the second is fixed by reducing the total or putting a pooler such as PgBouncer in front of Postgres.
+
+### Does PgBouncer fix connection pool exhaustion in Rails?
+
+It fixes the global limit, not the per-process one. PgBouncer lets many application connections share fewer Postgres connections, so you stay under max_connections. Each Rails process still needs a pool large enough for its own threads, and transaction pooling mode breaks session-level features such as session advisory locks.
+
+## Conclusion
+
+Connection pool exhaustion looks like a database problem and almost never is. It's arithmetic: threads per process against the pool, and pools across processes against `max_connections`. Get the per-process number right, account for everything that borrows a connection, stop holding connections across slow work, and keep the total honest about deploys. Then the error stops being a mystery and becomes a number you can check — which is exactly what the [connection pool calculator](/tools/connection-pool-calculator/) does.

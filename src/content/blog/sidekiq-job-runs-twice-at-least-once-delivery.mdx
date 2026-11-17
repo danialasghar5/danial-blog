@@ -1,8 +1,7 @@
 ---
 title: "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
-seoTitle: "Why Your Sidekiq Job Runs Twice (And How to Stop Double-Charges)"
-seoDescription: "At-least-once delivery, explained: the five windows where a job re-runs, why exactly-once is nearly impossible, and where the fix actually lives."
-description: "Sidekiq runs jobs at least once, not exactly once. Here's why background jobs execute twice — deploys, retries, timeouts, lost acks — and where the fix actually lives."
+seoTitle: "Why Sidekiq Jobs Run Twice — and How to Stop It"
+description: "Sidekiq runs jobs at least once, so duplicates happen. The 5 windows where a job re-runs — and how to stop double-charges with idempotent workers."
 pubDate: 2026-07-20
 ogImage: "/og/sidekiq-job-runs-twice-at-least-once-delivery.png"
 category: "background-jobs"
@@ -199,6 +198,20 @@ Closing it means moving the guarantee out of a Ruby conditional and into the lay
 That's the throughline of this blog: **the queue provides delivery; correctness lives in the database.** It's also how large operators build. GitLab treats jobs as idempotent by convention and defines the bar precisely: a worker is idempotent if it can safely run multiple times with the same arguments and its side effects happen only once, or a second run has no effect ([GitLab: Idempotent Sidekiq jobs](https://docs.gitlab.com/development/sidekiq/idempotent_jobs/)). They design for at-least-once because at-least-once is the guarantee that exists.
 
 One practical follow-up people always ask: when a job re-runs, it's a fresh execution with a new JID, so you can't dedupe on the job ID ([Discussion #5775](https://github.com/sidekiq/sidekiq/discussions/5775)) — the identity you key on has to come from your domain, like the order or user, not from Sidekiq.
+
+## FAQ
+
+### What is at-least-once delivery?
+
+It is a delivery guarantee that a job is handed to a worker one or more times, and never silently zero times. Faced with possibly running a job twice or possibly never running it, an at-least-once system chooses twice: a duplicate is visible and, if your code is idempotent, harmless, while a lost job is silent and often unrecoverable.
+
+### How do I stop Sidekiq jobs running multiple times?
+
+You do not stop the re-runs — you make them harmless. Assume the job runs more than once and make its effect idempotent, enforced in the database: a unique index makes a duplicate impossible to persist, and an atomic state transition (for example pending to processing) lets exactly one worker win a race. A guard clause alone still races under concurrent duplicates.
+
+### Does a re-run job keep the same JID?
+
+No. A re-run is a fresh execution with a new job ID (JID), so you cannot deduplicate on the JID. The identity you key idempotency on has to come from your domain — the order or the user — not from Sidekiq's job ID.
 
 ## Takeaways
 

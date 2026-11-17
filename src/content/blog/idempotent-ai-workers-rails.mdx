@@ -1,7 +1,7 @@
 ---
 title: "Designing Idempotent Background Workers for LLM Calls in Rails"
-seoTitle: "Idempotent Background Workers for LLM Calls in Rails"
-description: "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills."
+seoTitle: "Idempotent Sidekiq Workers for LLM Calls (Rails)"
+description: "An LLM call behind a Sidekiq job runs at least once. Make workers idempotent so a retry never double-classifies — or double-bills your OpenAI calls."
 pubDate: 2026-07-07
 ogImage: "/og/idempotent-ai-workers-rails.png"
 category: "background-jobs"
@@ -252,6 +252,24 @@ To keep the boundary honest, here's the split.
 **On the project roadmap:** outbound webhook dispatch to client callback URLs, and automatic provider fallback to Anthropic Claude when OpenAI rate-limits or times out.
 
 **Hardening I'd add next (not yet built):** the atomic `pending → processing` claim for concurrent duplicates, reusing the audit trail to skip re-billing after a failed write, and a transactional outbox for exactly-once enqueue.
+
+## FAQ
+
+### Does Sidekiq guarantee exactly-once execution?
+
+No. Sidekiq provides at-least-once delivery, so a job can run more than once after a timeout, deploy, or lost acknowledgement. Every worker must therefore be idempotent — safe to run multiple times without duplicating side effects.
+
+### Why do LLM background jobs need idempotency?
+
+Because an LLM call is metered and non-deterministic. A blind retry re-bills the API for work already done, and the second response can differ from the first, overwriting a good classification. Idempotency must be enforced on the work, not the output.
+
+### How do you make a Sidekiq worker idempotent for an LLM call?
+
+Key idempotency on a stable identifier such as the record UUID and its completion state, so a retry after success is a no-op. Where concurrent duplicates are possible, replace the read-then-write check with an atomic state transition in the database so only one worker can claim the job.
+
+### Does retrying a failed Sidekiq job re-bill the OpenAI API?
+
+A blind retry does: if the model call succeeded but the job crashed before persisting, the retry calls the model again and pays a second time. A completion-state gate stops re-billing after a successful run, since an already-completed ticket returns immediately. Re-billing after a failed write is only avoided by reusing a stored response — a future improvement, not a default.
 
 ## The lesson
 
