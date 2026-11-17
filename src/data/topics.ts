@@ -64,9 +64,9 @@ export const TOPICS: Topic[] = [
 		intro: [
 			'The database is the one place in a Rails system that can settle a race correctly, which is exactly why so much reliability work ends up here. This hub covers Postgres locking, transactions and isolation levels, unique constraints, and the atomic state transitions that let exactly one worker win.',
 		],
-		startHere: undefined,
+		startHere: 'postgres-race-conditions-row-locks-rails',
 		related: ['background-jobs', 'ai-backend'],
-		live: false,
+		live: true,
 	},
 	{
 		slug: 'ai-backend',

@@ -1,0 +1,195 @@
+---
+title: "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production"
+seoTitle: "Fix ActiveRecord::Deadlocked (40P01) in Rails"
+description: "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live."
+pubDate: 2026-11-17
+category: "database-reliability"
+tags:
+  - "postgres"
+  - "rails"
+  - "concurrency"
+  - "deadlocks"
+  - "locking"
+draft: false
+---
+
+Your app has been running fine for months. Then, under a traffic spike, your error tracker lights up with `ActiveRecord::Deadlocked: PG::TRDeadlockDetected: ERROR: deadlock detected`. One request died; the others went through. You restart nothing, the spike passes, and it disappears — until the next spike. A deadlock isn't a bug you can reproduce by clicking around, which is why it's one of the most disorienting production errors in Rails. It's also one of the most *solvable*, once you understand that Postgres didn't malfunction: it did exactly what it's designed to do.
+
+This is the practical guide to `ActiveRecord::Deadlocked` (Postgres error code `40P01`): why it happens, how to read the deadlock report Postgres hands you, the one rule that prevents the overwhelming majority of them, and the SQL to catch lock contention in the act.
+
+## What a deadlock actually is
+
+A deadlock is not a lock that's "stuck." It's a *cycle*: two transactions each holding a lock the other one needs, with neither able to proceed. Postgres detects the cycle and breaks it by killing one of the transactions — the victim — so the other can continue. The victim is the one that raises `40P01`.
+
+Here's the canonical shape, a money transfer running twice in opposite directions at the same moment:
+
+```text
+Transaction A: transfer X → Y               Transaction B: transfer Y → X
+--------------------------------------      --------------------------------------
+UPDATE accounts ... WHERE id = X            UPDATE accounts ... WHERE id = Y
+   (A now holds the lock on row X)             (B now holds the lock on row Y)
+
+UPDATE accounts ... WHERE id = Y            UPDATE accounts ... WHERE id = X
+   (A waits for B to release Y)                (B waits for A to release X)
+
+                 each waits for the other
+                   DEADLOCK  →  40P01
+```
+
+A holds X and wants Y; B holds Y and wants X. Each is waiting for a lock the other holds, so neither will ever release. Without intervention they'd wait forever. Postgres runs a deadlock check once a lock wait has lasted `deadlock_timeout` (one second by default), finds the cycle, and terminates one transaction so the system makes progress.
+
+The crucial insight: **each transaction, in isolation, did nothing wrong.** Both locked exactly the rows they needed to update. The deadlock is an *emergent* property of the two running concurrently in incompatible lock orders. That's why it only appears under concurrency, and why it feels random — it depends on precise timing that only occurs under load.
+
+## Reading the 40P01 report
+
+When a deadlock fires, Postgres writes a detailed report to its log — and this report usually tells you the exact fix. In Rails you'll first see the exception:
+
+```text
+ActiveRecord::Deadlocked: PG::TRDeadlockDetected: ERROR:  deadlock detected
+DETAIL:  Process 18321 waits for ShareLock on transaction 4412; blocked by process 18344.
+         Process 18344 waits for ShareLock on transaction 4410; blocked by process 18321.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,14) in relation "accounts"
+```
+
+That's the Rails-facing error. The gold is in the **Postgres server log**, where the detector records the statement each process in the cycle was stuck on:
+
+```text
+ERROR:  deadlock detected
+DETAIL:  Process 18321 waits for ShareLock on transaction 4412; blocked by process 18344.
+         Process 18344 waits for ShareLock on transaction 4410; blocked by process 18321.
+         Process 18321: UPDATE accounts SET balance = balance + 50 WHERE id = 'Y';
+         Process 18344: UPDATE accounts SET balance = balance + 50 WHERE id = 'X';
+```
+
+Two statements, two processes, each blocked by the other — and critically, you can see the `WHERE` clauses. Process 18321 is waiting on row `Y`, which 18344 already holds; 18344 is waiting on row `X`, which 18321 already holds. Find the code path behind each statement, and you'll see one locks `X` then `Y` while the other locks `Y` then `X`. That's the cause: **inconsistent lock ordering.** Set `log_lock_waits = on` in `postgresql.conf` to also capture *long waits* before they escalate into deadlocks — an early-warning signal that two code paths are contending.
+
+## The one rule that prevents most deadlocks
+
+Deadlocks require a *cycle*, and a cycle requires transactions to acquire locks in *different orders*. Remove the inconsistency and you remove the cycle. So the rule is:
+
+> **Always acquire locks in a consistent, deterministic order — the same order, every time, everywhere in your codebase.**
+
+The simplest deterministic order is by primary key. When a transaction needs to lock multiple rows, lock them sorted by ID. Here's the transfer rewritten so it can never deadlock against another transfer:
+
+```ruby
+class InsufficientFunds < StandardError; end
+
+def transfer(from_id, to_id, amount)
+  Account.transaction do
+    # order(:id) makes every transfer lock the lower id first,
+    # whichever direction the money is moving.
+    accounts = Account.where(id: [from_id, to_id]).order(:id).lock.index_by(&:id)
+    from = accounts.fetch(from_id)
+    to   = accounts.fetch(to_id)
+
+    raise InsufficientFunds if from.balance < amount
+    from.update!(balance: from.balance - amount)
+    to.update!(balance: to.balance + amount)
+  end
+end
+```
+
+Now a transfer `X → Y` and a transfer `Y → X` *both* attempt to lock the lower ID first. One wins the first lock, the other waits for it — a plain wait, not a cycle. One transaction completes, releases, and the other proceeds. No deadlock, because there's no longer a way to form the cycle.
+
+Two details matter in that code. The `.order(:id)` is not decorative: `SELECT ... FOR UPDATE` acquires row locks in the order the rows are returned, and the order of the IDs in the `IN (...)` list has no effect on that — without an explicit `ORDER BY`, the planner can hand rows back in any order and silently reintroduce the inconsistency. And the insufficient-funds check raises a real exception rather than `ActiveRecord::Rollback`, which the transaction block swallows silently — the caller would never learn the transfer didn't happen.
+
+This is the same `.lock` pessimistic locking covered in the [race-conditions and row-locking guide](/blog/postgres-race-conditions-row-locks-rails/) — a deadlock is simply what happens when that locking is done in conflicting orders by two transactions at once.
+
+The rule generalizes beyond primary keys. If you lock rows across *different* tables, define a canonical order (always `users` before `orders` before `line_items`, say) and follow it in every transaction. The specific order doesn't matter; the *consistency* does.
+
+## The other common Rails deadlock sources
+
+Lock ordering covers most cases, but three Rails-specific patterns deserve naming because they're easy to miss:
+
+**Bulk updates without an explicit order.** `Model.where(...).update_all` and other mass writes lock every matching row, in whatever order the plan visits them. Two of these running concurrently over overlapping rows can deadlock. Postgres's `UPDATE` has no `ORDER BY`, so impose the order yourself: inside the transaction, lock the rows first with `Model.where(...).order(:id).lock.pluck(:id)`, then run the `update_all`. Or batch the writes so concurrent runs don't overlap.
+
+**Foreign-key locks.** Inserting a child row (or changing its foreign key) makes Postgres take a `FOR KEY SHARE` lock on the referenced *parent* row, so the parent can't be deleted mid-write. Those locks don't conflict with each other, but they do conflict with `FOR UPDATE` — which is exactly what Rails' `.lock` takes. So a transaction that inserts a child and then locks the parent with `.lock` can deadlock against another doing the same thing on the same parent, even though neither explicitly locked anything first. This is the sneakiest source because half the locking is invisible in your Ruby. If you see deadlocks involving rows you never explicitly `.lock`, suspect FK locks — and if you're only updating non-key columns on the parent, lock it with `.lock("FOR NO KEY UPDATE")`, which doesn't conflict with `FOR KEY SHARE`.
+
+**Long transactions holding locks across slow work.** A transaction that acquires a lock and then makes an HTTP call, runs a slow query, or waits on anything holds that lock the whole time — widening the window in which another transaction can collide with it. Keep transactions short: acquire the lock, do the database writes, commit. Never hold a lock across a network call. This is the same discipline that prevents lock contention from turning into [connection pool exhaustion](/blog/rails-connection-pool-exhaustion/) — a thread blocked on a lock is a connection held hostage.
+
+## Diagnosing lock contention live
+
+A true deadlock is resolved within about a second, so you won't catch one in progress. What you *can* catch is the contention that produces them: transactions stuck waiting on each other's locks. This query lists every waiting backend next to the one blocking it, using `pg_blocking_pids()` (Postgres 9.6+):
+
+```sql
+SELECT
+  blocked.pid     AS blocked_pid,
+  blocked.query   AS blocked_query,
+  blocking.pid    AS blocking_pid,
+  blocking.query  AS blocking_query,
+  blocking.state  AS blocking_state
+FROM pg_stat_activity blocked
+CROSS JOIN LATERAL unnest(pg_blocking_pids(blocked.pid)) AS b(pid)
+JOIN pg_stat_activity blocking ON blocking.pid = b.pid;
+```
+
+`blocked_query` and `blocking_query` give you the two statements in the standoff. Note that `blocking_query` is the blocker's *most recent* statement, not necessarily the one that took the lock — if `blocking_state` is `idle in transaction`, the blocker took its lock earlier and is now holding it while your app does something else, which is the long-transaction problem above.
+
+If you need to break a standoff manually in an emergency, `SELECT pg_cancel_backend(pid)` cancels the offending query (preferred); `pg_terminate_backend(pid)` kills the whole connection (last resort).
+
+## Make the deadlock survivable: retry on 40P01
+
+Here's the reframe that changes how you handle deadlocks operationally: **a deadlock victim is a *transient* failure.** The transaction didn't fail because of bad data or bad logic — it failed because of unlucky timing, and the losing transaction, run again a moment later when the other has committed, will almost always succeed. So the correct operational response, alongside fixing the lock order, is to *retry* the deadlocked transaction.
+
+```ruby
+def transfer_with_retry(from_id, to_id, amount, max_attempts: 3)
+  attempts = 0
+  begin
+    attempts += 1
+    transfer(from_id, to_id, amount)   # the lock-ordered version above
+  rescue ActiveRecord::Deadlocked
+    retry if attempts < max_attempts
+    raise
+  end
+end
+```
+
+Retry the *whole* transaction, from the outermost `transaction` block. If `transfer` is called inside another transaction, Postgres has already aborted that outer transaction, and retrying only the inner part fails immediately.
+
+Bound the retries — a deadlock that recurs three times in a row is no longer "unlucky timing," it's a systemic lock-ordering problem the retry is papering over, and you want it to surface. Retrying is the safety net; consistent lock ordering is the actual fix. Both, together.
+
+This is also why deadlocks belong in the *transient* bucket of your job retry strategy. If the deadlocking code runs inside a background job, classify `ActiveRecord::Deadlocked` as retryable — exactly the transient-vs-permanent distinction in the [Sidekiq retry strategy guide](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/). A deadlocked job should retry; a job failing on a validation error should not.
+
+## Common mistakes
+
+- **Treating the deadlock as a Postgres bug.** It isn't. Postgres detected a cycle *your* two code paths created and broke it correctly. The fix is in your lock ordering, not your database config.
+- **Only retrying, never fixing the order.** Retries hide the symptom. Under enough load, a persistent lock-ordering inconsistency produces deadlocks faster than retries can absorb them.
+- **Forgetting `ORDER BY` on multi-row locks.** `SELECT ... FOR UPDATE` without an explicit order lets the planner choose the lock order, silently reintroducing the inconsistency you meant to prevent.
+- **Ignoring the server log.** The Rails exception tells you a deadlock happened; the Postgres server log tells you *which two queries* caused it. Always read the server log — it usually points straight at the fix.
+- **Holding locks across slow work.** A lock held across an API call turns a brief contention window into a wide one, converting rare deadlocks into frequent ones.
+
+## Key takeaways
+
+- A deadlock (`40P01` / `ActiveRecord::Deadlocked`) is a *lock-order cycle*, not a stuck lock. Postgres kills one transaction to break it.
+- **The fix is consistent lock ordering:** lock multiple rows with `.order(:id).lock` so every transaction locks them in the same sequence.
+- Watch for invisible lock sources: **foreign-key locks**, unordered **bulk updates**, and **long transactions** holding locks across slow work.
+- Read the **Postgres server log** — it records both queries in the cycle, which usually reveals the inconsistent order directly.
+- Diagnose live contention with **`pg_blocking_pids()`** joined to **`pg_stat_activity`**.
+- **Retry the deadlock victim** (bounded, from the outermost transaction) — it's a transient failure — but treat retries as a safety net, not the fix.
+
+## FAQ
+
+### What is ActiveRecord::Deadlocked?
+
+It's the Rails exception wrapping Postgres error `40P01` (`PG::TRDeadlockDetected`). Postgres detected two transactions each holding a lock the other needs — a cycle — and killed one of them so the other could proceed. The killed transaction raises this error.
+
+### Why do deadlocks only happen under load?
+
+A deadlock requires two transactions to run concurrently and acquire locks in conflicting orders. At low traffic they rarely overlap in the exact window needed to form a cycle; under load, overlapping transactions become common, so the latent lock-ordering inconsistency finally surfaces.
+
+### How do I prevent Rails deadlocks?
+
+Acquire locks in a consistent, deterministic order everywhere. When locking multiple rows, add `.order(:id)` to your locking query so every transaction locks the same row first. Keep transactions short and never hold a lock across a network call.
+
+### Should I retry a deadlocked transaction?
+
+Yes. A deadlock victim is a transient failure — rerun the whole transaction (with bounded retries) and it will usually succeed once the conflicting transaction has committed. But retrying only masks a persistent lock-ordering bug; fix the order as well.
+
+### How do I find which queries are deadlocking?
+
+Read the Postgres server log (not just the Rails exception) — the deadlock report lists the statement each process was waiting on. For live contention, join `pg_blocking_pids(pid)` to `pg_stat_activity` to see which backend is blocking which, and enable `log_lock_waits` to log long waits.
+
+## Conclusion
+
+A deadlock feels like chaos — intermittent, load-dependent, impossible to reproduce on demand — but it's one of the most *deterministic* errors Postgres produces. It happens for exactly one reason (a lock-order cycle), it's fixed by exactly one discipline (consistent ordering), and it's made survivable by exactly one pattern (bounded retry on the victim). Read the server log to find the two conflicting queries, order your lock acquisition so the cycle can't form, retry the victim as a safety net, and the error that was waking you at 3am becomes a line in a dashboard that trends to zero.
