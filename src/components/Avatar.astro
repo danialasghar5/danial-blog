@@ -1,0 +1,17 @@
+---
+// Author avatar. No headshot yet, so it is the "da" brand mark on a soft disc;
+// swap in an <img> here once a real photo exists in public/.
+import BrandMark from './BrandMark.astro';
+interface Props { size?: number; }
+const { size = 28 } = Astro.props;
+---
+<span class="avatar" style={`--size:${size}px`} aria-hidden="true"><BrandMark size={Math.round(size * 0.62)} /></span>
+
+<style>
+	.avatar {
+		display: inline-grid; place-items: center; flex: none;
+		width: var(--size); height: var(--size); border-radius: 50%;
+		background: var(--bg-subtle); color: var(--text);
+		box-shadow: inset 0 0 0 1px var(--border);
+	}
+</style>
