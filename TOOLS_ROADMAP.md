@@ -43,7 +43,7 @@
 | Phase | Name | Status | Branch | Approved |
 |---|---|---|---|---|
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
-| 0 | Prep: merge redesign, baseline data, keyword validation | ⏳ Not started | — | — |
+| 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 In progress: redesign merged (D1, D2 ✅), SEO baseline done (`607422d`); waiting on D3, D4 | `chore/seo-baseline` | — |
 | 1 | Foundation and first five tools | ⏳ Not started | `feat/tools-foundation`, then `feat/tool-<slug>` | — |
 | 2 | Signature depth and first utilities | ⏳ Not started | — | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
@@ -228,7 +228,7 @@ Contact is by email only (`hello@danialasghar.com`). There is no scheduler.
 - Trailing-slash URLs, `robots.txt` allows everything, real 404 status.
 - Self-hosted fonts.
 - Titles are 60 characters or fewer (rule from `PRODUCT.md`).
-- The live sitemap had 27 URLs on 2026-11-26.
+- The live sitemap had 25 URLs on 2026-11-26. The `feat/premium-redesign` build has the same 25.
 
 **Privacy and analytics [V]**
 - Cloudflare Web Analytics, which is cookieless, enabled only when `PUBLIC_CF_BEACON_TOKEN` is set.
@@ -1969,13 +1969,24 @@ Search ──► Article ──callout──► Signature tool ──result-awar
 the start of the phase, minus any change the owner has approved):
 
 - confirms the URL still exists with the same path
-- compares `<title>`, meta description, canonical, robots meta, OG tags and the full JSON-LD against a
-  baseline snapshot (`.seo-baseline/*.json`, committed in Phase 0)
+- compares `<title>`, meta description, canonical, robots meta, OG and Twitter tags and the full JSON-LD
+  against a baseline snapshot (`.seo-baseline/baseline.json`, committed in Phase 0)
 - compares the H1 and the list of heading IDs (anchors)
 - for blog posts, confirms the sitemap URL and `lastmod` are unchanged
 
 **Exit rule:** no unapproved differences. Approved changes are recorded in §17 and the baseline is
 refreshed in the same commit.
+
+**Usage (built in Phase 0, commit `607422d`):**
+- `npm run seo:check` builds the site, then compares it against the baseline. Exit 0 means clean; exit 1
+  lists every changed field with its before and after values.
+- `npm run seo:baseline` rebuilds the snapshot. Use it only for approved changes.
+- New URLs are reported with `+` but don't fail the check. They become protected the next time the
+  baseline is refreshed.
+- **Verified:** two consecutive builds produce identical snapshots, and a changed `<title>` is detected.
+- **Refresh rule:** the baseline was taken at `f9a3e87`, which is `main` with the redesign merged. If
+  `main` changes for reasons unrelated to tools (e.g. new posts), refresh the baseline on top of it and
+  note that in §17.
 
 ---
 
@@ -2156,8 +2167,12 @@ starts.**
 | DEC-11 | 2026-11-26 | No "Writing" dropdown; the topic sub-bar stays; "Tools" becomes a disclosure-button dropdown | Proposed in roadmap |
 | DEC-12 | 2026-11-26 | Blog frontmatter schema untouched; links between tools and posts live in tool frontmatter | Proposed in roadmap |
 
-*Add a row for each new decision: CSP delivery, test runner, analytics method, the ads gate, library
-choices with their licences.*
+| DEC-13 | 2026-11-26 | CSP and security headers go in the existing `public/_headers` file. The live site applies it (verified: `/_astro/*` serves `cache-control: public, max-age=31536000, immutable`), so A7 is resolved | Verified in Phase 0 |
+| DEC-14 | 2026-11-26 | SEO baseline: `.seo-baseline/baseline.json` (25 URLs) taken from `feat/premium-redesign` at `f9a3e87` with `scripts/seo-regression.mjs`; no new dependencies | Phase 0 (`607422d`) |
+| DEC-15 | 2026-11-26 | Tools work happens in a separate git worktree, because another session edits the main checkout at the same time. Only files named explicitly are added to commits | Process |
+
+*Add a row for each new decision: test runner, analytics method, the ads gate, library choices with their
+licences.*
 
 ---
 
@@ -2171,7 +2186,7 @@ choices with their licences.*
 | A4 | The Postgres lock conflict matrix and the operation → lock mapping (Appendix A) | Check against the docs for each supported major version in Phase 1 |
 | A5 | Deadlock DETAIL formats listed in §8.3 cover Postgres 13–17 | Check `deadlock.c` messages and real logs in Phase 1 |
 | A6 | Node 22.12 `--experimental-strip-types` runs the test suite with a glob | Try it in Phase 1 (DEC-10) |
-| A7 | Cloudflare Workers static assets honour `public/_headers`, or Astro 7 can emit CSP | Check in Phase 1 |
+| A7 | ~~Cloudflare Workers static assets honour `public/_headers`~~ **Verified 2026-11-26** (DEC-13) | Done |
 | A8 | Astro 7 supports `reference()` and `.refine()` in collection schemas | Check in Phase 1 |
 | A9 | Cloudflare Web Analytics has no custom events | Check in Phase 1 (affects §13.6) |
 | A10 | A sustainable pace is about 2 tools a week, with content | Review at the month-3 check |
@@ -2186,8 +2201,8 @@ choices with their licences.*
 
 | ID | Item | Blocks | Owner |
 |---|---|---|---|
-| D1 | **Redesign approval and merge of `feat/premium-redesign` into `main`** (9 commits ahead of `main`, not pushed) | Phase 1 | Owner |
-| D2 | Base branch for Phase 1 work: `main` after the merge (recommended) or `feat/premium-redesign` | Phase 1 | Owner |
+| D1 | ~~Redesign merge into `main`~~ **Resolved:** `main` and `origin/main` are at `f9a3e87`, which includes the redesign and this roadmap. Merged outside this session | — | Done |
+| D2 | ~~Base branch for Phase 1~~ **Resolved:** `main` (`f9a3e87`). The SEO baseline was taken from this exact commit | — | Done |
 | D3 | Supported versions: Sidekiq (6.x? 7.x, 8.x), Rails (7.1–8.x), Postgres (13–17?) | Phase 1 tool specs | Owner |
 | D4 | Search Console access or exports for the baseline and the keyword check | Phase 0 exit | Owner |
 | D5 | Lead measurement method: mailto subject tagging (recommended) vs referrer check | Phase 1 CTA wiring | Owner |
@@ -2196,8 +2211,11 @@ choices with their licences.*
 | D8 | Licence for tool code if the repo is ever made public | Not blocking | Owner |
 | D9 | Final AdSense traffic threshold | Phase 3 gate | Owner |
 
-**Repository state when this was written (do not disturb):**
-- `feat/premium-redesign` at `ed84151`, 9 commits ahead of `main` (`bf4d98e`), no upstream.
+**Repository state (do not disturb), updated 2026-11-26 in Phase 0:**
+- `main` = `origin/main` = `feat/premium-redesign` = `f9a3e87`. The redesign and this roadmap
+  (`3fcbe6b`) are merged.
+- `chore/seo-baseline` at `607422d` (+ the roadmap tracking commit), branched from `f9a3e87`. Not pushed.
+- Tools work happens in a separate worktree (DEC-15), not in the main checkout.
 - Branch `backup/premium-redesign-before-split` at `0cc6ac8`.
 - `stash@{0}` ("experimental-uncoordinated-redesign-edits", made on `main`).
 - Untracked `docs/PROJECT_OVERVIEW.md` and `files/`.
