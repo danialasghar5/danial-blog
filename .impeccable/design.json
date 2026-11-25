@@ -1,0 +1,615 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T22:24:53+00:00",
+  "title": "Design System: Danial Asghar",
+  "extensions": {
+    "colorMeta": {
+      "ruby": {
+        "role": "primary",
+        "displayName": "Ruby",
+        "canonical": "#B8123A",
+        "tonalRamp": [
+          "#3A131C",
+          "#661A2C",
+          "#961C3A",
+          "#D71947",
+          "#E44E72",
+          "#E48BA1",
+          "#EBC1CB",
+          "#F8EDF0"
+        ]
+      },
+      "ruby-deep": {
+        "role": "primary",
+        "displayName": "Ruby Deep (hover)",
+        "canonical": "#960C2D",
+        "tonalRamp": [
+          "#3A121C",
+          "#67182B",
+          "#991A38",
+          "#DB1544",
+          "#E64C71",
+          "#E689A0",
+          "#ECC0CB",
+          "#F8EDEF"
+        ]
+      },
+      "ruby-night": {
+        "role": "primary",
+        "displayName": "Night Ruby",
+        "canonical": "#FF6F8E",
+        "tonalRamp": [
+          "#3E0F19",
+          "#6E1225",
+          "#A40F2F",
+          "#EC0436",
+          "#F43E65",
+          "#EE8199",
+          "#F0BDC8",
+          "#F9ECEF"
+        ]
+      },
+      "ruby-night-hover": {
+        "role": "primary",
+        "displayName": "Night Ruby Hover",
+        "canonical": "#FF96AC",
+        "tonalRamp": [
+          "#3E0F19",
+          "#6E1225",
+          "#A40F2E",
+          "#EC0435",
+          "#F43E64",
+          "#EE8198",
+          "#F0BDC7",
+          "#F9ECEF"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#787878",
+          "#999999",
+          "#B8B8B8",
+          "#D6D6D6",
+          "#F2F2F2"
+        ]
+      },
+      "paper-subtle": {
+        "role": "neutral",
+        "displayName": "Paper Subtle",
+        "canonical": "#F5F4F2",
+        "tonalRamp": [
+          "#292723",
+          "#46423A",
+          "#635C50",
+          "#877D69",
+          "#A59D8D",
+          "#BFBAB1",
+          "#DAD7D3",
+          "#F3F3F1"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#121216",
+        "tonalRamp": [
+          "#242429",
+          "#3B3B44",
+          "#525261",
+          "#6C6C83",
+          "#9090A2",
+          "#B2B2BD",
+          "#D4D4D9",
+          "#F2F2F3"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#4D4D57",
+        "tonalRamp": [
+          "#252528",
+          "#3D3D43",
+          "#55555E",
+          "#71717F",
+          "#93939F",
+          "#B4B4BB",
+          "#D5D5D8",
+          "#F2F2F3"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#696973",
+        "tonalRamp": [
+          "#252527",
+          "#3E3E42",
+          "#56565D",
+          "#73737D",
+          "#95959D",
+          "#B5B5BA",
+          "#D5D5D7",
+          "#F2F2F3"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E6E5E1",
+        "tonalRamp": [
+          "#282824",
+          "#44423C",
+          "#605D52",
+          "#827E6D",
+          "#A19E91",
+          "#BDBBB3",
+          "#D9D8D4",
+          "#F3F3F2"
+        ]
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "#CFCDC8",
+        "tonalRamp": [
+          "#282725",
+          "#43413D",
+          "#5E5B54",
+          "#807B70",
+          "#9F9C93",
+          "#BBB9B4",
+          "#D8D7D4",
+          "#F3F2F2"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#0F0F12",
+        "tonalRamp": [
+          "#242428",
+          "#3C3C44",
+          "#525260",
+          "#6D6D82",
+          "#9191A1",
+          "#B3B3BD",
+          "#D4D4D9",
+          "#F2F2F3"
+        ]
+      },
+      "night-panel": {
+        "role": "neutral",
+        "displayName": "Night Panel",
+        "canonical": "#15151A",
+        "tonalRamp": [
+          "#242429",
+          "#3B3B45",
+          "#515161",
+          "#6C6C84",
+          "#8F8FA3",
+          "#B2B2BD",
+          "#D3D3D9",
+          "#F2F2F3"
+        ]
+      },
+      "night-subtle": {
+        "role": "neutral",
+        "displayName": "Night Subtle",
+        "canonical": "#1A1A20",
+        "tonalRamp": [
+          "#242429",
+          "#3B3B45",
+          "#525261",
+          "#6C6C84",
+          "#9090A2",
+          "#B2B2BD",
+          "#D4D4D9",
+          "#F2F2F3"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#EDEDF0",
+        "tonalRamp": [
+          "#242428",
+          "#3C3C44",
+          "#525260",
+          "#6D6D82",
+          "#9191A1",
+          "#B3B3BD",
+          "#D4D4D9",
+          "#F2F2F3"
+        ]
+      },
+      "night-ink-muted": {
+        "role": "neutral",
+        "displayName": "Night Ink Muted",
+        "canonical": "#B0B0BA",
+        "tonalRamp": [
+          "#252528",
+          "#3D3D43",
+          "#54545E",
+          "#707080",
+          "#93939F",
+          "#B4B4BB",
+          "#D4D4D8",
+          "#F2F2F3"
+        ]
+      },
+      "night-ink-faint": {
+        "role": "neutral",
+        "displayName": "Night Ink Faint",
+        "canonical": "#8F8F9A",
+        "tonalRamp": [
+          "#252527",
+          "#3D3D42",
+          "#55555D",
+          "#72727E",
+          "#94949E",
+          "#B5B5BA",
+          "#D5D5D8",
+          "#F2F2F3"
+        ]
+      },
+      "night-hairline": {
+        "role": "neutral",
+        "displayName": "Night Hairline",
+        "canonical": "#26262D",
+        "tonalRamp": [
+          "#242428",
+          "#3C3C44",
+          "#535360",
+          "#6E6E82",
+          "#9191A1",
+          "#B3B3BC",
+          "#D4D4D8",
+          "#F2F2F3"
+        ]
+      },
+      "night-hairline-strong": {
+        "role": "neutral",
+        "displayName": "Night Hairline Strong",
+        "canonical": "#383841",
+        "tonalRamp": [
+          "#252528",
+          "#3C3C43",
+          "#54545F",
+          "#6F6F80",
+          "#9292A0",
+          "#B4B4BC",
+          "#D4D4D8",
+          "#F2F2F3"
+        ]
+      },
+      "path-green": {
+        "role": "tertiary",
+        "displayName": "Correct-Path Green",
+        "canonical": "#18704F",
+        "tonalRamp": [
+          "#17352A",
+          "#225E47",
+          "#298965",
+          "#2DC38B",
+          "#5ED4A8",
+          "#95DBC0",
+          "#C6E7DA",
+          "#EEF6F3"
+        ]
+      },
+      "path-green-fill": {
+        "role": "tertiary",
+        "displayName": "Correct-Path Green Fill",
+        "canonical": "#E3F1EA",
+        "tonalRamp": [
+          "#1E2E26",
+          "#304F40",
+          "#407259",
+          "#519E78",
+          "#7BB799",
+          "#A6CAB8",
+          "#CEDFD6",
+          "#F0F4F2"
+        ]
+      },
+      "path-green-night": {
+        "role": "tertiary",
+        "displayName": "Night Correct-Path Green",
+        "canonical": "#5FC89E",
+        "tonalRamp": [
+          "#1B3229",
+          "#295644",
+          "#357E61",
+          "#3FB083",
+          "#6DC5A2",
+          "#9DD2BD",
+          "#CAE3D9",
+          "#EFF5F3"
+        ]
+      },
+      "failure-clay": {
+        "role": "tertiary",
+        "displayName": "Failure Clay",
+        "canonical": "#B4432F",
+        "tonalRamp": [
+          "#341D18",
+          "#5B2D25",
+          "#853B2E",
+          "#BC4834",
+          "#CE7464",
+          "#D7A198",
+          "#E5CCC7",
+          "#F6F0EE"
+        ]
+      },
+      "failure-clay-fill": {
+        "role": "tertiary",
+        "displayName": "Failure Clay Fill",
+        "canonical": "#FBEDEA",
+        "tonalRamp": [
+          "#361C16",
+          "#5F2B20",
+          "#8C3827",
+          "#C74529",
+          "#D7715B",
+          "#DCA093",
+          "#E8CBC5",
+          "#F7EFEE"
+        ]
+      },
+      "failure-clay-night": {
+        "role": "tertiary",
+        "displayName": "Night Failure Clay",
+        "canonical": "#F08A6E",
+        "tonalRamp": [
+          "#391B13",
+          "#652A1A",
+          "#96371D",
+          "#D6421A",
+          "#E36F4F",
+          "#E49F8C",
+          "#EBCAC1",
+          "#F7EFED"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page H1s and the home positioning line; article titles use clamp(2.2rem, 1.5rem + 2.6vw, 3.25rem)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Non-prose H2s, the home lead entry, services prices and closing section."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Feed entry titles, prose H2s, section heads, mobile menu links."
+      },
+      "body": {
+        "displayName": "Reading Serif",
+        "purpose": "Article prose at 66ch; deks, ledes and panel blurbs."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Nav links, related titles, base UI text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, rail headings, TOC and sub-bar links, meta rows."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Dates, reading time, footer small print, small buttons."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Code blocks, inline code, calculator numeric inputs, diagram code labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent)",
+        "purpose": "Halo on focused text inputs only."
+      },
+      {
+        "name": "avatar-ring",
+        "value": "inset 0 0 0 1px var(--border)",
+        "purpose": "Hairline edge of the avatar disc."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": ".15s ease",
+        "purpose": "Colour, border and background changes on links, buttons, inputs."
+      },
+      {
+        "name": "theme",
+        "value": ".2s ease",
+        "purpose": "Page background and text colour on theme switch."
+      },
+      {
+        "name": "brand-hover",
+        "value": "transform .3s cubic-bezier(.2, .8, .2, 1)",
+        "purpose": "The header mark tilts -8deg and scales 1.06 on hover."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "prefers-reduced-motion removes all transitions and smooth scroll."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "menu",
+        "value": "780px"
+      },
+      {
+        "name": "topic-bar-unmask",
+        "value": "900px"
+      },
+      {
+        "name": "home-rail",
+        "value": "1000px"
+      },
+      {
+        "name": "article-rail",
+        "value": "1100px"
+      },
+      {
+        "name": "grid-2",
+        "value": "640px"
+      },
+      {
+        "name": "grid-3",
+        "value": "960px"
+      }
+    ],
+    "layout": {
+      "container": "1180px",
+      "rail": "300px",
+      "header": "64px",
+      "topicBar": "44px",
+      "measure": "66ch",
+      "measureWide": "880px"
+    }
+  },
+  "components": [
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Default hire action: header Services, work panel, rail newsletter submit.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">Services</a>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:11px 18px; border-radius:var(--radius, 6px); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-weight:600; font-size:0.9375rem; line-height:1; text-decoration:none; border:1px solid transparent; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; } .ds-btn-outline:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-btn-outline { background:transparent; color:var(--brand, #B8123A); border-color:var(--brand, #B8123A); } .ds-btn-outline:hover { background:color-mix(in srgb, var(--brand, #B8123A) 8%, transparent); color:var(--brand-hover, #960C2D); }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ruby fill for the page's single decisive action (email me, subscribe band, mobile Services).",
+      "html": "<button class=\"ds-btn-primary\">Subscribe</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:11px 18px; border-radius:var(--radius, 6px); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-weight:600; font-size:0.9375rem; line-height:1; text-decoration:none; border:1px solid transparent; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; } .ds-btn-primary:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-btn-primary { background:var(--brand, #B8123A); color:var(--brand-contrast, #FFFFFF); } .ds-btn-primary:hover { background:var(--brand-hover, #960C2D); } .ds-btn-primary:active { background:var(--brand-hover, #960C2D); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral outline for non-hire alternatives (Subscribe via RSS).",
+      "html": "<a class=\"ds-btn-secondary\" href=\"#\">Subscribe via RSS</a>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:11px 18px; border-radius:var(--radius, 6px); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-weight:600; font-size:0.9375rem; line-height:1; text-decoration:none; border:1px solid transparent; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; } .ds-btn-secondary:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-btn-secondary { background:var(--bg, #FFFFFF); color:var(--text, #121216); border-color:var(--border-strong, #CFCDC8); } .ds-btn-secondary:hover { border-color:var(--text-faint, #696973); }"
+    },
+    {
+      "name": "Email Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Text field with ruby border and ring on focus, clay on error.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\" aria-label=\"Email address\">",
+      "css": ".ds-input { font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-size:1.0625rem; color:var(--text, #121216); padding:10px 14px; background:var(--card-bg, #FFFFFF); border:1px solid var(--border-strong, #CFCDC8); border-radius:var(--radius, 6px); transition:border-color .15s ease, box-shadow .15s ease; } .ds-input::placeholder { color:var(--text-faint, #696973); } .ds-input:hover { border-color:var(--text-faint, #696973); } .ds-input:focus-visible { outline:none; border-color:var(--brand, #B8123A); box-shadow:0 0 0 3px color-mix(in srgb, var(--brand, #B8123A) 35%, transparent); } .ds-input[aria-invalid=\"true\"] { border-color:var(--dg-hazard, #B4432F); }"
+    },
+    {
+      "name": "Header",
+      "kind": "nav",
+      "refersTo": "header",
+      "description": "Sticky 64px header: da lockup, ink nav with ruby current rule, outline Services button.",
+      "html": "<header class=\"ds-header\"><a class=\"ds-brand\" href=\"#\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 128 128\" aria-hidden=\"true\"><g fill=\"none\" stroke-width=\"15\" stroke-linecap=\"round\"><circle cx=\"36\" cy=\"80\" r=\"21\" stroke=\"currentColor\"/><path d=\"M64 22 V101\" stroke=\"currentColor\"/><circle cx=\"85.5\" cy=\"80\" r=\"21\" stroke=\"#B8123A\"/><path d=\"M114 59 V101\" stroke=\"#B8123A\"/></g></svg><span>Danial Asghar</span></a><nav class=\"ds-nav\"><a class=\"ds-nav-link is-active\" href=\"#\" aria-current=\"page\">Writing</a><a class=\"ds-nav-link\" href=\"#\">Projects</a><a class=\"ds-nav-link\" href=\"#\">Tools</a><a class=\"ds-nav-link\" href=\"#\">About</a></nav><a class=\"ds-header-cta\" href=\"#\">Services</a></header>",
+      "css": ".ds-header { display:flex; align-items:center; gap:24px; height:64px; padding:0 24px; background:var(--bg, #FFFFFF); border-bottom:1px solid var(--border, #E6E5E1); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); } .ds-brand { display:inline-flex; align-items:center; gap:.6rem; margin-right:auto; color:var(--text, #121216); text-decoration:none; font-weight:800; font-size:1.25rem; letter-spacing:-0.03em; } .ds-nav { display:flex; gap:32px; } .ds-nav-link { position:relative; display:inline-flex; align-items:center; height:64px; color:var(--text, #121216); font-weight:500; font-size:1.0625rem; text-decoration:none; transition:color .15s ease; } .ds-nav-link:hover, .ds-nav-link.is-active { color:var(--brand, #B8123A); } .ds-nav-link.is-active::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--brand, #B8123A); } .ds-nav-link:focus-visible, .ds-header-cta:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-header-cta { padding:7px 13px; border:1px solid var(--brand, #B8123A); border-radius:6px; color:var(--brand, #B8123A); font-weight:600; font-size:0.8125rem; text-decoration:none; } .ds-header-cta:hover { background:color-mix(in srgb, var(--brand, #B8123A) 8%, transparent); }"
+    },
+    {
+      "name": "Feed Entry",
+      "kind": "custom",
+      "description": "Hairline-ruled post entry: heavy title, serif dek, byline row with avatar. No card.",
+      "html": "<article class=\"ds-entry\"><h3 class=\"ds-entry-title\"><a href=\"#\">Why your Sidekiq job runs twice</a></h3><p class=\"ds-entry-dek\">At-least-once delivery means every job must be safe to run again. Here is the mechanism and the fix.</p><p class=\"ds-entry-meta\"><span class=\"ds-avatar\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 128 128\" aria-hidden=\"true\"><g fill=\"none\" stroke-width=\"15\" stroke-linecap=\"round\"><circle cx=\"36\" cy=\"80\" r=\"21\" stroke=\"currentColor\"/><path d=\"M64 22 V101\" stroke=\"currentColor\"/><circle cx=\"85.5\" cy=\"80\" r=\"21\" stroke=\"#B8123A\"/><path d=\"M114 59 V101\" stroke=\"#B8123A\"/></g></svg></span><span class=\"ds-entry-author\">Danial Asghar</span><span class=\"ds-dot\">·</span>Nov 2026<span class=\"ds-dot\">·</span>Background Jobs<span class=\"ds-dot\">·</span>9 min read</p></article>",
+      "css": ".ds-entry { padding:32px 0; border-top:1px solid var(--border, #E6E5E1); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); } .ds-entry-title { font-size:clamp(1.6rem, 1.2rem + 1.6vw, 2rem); font-weight:800; line-height:1.12; letter-spacing:-0.015em; margin:0; } .ds-entry-title a { color:var(--text, #121216); text-decoration:none; transition:color .15s ease; } .ds-entry-title a:hover { color:var(--brand, #B8123A); } .ds-entry-title a:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-entry-dek { font-family:var(--font-prose, Charter, 'Charis SIL', Georgia, serif); color:var(--text-muted, #4D4D57); font-size:1.25rem; line-height:1.55; margin:12px 0 0; max-width:62ch; } .ds-entry-meta { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem .5rem; margin:16px 0 0; font-size:0.9375rem; color:var(--text-faint, #696973); } .ds-entry-author { color:var(--text-muted, #4D4D57); font-weight:500; } .ds-dot { color:var(--border-strong, #CFCDC8); } .ds-avatar { display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--bg-subtle, #F5F4F2); color:var(--text, #121216); box-shadow:inset 0 0 0 1px var(--border, #E6E5E1); }"
+    },
+    {
+      "name": "Work Panel",
+      "kind": "card",
+      "refersTo": "rail-panel",
+      "description": "The rail's one bordered card: topic-aware headline, serif copy, full-width outline button.",
+      "html": "<aside class=\"ds-panel\"><h3>Jobs misbehaving in production?</h3><p>A fixed-scope Background Job Reliability Audit finds why jobs run twice, lose data or pile up, against your real code.</p><a class=\"ds-panel-btn\" href=\"#\">See services and prices</a><p class=\"ds-panel-note\">Fixed scope, from $1,000.</p></aside>",
+      "css": ".ds-panel { max-width:300px; background:var(--card-bg, #FFFFFF); border:1px solid var(--border-strong, #CFCDC8); border-radius:var(--radius-lg, 8px); padding:24px; font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); } .ds-panel h3 { font-size:1.5rem; font-weight:800; letter-spacing:-0.015em; line-height:1.15; margin:0 0 12px; color:var(--text, #121216); } .ds-panel p { font-family:var(--font-prose, Charter, 'Charis SIL', Georgia, serif); color:var(--text-muted, #4D4D57); font-size:1.0625rem; line-height:1.55; margin:0 0 20px; } .ds-panel-btn { display:flex; justify-content:center; padding:11px 18px; border:1px solid var(--brand, #B8123A); border-radius:6px; color:var(--brand, #B8123A); font-weight:600; font-size:0.9375rem; text-decoration:none; transition:background .15s ease; } .ds-panel-btn:hover { background:color-mix(in srgb, var(--brand, #B8123A) 8%, transparent); } .ds-panel-btn:focus-visible { outline:2px solid var(--brand, #B8123A); outline-offset:2px; } .ds-panel .ds-panel-note { font-family:inherit; font-size:0.8125rem; color:var(--text-faint, #696973); text-align:center; margin:12px 0 0; }"
+    },
+    {
+      "name": "Topic Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill tag on a subtle ground for topic labels.",
+      "html": "<span class=\"ds-chip\">Background Jobs</span>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-size:0.8125rem; font-weight:500; padding:.25rem .6rem; border:1px solid var(--border, #E6E5E1); border-radius:999px; color:var(--text-muted, #4D4D57); background:var(--bg-subtle, #F5F4F2); }"
+    },
+    {
+      "name": "Tool Verdict",
+      "kind": "custom",
+      "description": "Calculator result strip: green OK / clay risk with a drawn mask icon; never ruby.",
+      "html": "<div class=\"ds-verdict is-ok\"><span class=\"ds-state\"><strong>Pool fits.</strong> Every process has a connection per thread, with headroom on Postgres.</span></div>",
+      "css": ".ds-verdict { padding:16px 20px; border:1px solid var(--border-strong, #CFCDC8); border-radius:6px; background:var(--bg-subtle, #F5F4F2); font-family:var(--font-sans, 'Bricolage Grotesque', system-ui, sans-serif); font-size:0.9375rem; line-height:1.55; color:var(--text, #121216); } .ds-verdict.is-ok { border-color:var(--dg-accent, #18704F); background:var(--dg-accent-fill, #E3F1EA); } .ds-verdict.is-ok strong { color:var(--dg-accent, #18704F); } .ds-state::before { content:''; display:inline-block; vertical-align:-2px; margin-right:.4rem; width:1em; height:1em; background:var(--dg-accent, #18704F); -webkit-mask:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / contain no-repeat; mask:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") center / contain no-repeat; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Developer Publication",
+    "overview": "The site is a technical publication in the Ruby Weekly, Medium and Honeybadger developer-blog tradition, built to their craft level: the writing is the product, and it is set big and confident. A white page, near-black ink and a single ruby carry everything. Titles are a heavy grotesk with tight tracking; reading text is a 20px book serif at a comfortable measure; code is the only thing in mono. Nothing is decorative: depth comes from hairlines, not shadows, and the one bordered box on a page sits in the right rail.\n\nDensity is editorial, not dashboard. A feed is a stack of hairline-ruled entries (big title, serif dek, byline row), never a grid of cards. Reading pages get a quiet topic sub-bar under the header and, on wide screens, a sticky right rail holding \"On this page\" and one work-with-me panel. The route to hire Danial is always one calm outlined ruby button beside the text, never a banner.\n\nThe identity is the \"da\" ligature mark: the d's tall stem doubles as the left edge of the a's bowl, d in ink (follows the theme), a in ruby. It stays unique to this site; it is not a red block or a gem.",
+    "keyCharacteristics": [
+      "White / near-black grounds, one ruby accent, semantic green and clay only inside diagrams and tool verdicts.",
+      "Bricolage Grotesque 800 titles with negative tracking; Charter / Charis SIL 20px reading text at 66ch; JetBrains Mono for code.",
+      "Hairline-ruled feeds and lists; exactly one bordered panel family in the rail.",
+      "Square-ish corners (4 / 6 / 8px); flat, no elevation shadows.",
+      "Complete light and dark themes driven by the same tokens."
+    ],
+    "rules": [
+      {
+        "name": "The One Ruby Rule",
+        "body": "Ruby means \"brand, link, action or here\". It is never a fill for a section, a background band, or a decorative stripe, and the outline button is preferred over the filled one wherever a page already has a primary action.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Diagram Rule",
+        "body": "Diagrams and tool verdicts speak in green (correct path) and clay (failure) and never borrow ruby. Ruby in a diagram would read as a link or a brand claim.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is Machine Text Rule",
+        "body": "JetBrains Mono is for code and machine values only: code blocks, inline code, the calculator's numeric inputs, and diagram code labels. Never for headings, labels, or UI chrome.",
+        "section": "typography"
+      },
+      {
+        "name": "The Serif Reads Rule",
+        "body": "Anything meant to be read as sentences (prose, deks, ledes, panel blurbs, author bio) is serif; anything meant to be scanned or clicked is the grotesk.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Not Shadow Rule",
+        "body": "Separate things with a 1px hairline. If an element seems to need a shadow to stand out, it should instead be the rail panel, or nothing.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep ruby to the mark's a, links, the hire action and the current state.",
+      "**Do** set every title in Bricolage Grotesque 800 with negative tracking (-0.015em to -0.03em).",
+      "**Do** set reading text in the serif at 20px / 1.65 inside a `66ch` column.",
+      "**Do** divide feed entries, lists and sections with 1px hairlines.",
+      "**Do** use the drawn SVG icon set (currentColor strokes or masks) for every icon.",
+      "**Do** use green for correct paths and OK verdicts, clay for failures and errors.",
+      "**Do** ship every screen complete in both light and dark tokens."
+    ],
+    "donts": [
+      "**Don't** put ruby in diagrams or tool verdicts.",
+      "**Don't** wrap feed entries in cards or lay posts out as a card grid.",
+      "**Don't** add more than the work card and newsletter panel to a rail, or nest panels.",
+      "**Don't** add elevation shadows; separation is a hairline.",
+      "**Don't** add eyebrow or kicker labels above titles.",
+      "**Don't** use unicode glyphs (arrows, checks, crosses) as icons.",
+      "**Don't** use mono for headings, labels or UI text.",
+      "**Don't** replace the \"da\" ligature with a generic red block, gem or initials badge."
+    ]
+  }
+}
