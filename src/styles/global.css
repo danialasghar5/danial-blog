@@ -66,7 +66,7 @@
 	--space-32: 128px;
 
 	/* ---- Reading measure (apply on the serif element itself) ---- */
-	--measure: 66ch;          /* ~700px at 20px Charis */
+	--measure: 64ch;          /* ~680px at 20px Charter, under 80 characters a line */
 	--measure-wide: 880px;    /* diagrams */
 
 	/* ---- Type scale ---- */
@@ -193,7 +193,7 @@ h3 { font-size: var(--fs-2xl); }
 h4 { font-size: var(--fs-xl); }
 h5 { font-size: var(--fs-lg); }
 
-p { margin: 0 0 var(--space-4) 0; }
+p { margin: 0 0 var(--space-4) 0; text-wrap: pretty; }
 
 a {
 	color: var(--brand);

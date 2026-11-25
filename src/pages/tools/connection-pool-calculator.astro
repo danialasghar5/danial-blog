@@ -273,15 +273,15 @@ const jsonLd = [
 	.field input:hover { border-color: var(--text-faint); }
 	.field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
 
-	/* Verdict: a tinted strip with a full state-coloured border. */
+	/* Verdict: a state-tinted strip (no border: it sits inside the tool card). */
 	.verdict {
 		margin-top: var(--space-6); padding: var(--space-4) var(--space-5);
-		border: 1px solid var(--border-strong); border-radius: var(--radius);
+		border-radius: var(--radius);
 		background: var(--bg-subtle);
 		font-size: var(--fs-sm); line-height: var(--lh-normal); color: var(--text);
 	}
-	.verdict.is-ok { border-color: var(--dg-accent); background: var(--dg-accent-fill); }
-	.verdict.is-risk { border-color: var(--dg-hazard); background: var(--dg-hazard-fill); }
+	.verdict.is-ok { background: var(--dg-accent-fill); }
+	.verdict.is-risk { background: var(--dg-hazard-fill); }
 	.verdict :global(strong) { font-weight: 600; }
 	/* State icons: drawn check / cross, tinted with the state colour. */
 	.verdict :global(:is(.state-ok, .state-risk))::before {
