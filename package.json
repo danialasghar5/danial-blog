@@ -10,6 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "icons": "node scripts/generate-icons.mjs",
+    "seo:baseline": "astro build && node scripts/seo-regression.mjs --baseline",
+    "seo:check": "astro build && node scripts/seo-regression.mjs",
     "astro": "astro"
   },
   "dependencies": {

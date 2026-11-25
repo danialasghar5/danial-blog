@@ -1,0 +1,3083 @@
+{
+	"/": {
+		"loc": "https://danialasghar.com/",
+		"lastmod": null,
+		"title": "Danial Asghar — Reliability Engineering for Rails & AI Backends",
+		"canonical": "https://danialasghar.com/",
+		"meta": {
+			"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+			"og:description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Danial Asghar — Reliability Engineering for Rails & AI Backends",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Danial Asghar — Reliability Engineering for Rails & AI Backends"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			}
+		],
+		"h1": [
+			"Reliability engineering for Rails and AI backends."
+		],
+		"headingIds": [
+			"nl-heading",
+			"rail-topics",
+			"rail-author"
+		]
+	},
+	"/about/": {
+		"loc": "https://danialasghar.com/about/",
+		"lastmod": null,
+		"title": "About — Danial Asghar",
+		"canonical": "https://danialasghar.com/about/",
+		"meta": {
+			"description": "Danial Asghar — Senior Backend Engineer. Building and scaling production Rails, Shopify, and AWS applications.",
+			"og:description": "Danial Asghar — Senior Backend Engineer. Building and scaling production Rails, Shopify, and AWS applications.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "About — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/about/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Danial Asghar — Senior Backend Engineer. Building and scaling production Rails, Shopify, and AWS applications.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "About — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/about/",
+						"name": "About",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Backend engineer building reliable Rails systems, high-volume APIs, and AI-powered products."
+		],
+		"headingIds": []
+	},
+	"/blog/": {
+		"loc": "https://danialasghar.com/blog/",
+		"lastmod": null,
+		"title": "Writing on Rails Reliability & Background Jobs — Danial Asghar",
+		"canonical": "https://danialasghar.com/blog/",
+		"meta": {
+			"description": "Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends.",
+			"og:description": "Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Writing on Rails Reliability & Background Jobs — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/blog/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Writing on Rails Reliability & Background Jobs — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Writing",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Writing"
+		],
+		"headingIds": [
+			"nl-heading"
+		]
+	},
+	"/blog/how-solid-queue-works/": {
+		"loc": "https://danialasghar.com/blog/how-solid-queue-works/",
+		"lastmod": "2026-08-04T00:00:00.000Z",
+		"title": "How Solid Queue Works in Rails 8 (No Redis Needed)",
+		"canonical": "https://danialasghar.com/blog/how-solid-queue-works/",
+		"meta": {
+			"description": "Solid Queue runs jobs on Postgres, not Redis. How the dispatcher, SKIP LOCKED claims, and polling actually work under the hood — and the trade-offs.",
+			"og:description": "Solid Queue runs jobs on Postgres, not Redis. How the dispatcher, SKIP LOCKED claims, and polling actually work under the hood — and the trade-offs.",
+			"og:image": "https://danialasghar.com/og/how-solid-queue-works.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "How Solid Queue Works in Rails 8 (No Redis Needed)",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/how-solid-queue-works/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Solid Queue runs jobs on Postgres, not Redis. How the dispatcher, SKIP LOCKED claims, and polling actually work under the hood — and the trade-offs.",
+			"twitter:image": "https://danialasghar.com/og/how-solid-queue-works.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "How Solid Queue Works in Rails 8 (No Redis Needed)"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Background Jobs & Async",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-08-04",
+				"datePublished": "2026-08-04",
+				"description": "A deep look at Solid Queue internals — execution tables, SKIP LOCKED claiming, concurrency controls, heartbeats — and the one guarantee it doesn't give you.",
+				"headline": "How Solid Queue Works Under the Hood (Rails 8)",
+				"image": "https://danialasghar.com/og/how-solid-queue-works.png",
+				"inLanguage": "en",
+				"keywords": [
+					"solid queue",
+					"rails 8 background jobs",
+					"solid queue vs sidekiq",
+					"for update skip locked",
+					"active job database backend",
+					"solid queue architecture"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/how-solid-queue-works/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No. It runs entirely on your relational database (Postgres, MySQL, or SQLite), storing the queue as ordinary tables. Removing Redis is the point — one fewer service to operate — at the cost of polling load on your database."
+						},
+						"name": "Does Solid Queue use Redis?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Workers poll solid_queue_ready_executions and claim jobs with FOR UPDATE SKIP LOCKED. That clause lets a worker lock and take a row while other workers skip past it to different rows, so many workers run jobs concurrently without blocking or double-claiming."
+						},
+						"name": "How does Solid Queue handle concurrency without Redis?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No — at-least-once. SKIP LOCKED stops two workers claiming the same row at once, but a job can still run more than once if a worker crashes after a side effect but before completion is recorded. Make your jobs idempotent."
+						},
+						"name": "Is Solid Queue exactly-once?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Jobs that would exceed the limit go to solid_queue_blocked_executions, tracked by a semaphore; the dispatcher promotes them to ready when a slot frees. It enforces strict limits but adds overhead, so reserve it for mutual exclusion rather than general rate-limiting."
+						},
+						"name": "How does limits_concurrency work in Solid Queue?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No — retries come from Active Job (retry_on / discard_on), not Solid Queue. A job that raises without a retry rule lands in solid_queue_failed_executions and stays there until you retry or discard it."
+						},
+						"name": "Does Solid Queue retry failed jobs automatically?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "The supervisor prunes the dead process after its heartbeat expires (process_alive_threshold, default 5 minutes) and marks its in-flight jobs failed with ProcessPrunedError for inspection — they aren't silently re-run."
+						},
+						"name": "What happens to jobs when a Solid Queue worker crashes?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It polls rather than pushes, so there's a latency floor equal to your polling interval (0.1s by default for workers). A job enqueued just after a poll waits for the next one. Lower the interval for faster pickup, at the cost of more database queries."
+						},
+						"name": "Why is my Solid Queue job slow to start?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/how-solid-queue-works/",
+						"name": "How Solid Queue Works Under the Hood (Rails 8)",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"How Solid Queue Works Under the Hood (Rails 8)"
+		],
+		"headingIds": [
+			"the-core-idea-the-database-is-the-queue",
+			"the-four-processes",
+			"the-execution-tables",
+			"how-a-worker-claims-a-job-for-update-skip-locked",
+			"the-job-lifecycle-as-a-state-machine",
+			"concurrency-controls-limits_concurrency-and-blocked-jobs",
+			"the-polling-model-and-where-latency-comes-from",
+			"what-happens-when-a-worker-dies",
+			"finished-and-failed-jobs-two-production-gotchas",
+			"the-guarantee-solid-queue-gives-you-and-the-one-it-doesnt",
+			"common-misconceptions",
+			"key-takeaways",
+			"faq",
+			"does-solid-queue-use-redis",
+			"how-does-solid-queue-handle-concurrency-without-redis",
+			"is-solid-queue-exactly-once",
+			"how-does-limits_concurrency-work-in-solid-queue",
+			"does-solid-queue-retry-failed-jobs-automatically",
+			"what-happens-to-jobs-when-a-solid-queue-worker-crashes",
+			"why-is-my-solid-queue-job-slow-to-start",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/idempotent-ai-workers-rails/": {
+		"loc": "https://danialasghar.com/blog/idempotent-ai-workers-rails/",
+		"lastmod": "2026-07-07T00:00:00.000Z",
+		"title": "Idempotent Sidekiq Workers for LLM Calls (Rails)",
+		"canonical": "https://danialasghar.com/blog/idempotent-ai-workers-rails/",
+		"meta": {
+			"description": "An LLM call behind a Sidekiq job runs at least once. Make workers idempotent so a retry never double-classifies — or double-bills your OpenAI calls.",
+			"og:description": "An LLM call behind a Sidekiq job runs at least once. Make workers idempotent so a retry never double-classifies — or double-bills your OpenAI calls.",
+			"og:image": "https://danialasghar.com/og/idempotent-ai-workers-rails.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Idempotent Sidekiq Workers for LLM Calls (Rails)",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/idempotent-ai-workers-rails/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "An LLM call behind a Sidekiq job runs at least once. Make workers idempotent so a retry never double-classifies — or double-bills your OpenAI calls.",
+			"twitter:image": "https://danialasghar.com/og/idempotent-ai-workers-rails.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Idempotent Sidekiq Workers for LLM Calls (Rails)"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "AI Backend",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-07-07",
+				"datePublished": "2026-07-07",
+				"description": "An LLM call behind a Sidekiq job runs at least once, not exactly once. How to make Rails workers idempotent so a retry never double-classifies or double-bills.",
+				"headline": "Idempotent Background Workers for LLM Calls in Rails",
+				"image": "https://danialasghar.com/og/idempotent-ai-workers-rails.png",
+				"inLanguage": "en",
+				"keywords": [
+					"idempotent background jobs",
+					"sidekiq",
+					"llm",
+					"rails",
+					"reliability",
+					"structured outputs"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/idempotent-ai-workers-rails/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No. Sidekiq provides at-least-once delivery, so a job can run more than once after a timeout, deploy, or lost acknowledgement. Every worker must therefore be idempotent — safe to run multiple times without duplicating side effects."
+						},
+						"name": "Does Sidekiq guarantee exactly-once execution?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Because an LLM call is metered and non-deterministic. A blind retry re-bills the API for work already done, and the second response can differ from the first, overwriting a good classification. Idempotency must be enforced on the work, not the output."
+						},
+						"name": "Why do LLM background jobs need idempotency?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Key idempotency on a stable identifier such as the record UUID and its completion state, so a retry after success is a no-op. Where concurrent duplicates are possible, replace the read-then-write check with an atomic state transition in the database so only one worker can claim the job."
+						},
+						"name": "How do you make a Sidekiq worker idempotent for an LLM call?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "A blind retry does: if the model call succeeded but the job crashed before persisting, the retry calls the model again and pays a second time. A completion-state gate stops re-billing after a successful run, since an already-completed ticket returns immediately. Re-billing after a failed write is only avoided by reusing a stored response — a future improvement, not a default."
+						},
+						"name": "Does retrying a failed Sidekiq job re-bill the OpenAI API?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/idempotent-ai-workers-rails/",
+						"name": "Idempotent Background Workers for LLM Calls in Rails",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Designing Idempotent Background Workers for LLM Calls in Rails"
+		],
+		"headingIds": [
+			"why-an-llm-makes-double-execution-worse",
+			"what-idempotency-means-for-an-llm-worker",
+			"the-shipped-gate-status-based-idempotency-on-the-uuid",
+			"where-a-status-gate-isnt-enough-the-check-then-act-race",
+			"a-subtle-case-the-model-succeeded-the-write-didnt",
+			"common-idempotency-mistakes",
+			"tradeoffs",
+			"failure-modes",
+			"testing-and-monitoring-idempotent-workers",
+			"whats-shipped-vs-whats-planned",
+			"faq",
+			"does-sidekiq-guarantee-exactly-once-execution",
+			"why-do-llm-background-jobs-need-idempotency",
+			"how-do-you-make-a-sidekiq-worker-idempotent-for-an-llm-call",
+			"does-retrying-a-failed-sidekiq-job-re-bill-the-openai-api",
+			"the-lesson",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/postgres-race-conditions-row-locks-rails/": {
+		"loc": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/",
+		"lastmod": "2026-10-20T00:00:00.000Z",
+		"title": "Postgres Concurrency in Rails: Row Locks & Deadlocks (2026)",
+		"canonical": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/",
+		"meta": {
+			"description": "Why read-modify-write leaks race conditions in Rails, how SELECT FOR UPDATE blocks, and when to use advisory locks — with real production code.",
+			"og:description": "Why read-modify-write leaks race conditions in Rails, how SELECT FOR UPDATE blocks, and when to use advisory locks — with real production code.",
+			"og:image": "https://danialasghar.com/og/postgres-race-conditions-row-locks-rails.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Postgres Concurrency in Rails: Row Locks & Deadlocks (2026)",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Why read-modify-write leaks race conditions in Rails, how SELECT FOR UPDATE blocks, and when to use advisory locks — with real production code.",
+			"twitter:image": "https://danialasghar.com/og/postgres-race-conditions-row-locks-rails.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Postgres Concurrency in Rails: Row Locks & Deadlocks (2026)"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@type": "Article",
+						"author": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"dateModified": "2026-10-20",
+						"datePublished": "2026-10-20",
+						"description": "Why read-modify-write leaks race conditions in Rails, how SELECT FOR UPDATE blocks, and when to use advisory locks — with real production code.",
+						"headline": "Postgres Concurrency in Rails: Row Locks & Deadlocks (2026)",
+						"image": "https://danialasghar.com/og/postgres-race-conditions-row-locks-rails.png",
+						"mainEntityOfPage": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Writing",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/",
+						"name": "Fixing Postgres Race Conditions & Row-Level Deadlocks in Production Rails",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Fixing Postgres Race Conditions & Row-Level Deadlocks in Production Rails"
+		],
+		"headingIds": [
+			"1-the-flaw-in-read-modify-write",
+			"why-active-record-validations-fail",
+			"2-level-1-pessimistic-row-locking-select-for-update",
+			"avoiding-lock-escalation-for-no-key-update",
+			"3-level-2-optimistic-locking-lock_version",
+			"schema-setup",
+			"resilient-retry-pattern",
+			"4-level-3-postgresql-advisory-locks-pg_advisory_xact_lock",
+			"5-eliminating-postgres-deadlocks-40p01",
+			"how-a-deadlock-occurs",
+			"the-golden-rule-deterministic-lock-ordering",
+			"summary-checklist-for-rails-concurrency",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/rails-connection-pool-exhaustion/": {
+		"loc": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/",
+		"lastmod": "2026-11-17T00:00:00.000Z",
+		"title": "Rails ConnectionTimeoutError: Fix Connection Pool Exhaustion",
+		"canonical": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/",
+		"meta": {
+			"description": "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections.",
+			"og:description": "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections.",
+			"og:image": "https://danialasghar.com/og/rails-connection-pool-exhaustion.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Rails ConnectionTimeoutError: Fix Connection Pool Exhaustion",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections.",
+			"twitter:image": "https://danialasghar.com/og/rails-connection-pool-exhaustion.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Rails ConnectionTimeoutError: Fix Connection Pool Exhaustion"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Database Reliability",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about/"
+				},
+				"dateModified": "2026-11-17",
+				"datePublished": "2026-11-17",
+				"description": "ActiveRecord::ConnectionTimeoutError means threads outnumber pool connections. Size the pool per process, find hidden consumers, stay under max_connections.",
+				"headline": "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError",
+				"image": "https://danialasghar.com/og/rails-connection-pool-exhaustion.png",
+				"inLanguage": "en",
+				"keywords": [
+					"activerecord connectiontimeouterror",
+					"rails connection pool exhaustion",
+					"could not obtain a connection from the pool",
+					"rails database pool size",
+					"sidekiq database pool",
+					"postgres max_connections rails"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "A thread asked its process's connection pool for a database connection and none became free within checkout_timeout (5 seconds by default). It almost always means more threads are contending for the pool than it has connections, or connections are being held too long. It is a pool-sizing or connection-hygiene problem, not a database outage."
+						},
+						"name": "What causes ActiveRecord::ConnectionTimeoutError?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "At least the number of threads in that process that can touch the database, plus a little headroom for anything that checks out connections on its own threads, such as load_async or Action Cable. Size each process type separately: the web pool follows Puma threads, the worker pool follows Sidekiq concurrency or Solid Queue worker threads."
+						},
+						"name": "How big should the Rails database pool be?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Not necessarily. Each process has its own pool, sized to its own thread count, and those counts usually differ. A single database.yml can serve both if the pool reads from an environment variable you set per process, rather than RAILS_MAX_THREADS, which usually reflects the web server's thread count."
+						},
+						"name": "Should Puma and Sidekiq use the same pool size?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "ConnectionTimeoutError is raised inside one Rails process when its own pool is exhausted. PG::ConnectionBad with FATAL: sorry, too many clients already comes from Postgres when the total number of connections across every process has reached max_connections. The first is fixed per process; the second is fixed by reducing the total or putting a pooler such as PgBouncer in front of Postgres."
+						},
+						"name": "What is the difference between ConnectionTimeoutError and too many clients already?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It fixes the global limit, not the per-process one. PgBouncer lets many application connections share fewer Postgres connections, so you stay under max_connections. Each Rails process still needs a pool large enough for its own threads, and transaction pooling mode breaks session-level features such as session advisory locks."
+						},
+						"name": "Does PgBouncer fix connection pool exhaustion in Rails?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/",
+						"name": "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError"
+		],
+		"headingIds": [
+			"what-the-error-actually-means",
+			"rule-1-the-pool-must-cover-the-threads-in-its-process",
+			"rule-2-count-the-hidden-connection-consumers",
+			"rule-3-dont-hold-a-connection-while-waiting-on-something-else",
+			"rule-4-stay-under-postgres-max_connections",
+			"diagnose-it-in-production",
+			"key-takeaways",
+			"faq",
+			"what-causes-activerecordconnectiontimeouterror",
+			"how-big-should-the-rails-database-pool-be",
+			"should-puma-and-sidekiq-use-the-same-pool-size",
+			"what-is-the-difference-between-connectiontimeouterror-and-too-many-clients-already",
+			"does-pgbouncer-fix-connection-pool-exhaustion-in-rails",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/rails-deadlock-activerecord/": {
+		"loc": "https://danialasghar.com/blog/rails-deadlock-activerecord/",
+		"lastmod": "2026-11-17T00:00:00.000Z",
+		"title": "Fix ActiveRecord::Deadlocked (40P01) in Rails",
+		"canonical": "https://danialasghar.com/blog/rails-deadlock-activerecord/",
+		"meta": {
+			"description": "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live.",
+			"og:description": "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live.",
+			"og:image": "https://danialasghar.com/og/rails-deadlock-activerecord.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Fix ActiveRecord::Deadlocked (40P01) in Rails",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/rails-deadlock-activerecord/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live.",
+			"twitter:image": "https://danialasghar.com/og/rails-deadlock-activerecord.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Fix ActiveRecord::Deadlocked (40P01) in Rails"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Database Reliability",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about/"
+				},
+				"dateModified": "2026-11-17",
+				"datePublished": "2026-11-17",
+				"description": "Why Postgres kills one transaction on a deadlock, how to read the 40P01 log, the lock-ordering rule that prevents it, and the SQL to diagnose it live.",
+				"headline": "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production",
+				"image": "https://danialasghar.com/og/rails-deadlock-activerecord.png",
+				"inLanguage": "en",
+				"keywords": [
+					"activerecord deadlocked",
+					"rails deadlock",
+					"pg trdeadlockdetected",
+					"postgres deadlock detected 40P01",
+					"postgres lock ordering",
+					"pg_blocking_pids"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/rails-deadlock-activerecord/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It's the Rails exception wrapping Postgres error 40P01 (PG::TRDeadlockDetected). Postgres detected two transactions each holding a lock the other needs — a cycle — and killed one of them so the other could proceed. The killed transaction raises this error."
+						},
+						"name": "What is ActiveRecord::Deadlocked?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "A deadlock requires two transactions to run concurrently and acquire locks in conflicting orders. At low traffic they rarely overlap in the exact window needed to form a cycle; under load, overlapping transactions become common, so the latent lock-ordering inconsistency finally surfaces."
+						},
+						"name": "Why do deadlocks only happen under load?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Acquire locks in a consistent, deterministic order everywhere. When locking multiple rows, add .order(:id) to your locking query so every transaction locks the same row first. Keep transactions short and never hold a lock across a network call."
+						},
+						"name": "How do I prevent Rails deadlocks?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Yes. A deadlock victim is a transient failure — rerun the whole transaction (with bounded retries) and it will usually succeed once the conflicting transaction has committed. But retrying only masks a persistent lock-ordering bug; fix the order as well."
+						},
+						"name": "Should I retry a deadlocked transaction?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Read the Postgres server log (not just the Rails exception) — the deadlock report lists the statement each process was waiting on. For live contention, join pg_blocking_pids(pid) to pg_stat_activity to see which backend is blocking which, and enable log_lock_waits to log long waits."
+						},
+						"name": "How do I find which queries are deadlocking?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/rails-deadlock-activerecord/",
+						"name": "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production"
+		],
+		"headingIds": [
+			"what-a-deadlock-actually-is",
+			"reading-the-40p01-report",
+			"the-one-rule-that-prevents-most-deadlocks",
+			"the-other-common-rails-deadlock-sources",
+			"diagnosing-lock-contention-live",
+			"make-the-deadlock-survivable-retry-on-40p01",
+			"common-mistakes",
+			"key-takeaways",
+			"faq",
+			"what-is-activerecorddeadlocked",
+			"why-do-deadlocks-only-happen-under-load",
+			"how-do-i-prevent-rails-deadlocks",
+			"should-i-retry-a-deadlocked-transaction",
+			"how-do-i-find-which-queries-are-deadlocking",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/sidekiq-job-runs-twice-at-least-once-delivery/": {
+		"loc": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/",
+		"lastmod": "2026-07-20T00:00:00.000Z",
+		"title": "Why Sidekiq Jobs Run Twice — and How to Stop It",
+		"canonical": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/",
+		"meta": {
+			"description": "Sidekiq runs jobs at least once, so duplicates happen. The 5 windows where a job re-runs — and how to stop double-charges with idempotent workers.",
+			"og:description": "Sidekiq runs jobs at least once, so duplicates happen. The 5 windows where a job re-runs — and how to stop double-charges with idempotent workers.",
+			"og:image": "https://danialasghar.com/og/sidekiq-job-runs-twice-at-least-once-delivery.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Why Sidekiq Jobs Run Twice — and How to Stop It",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Sidekiq runs jobs at least once, so duplicates happen. The 5 windows where a job re-runs — and how to stop double-charges with idempotent workers.",
+			"twitter:image": "https://danialasghar.com/og/sidekiq-job-runs-twice-at-least-once-delivery.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Why Sidekiq Jobs Run Twice — and How to Stop It"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Background Jobs & Async",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-07-20",
+				"datePublished": "2026-07-20",
+				"description": "Sidekiq runs jobs at least once, not exactly once. Here's why background jobs execute twice — deploys, retries, timeouts, lost acks — and where the fix actually lives.",
+				"headline": "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)",
+				"image": "https://danialasghar.com/og/sidekiq-job-runs-twice-at-least-once-delivery.png",
+				"inLanguage": "en",
+				"keywords": [
+					"sidekiq job runs twice",
+					"sidekiq at least once delivery",
+					"does sidekiq guarantee exactly once",
+					"sidekiq duplicate jobs",
+					"background jobs run multiple times",
+					"idempotency"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No. Sidekiq guarantees at-least-once delivery, not exactly-once execution. A job can run more than once — after a deploy, a retry, a timeout, or a completion that Redis never recorded — so every worker must be idempotent, meaning safe to run multiple times without duplicating its side effects."
+						},
+						"name": "Does Sidekiq guarantee exactly-once execution?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Because the job ran at a point where the system could not confirm success: a worker killed mid-job on a deploy, an error that triggered a retry, a successful completion whose acknowledgement was lost to a Redis blip, or a timeout on a long-running job. In each case Sidekiq's safe move is to run the job again rather than risk losing the work."
+						},
+						"name": "Why did my Sidekiq job run twice?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It is a delivery guarantee that a job is handed to a worker one or more times, and never silently zero times. Faced with possibly running a job twice or possibly never running it, an at-least-once system chooses twice: a duplicate is visible and, if your code is idempotent, harmless, while a lost job is silent and often unrecoverable."
+						},
+						"name": "What is at-least-once delivery?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "You do not stop the re-runs — you make them harmless. Assume the job runs more than once and make its effect idempotent, enforced in the database: a unique index makes a duplicate impossible to persist, and an atomic state transition (for example pending to processing) lets exactly one worker win a race. A guard clause alone still races under concurrent duplicates."
+						},
+						"name": "How do I stop Sidekiq jobs running multiple times?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No. A re-run is a fresh execution with a new job ID (JID), so you cannot deduplicate on the JID. The identity you key idempotency on has to come from your domain — the order or the user — not from Sidekiq's job ID."
+						},
+						"name": "Does a re-run job keep the same JID?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/",
+						"name": "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)"
+		],
+		"headingIds": [
+			"does-sidekiq-guarantee-exactly-once-execution",
+			"delivery-vs-execution-vs-side-effects",
+			"why-did-my-sidekiq-job-run-twice-the-five-windows",
+			"1-a-worker-is-killed-mid-job-deploys-and-restarts",
+			"2-the-job-raises-and-retries",
+			"3-a-completion-thats-never-recorded",
+			"4-timeouts-and-long-running-jobs",
+			"5-infrastructure-failure--the-asterisk-in-the-other-direction",
+			"why-cant-sidekiq-just-guarantee-exactly-once",
+			"where-correctness-actually-lives",
+			"faq",
+			"what-is-at-least-once-delivery",
+			"how-do-i-stop-sidekiq-jobs-running-multiple-times",
+			"does-a-re-run-job-keep-the-same-jid",
+			"takeaways",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/": {
+		"loc": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/",
+		"lastmod": "2026-07-30T00:00:00.000Z",
+		"title": "Sidekiq Retry: Default Count, Interval & Backoff",
+		"canonical": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/",
+		"meta": {
+			"description": "Sidekiq's default retry count, the backoff formula, and when to stop. Set retry intervals right — and skip jobs that can never succeed.",
+			"og:description": "Sidekiq's default retry count, the backoff formula, and when to stop. Set retry intervals right — and skip jobs that can never succeed.",
+			"og:image": "https://danialasghar.com/og/sidekiq-retry-strategy.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Sidekiq Retry: Default Count, Interval & Backoff",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Sidekiq's default retry count, the backoff formula, and when to stop. Set retry intervals right — and skip jobs that can never succeed.",
+			"twitter:image": "https://danialasghar.com/og/sidekiq-retry-strategy.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Sidekiq Retry: Default Count, Interval & Backoff"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Background Jobs & Async",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-07-30",
+				"datePublished": "2026-07-30",
+				"description": "Not every failed job should retry. A practical guide to Sidekiq retry strategy — backoff, error classification, the Dead Set, and when to stop.",
+				"headline": "Sidekiq Retry Strategy: Transient vs Permanent Failures",
+				"image": "https://danialasghar.com/og/sidekiq-retry-strategy.png",
+				"inLanguage": "en",
+				"keywords": [
+					"sidekiq retry strategy",
+					"transient vs permanent failures",
+					"retry_on discard_on",
+					"exponential backoff jitter",
+					"sidekiq dead set",
+					"background jobs"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "For transient failures, 5–8 bounded attempts over a few minutes handle almost all real blips. Sidekiq's default is 25, which is a safe floor but excessive for most jobs and harmful for permanent failures. Set the count per job based on how long the dependency realistically takes to recover."
+						},
+						"name": "How many times should a Sidekiq job retry?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "retry_on marks an error as transient and re-runs the job with backoff up to a limit. discard_on marks an error as permanent and drops the job immediately without retrying. Use retry_on for timeouts and 5xx; use discard_on for validation errors, 4xx, and missing records."
+						},
+						"name": "What's the difference between retry_on and discard_on?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Yes, but carefully. A 429 is transient — the limit resets — but retrying too aggressively makes it worse. Back off exponentially and honor the Retry-After header when the API provides one, rather than guessing the delay."
+						},
+						"name": "Should I retry a 429 Too Many Requests?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It moves to the Dead Set, Sidekiq's dead-letter queue, where it's retained and can be inspected and manually re-enqueued from the Web UI. Nothing is silently lost, which is what makes bounded retries safe."
+						},
+						"name": "What happens when a Sidekiq job runs out of retries?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No. Classification controls whether and when a job re-runs; idempotency controls what happens when it does. A retried transient failure still repeats earlier side effects unless the job is idempotent. You need both."
+						},
+						"name": "Does classifying retries replace idempotency?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/",
+						"name": "Sidekiq Retry Strategy: Transient vs Permanent Failures",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Sidekiq Retry Strategy: Transient vs Permanent Failures"
+		],
+		"headingIds": [
+			"the-two-kinds-of-failure",
+			"why-the-default-sidekiq-retry-is-a-trap",
+			"which-failures-to-retry-and-which-to-discard",
+			"retrying-transient-failures-the-right-way",
+			"discarding-permanent-failures",
+			"exponential-backoff-and-jitter",
+			"where-dead-jobs-go-the-dead-set",
+			"retries-and-idempotency-go-together",
+			"common-retry-mistakes",
+			"key-takeaways",
+			"faq",
+			"how-many-times-should-a-sidekiq-job-retry",
+			"whats-the-difference-between-retry_on-and-discard_on",
+			"should-i-retry-a-429-too-many-requests",
+			"what-happens-when-a-sidekiq-job-runs-out-of-retries",
+			"does-classifying-retries-replace-idempotency",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/solid-queue-vs-sidekiq/": {
+		"loc": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/",
+		"lastmod": "2026-08-17T00:00:00.000Z",
+		"title": "Solid Queue vs Sidekiq (2026): The Real Decision Guide",
+		"canonical": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/",
+		"meta": {
+			"description": "Not a feature table. When Solid Queue wins, when Sidekiq wins, and the one question that usually decides it — from a senior Rails engineer.",
+			"og:description": "Not a feature table. When Solid Queue wins, when Sidekiq wins, and the one question that usually decides it — from a senior Rails engineer.",
+			"og:image": "https://danialasghar.com/og/solid-queue-vs-sidekiq.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Solid Queue vs Sidekiq (2026): The Real Decision Guide",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Not a feature table. When Solid Queue wins, when Sidekiq wins, and the one question that usually decides it — from a senior Rails engineer.",
+			"twitter:image": "https://danialasghar.com/og/solid-queue-vs-sidekiq.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Solid Queue vs Sidekiq (2026): The Real Decision Guide"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Background Jobs & Async",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-08-17",
+				"datePublished": "2026-08-17",
+				"description": "Solid Queue vs Sidekiq isn't a throughput threshold — it's about where your complexity lives and whether your database can absorb the queue. A decision framework.",
+				"headline": "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)",
+				"image": "https://danialasghar.com/og/solid-queue-vs-sidekiq.png",
+				"inLanguage": "en",
+				"keywords": [
+					"solid queue vs sidekiq",
+					"rails 8 background jobs",
+					"sidekiq vs solid queue",
+					"solid queue redis",
+					"active job backend"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Yes. It's the default Active Job backend in new Rails 8 apps, runs on PostgreSQL, MySQL, or SQLite, and handles real production workloads. The main things to plan for are database headroom (the queue adds write and connection load) and pickup latency (it polls rather than pushes)."
+						},
+						"name": "Is Solid Queue production-ready?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "For background jobs, yes — it removes the need to run Redis solely as a job queue. But if you use Redis for caching, ActionCable, or rate limiting, those needs remain. And the queue's load doesn't vanish; it moves onto your database."
+						},
+						"name": "Does Solid Queue replace Redis?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "For ordinary application workloads, its performance is typically sufficient. Sidekiq generally wins on raw pickup latency (push vs poll) and sustained high throughput (in-memory Redis). Rather than trust a benchmark, measure your own peak jobs/minute and p95 enqueue-to-start latency and compare against your requirements."
+						},
+						"name": "Is Solid Queue as fast as Sidekiq?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Only when a constraint justifies it — you're dropping Redis, your database has headroom, or you want to shed paid features. A migration changes your failure semantics, monitoring, and runbook, so it's a real project. Don't switch just because the Rails 8 default changed."
+						},
+						"name": "Should I migrate from Sidekiq to Solid Queue?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "No, but it can use one. On a shared database the queue competes with application queries for writes and connections; pointing Solid Queue at a dedicated database isolates that load and is a common choice once traffic is real."
+						},
+						"name": "Does Solid Queue need a separate database?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "When Redis is already in your stack (its marginal cost is near zero), when you need sub-100ms pickup latency, when you run sustained high throughput, when your primary database is already strained, or when you need paid features like batches or rate limiting."
+						},
+						"name": "When is Sidekiq still the better choice?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/",
+						"name": "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)"
+		],
+		"headingIds": [
+			"whats-actually-different-redis-push-vs-database-poll",
+			"the-no-redis-claim-examined",
+			"the-decision-framework",
+			"the-factor-that-usually-decides-it-is-redis-already-in-your-stack",
+			"measure-your-own-numbers",
+			"who-should-choose-which",
+			"before-you-switch",
+			"key-takeaways",
+			"faq",
+			"is-solid-queue-production-ready",
+			"does-solid-queue-replace-redis",
+			"is-solid-queue-as-fast-as-sidekiq",
+			"should-i-migrate-from-sidekiq-to-solid-queue",
+			"does-solid-queue-need-a-separate-database",
+			"when-is-sidekiq-still-the-better-choice",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/blog/why-background-jobs-are-slow/": {
+		"loc": "https://danialasghar.com/blog/why-background-jobs-are-slow/",
+		"lastmod": "2026-08-10T00:00:00.000Z",
+		"title": "Why Sidekiq Jobs Are Slow: Latency vs Execution",
+		"canonical": "https://danialasghar.com/blog/why-background-jobs-are-slow/",
+		"meta": {
+			"description": "Slow job? It either waited in the queue or ran slowly. Measure which with Sidekiq::Queue#latency before you tune — a diagnostic method, not guesswork.",
+			"og:description": "Slow job? It either waited in the queue or ran slowly. Measure which with Sidekiq::Queue#latency before you tune — a diagnostic method, not guesswork.",
+			"og:image": "https://danialasghar.com/og/why-background-jobs-are-slow.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Why Sidekiq Jobs Are Slow: Latency vs Execution",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/blog/why-background-jobs-are-slow/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Slow job? It either waited in the queue or ran slowly. Measure which with Sidekiq::Queue#latency before you tune — a diagnostic method, not guesswork.",
+			"twitter:image": "https://danialasghar.com/og/why-background-jobs-are-slow.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Why Sidekiq Jobs Are Slow: Latency vs Execution"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "TechArticle",
+				"articleSection": "Background Jobs & Async",
+				"author": {
+					"@type": "Person",
+					"jobTitle": "Senior Backend Engineer",
+					"name": "Danial Asghar",
+					"sameAs": [
+						"https://github.com/danialasghar5",
+						"https://www.linkedin.com/in/danial-asghar5/"
+					],
+					"url": "https://danialasghar.com/about"
+				},
+				"dateModified": "2026-08-10",
+				"datePublished": "2026-08-10",
+				"description": "A “slow” background job either waited (queue latency) or ran slowly (execution time). Measure which — then a diagnostic method for fixing each, in Rails.",
+				"headline": "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time",
+				"image": "https://danialasghar.com/og/why-background-jobs-are-slow.png",
+				"inLanguage": "en",
+				"keywords": [
+					"sidekiq queue latency",
+					"background job execution time",
+					"rails background jobs slow",
+					"perform.active_job",
+					"queue latency vs execution time"
+				],
+				"mainEntityOfPage": {
+					"@id": "https://danialasghar.com/blog/why-background-jobs-are-slow/",
+					"@type": "WebPage"
+				},
+				"publisher": {
+					"@type": "Person",
+					"name": "Danial Asghar"
+				}
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "FAQPage",
+				"mainEntity": [
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Either they waited in the queue before a worker picked them up (queue latency) or they ran slowly once started (execution time). Measure queue latency with Sidekiq::Queue#latency; if it's high, the problem is capacity or throttling, not the job's code. If latency is low but results are slow, profile the job's perform."
+						},
+						"name": "Why are my Sidekiq jobs slow?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "It's the time in seconds since the oldest job in the queue was enqueued — roughly now — oldest_enqueued_at. It measures how long jobs are waiting before execution, which makes it the earliest signal of a backlog. Note it can read high for jobs re-enqueued after a deploy TERM or scheduled far in the future."
+						},
+						"name": "What is Sidekiq queue latency?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "That's high queue latency with low execution time — the job waited. Common causes are too few workers for the arrival rate, a retry storm consuming capacity, connection-pool starvation, or (on Solid Queue) the polling-interval floor."
+						},
+						"name": "Why is my job slow to start but fast to run?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Subscribe to the perform.active_job event via ActiveSupport::Notifications. Each job run reports its duration, so you get real execution times without modifying job code or installing an APM."
+						},
+						"name": "How do I measure background job execution time in Rails?"
+					},
+					{
+						"@type": "Question",
+						"acceptedAnswer": {
+							"@type": "Answer",
+							"text": "Only for I/O-bound jobs. Because of Ruby's GIL, extra threads help work that waits on the database or an API, but not CPU-bound work, where threads contend for the same core. For CPU-bound jobs, add processes instead. Also keep threads at or below your database connection pool size, or workers stall waiting for connections."
+						},
+						"name": "Does adding more Sidekiq threads make jobs faster?"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/",
+						"name": "Blog",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/blog/why-background-jobs-are-slow/",
+						"name": "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time"
+		],
+		"headingIds": [
+			"queue-latency-vs-execution-time-the-split-that-changes-everything",
+			"measure-the-split-before-you-guess",
+			"when-latency-is-high-the-job-waited",
+			"when-execution-is-high-the-job-ran-slowly",
+			"a-debugging-workflow",
+			"production-considerations",
+			"key-takeaways",
+			"faq",
+			"why-are-my-sidekiq-jobs-slow",
+			"what-is-sidekiq-queue-latency",
+			"why-is-my-job-slow-to-start-but-fast-to-run",
+			"how-do-i-measure-background-job-execution-time-in-rails",
+			"does-adding-more-sidekiq-threads-make-jobs-faster",
+			"conclusion",
+			"related-head",
+			"toc-rail-head",
+			"nl-heading"
+		]
+	},
+	"/contact/": {
+		"loc": "https://danialasghar.com/contact/",
+		"lastmod": null,
+		"title": "Contact — Danial Asghar",
+		"canonical": "https://danialasghar.com/contact/",
+		"meta": {
+			"description": "Get in touch with Danial Asghar about freelance and contract engineering work.",
+			"og:description": "Get in touch with Danial Asghar about freelance and contract engineering work.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Contact — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/contact/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Get in touch with Danial Asghar about freelance and contract engineering work.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Contact — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/contact/",
+						"name": "Contact",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Let's build something."
+		],
+		"headingIds": []
+	},
+	"/privacy/": {
+		"loc": "https://danialasghar.com/privacy/",
+		"lastmod": null,
+		"title": "Privacy Policy — Danial Asghar",
+		"canonical": "https://danialasghar.com/privacy/",
+		"meta": {
+			"description": "How Danial Asghar's site handles analytics, newsletter sign-ups, and the in-browser developer tools.",
+			"og:description": "How Danial Asghar's site handles analytics, newsletter sign-ups, and the in-browser developer tools.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Privacy Policy — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/privacy/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "How Danial Asghar's site handles analytics, newsletter sign-ups, and the in-browser developer tools.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Privacy Policy — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/privacy/",
+						"name": "Privacy",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Privacy Policy"
+		],
+		"headingIds": []
+	},
+	"/projects/": {
+		"loc": "https://danialasghar.com/projects/",
+		"lastmod": null,
+		"title": "Projects — Danial Asghar",
+		"canonical": "https://danialasghar.com/projects/",
+		"meta": {
+			"description": "Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS.",
+			"og:description": "Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Projects — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/projects/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Applications, tools, and SaaS extensions I've designed, built, and shipped with Rails, Shopify, and AWS.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Projects — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/",
+						"name": "Projects",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Things I've built"
+		],
+		"headingIds": []
+	},
+	"/projects/ai-lead-engine/": {
+		"loc": "https://danialasghar.com/projects/ai-lead-engine/",
+		"lastmod": null,
+		"title": "AI Lead Engine — Danial Asghar",
+		"canonical": "https://danialasghar.com/projects/ai-lead-engine/",
+		"meta": {
+			"description": "LLM lead scoring is asynchronous, but users expect results to appear live — without adding a single-page app to get real-time UI.",
+			"og:description": "LLM lead scoring is asynchronous, but users expect results to appear live — without adding a single-page app to get real-time UI.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "AI Lead Engine — Danial Asghar",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/projects/ai-lead-engine/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "LLM lead scoring is asynchronous, but users expect results to appear live — without adding a single-page app to get real-time UI.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "AI Lead Engine — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@type": "Article",
+						"author": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"description": "LLM lead scoring is asynchronous, but users expect results to appear live — without adding a single-page app to get real-time UI.",
+						"headline": "AI Lead Engine — Danial Asghar",
+						"image": "https://danialasghar.com/og-default.png",
+						"mainEntityOfPage": "https://danialasghar.com/projects/ai-lead-engine/",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/projects/ai-lead-engine/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/",
+						"name": "Projects",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/ai-lead-engine/",
+						"name": "AI Lead Engine",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"AI Lead Engine"
+		],
+		"headingIds": [
+			"cs-highlights-h",
+			"problem",
+			"requirements",
+			"constraints",
+			"architecture",
+			"engineering-decisions",
+			"tradeoffs",
+			"failure-modes",
+			"scaling",
+			"monitoring",
+			"security",
+			"outcome",
+			"lessons-learned"
+		]
+	},
+	"/projects/ai-support-ticket-triage-engine/": {
+		"loc": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/",
+		"lastmod": null,
+		"title": "AI Support Ticket Triage Engine — Danial Asghar",
+		"canonical": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/",
+		"meta": {
+			"description": "Support queues fill with unclassified tickets, but moving triage to an LLM puts a slow, non-deterministic, failure-prone call in the request path.",
+			"og:description": "Support queues fill with unclassified tickets, but moving triage to an LLM puts a slow, non-deterministic, failure-prone call in the request path.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "AI Support Ticket Triage Engine — Danial Asghar",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Support queues fill with unclassified tickets, but moving triage to an LLM puts a slow, non-deterministic, failure-prone call in the request path.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "AI Support Ticket Triage Engine — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@type": "Article",
+						"author": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"description": "Support queues fill with unclassified tickets, but moving triage to an LLM puts a slow, non-deterministic, failure-prone call in the request path.",
+						"headline": "AI Support Ticket Triage Engine — Danial Asghar",
+						"image": "https://danialasghar.com/og-default.png",
+						"mainEntityOfPage": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/",
+						"name": "Projects",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/ai-support-ticket-triage-engine/",
+						"name": "AI Support Ticket Triage Engine",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"AI Support Ticket Triage Engine"
+		],
+		"headingIds": [
+			"cs-highlights-h",
+			"problem",
+			"requirements",
+			"constraints",
+			"architecture",
+			"engineering-decisions",
+			"tradeoffs",
+			"failure-modes",
+			"scaling",
+			"monitoring",
+			"security",
+			"outcome",
+			"lessons-learned"
+		]
+	},
+	"/projects/covetpics/": {
+		"loc": "https://danialasghar.com/projects/covetpics/",
+		"lastmod": null,
+		"title": "CovetPics — Shopify UGC Platform — Danial Asghar",
+		"canonical": "https://danialasghar.com/projects/covetpics/",
+		"meta": {
+			"description": "Showing user-generated content on storefronts means running reliably inside Shopify — around its APIs, rate limits, and lossy webhooks.",
+			"og:description": "Showing user-generated content on storefronts means running reliably inside Shopify — around its APIs, rate limits, and lossy webhooks.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "CovetPics — Shopify UGC Platform — Danial Asghar",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/projects/covetpics/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Showing user-generated content on storefronts means running reliably inside Shopify — around its APIs, rate limits, and lossy webhooks.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "CovetPics — Shopify UGC Platform — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@type": "Article",
+						"author": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"description": "Showing user-generated content on storefronts means running reliably inside Shopify — around its APIs, rate limits, and lossy webhooks.",
+						"headline": "CovetPics — Shopify UGC Platform — Danial Asghar",
+						"image": "https://danialasghar.com/og-default.png",
+						"mainEntityOfPage": "https://danialasghar.com/projects/covetpics/",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/projects/covetpics/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/",
+						"name": "Projects",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/covetpics/",
+						"name": "CovetPics — Shopify UGC Platform",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"CovetPics — Shopify UGC Platform"
+		],
+		"headingIds": [
+			"cs-highlights-h",
+			"problem",
+			"requirements",
+			"constraints",
+			"architecture",
+			"engineering-decisions",
+			"tradeoffs",
+			"failure-modes",
+			"scaling",
+			"monitoring",
+			"security",
+			"outcome",
+			"lessons-learned"
+		]
+	},
+	"/projects/interstride/": {
+		"loc": "https://danialasghar.com/projects/interstride/",
+		"lastmod": null,
+		"title": "Interstride — Danial Asghar",
+		"canonical": "https://danialasghar.com/projects/interstride/",
+		"meta": {
+			"description": "International-student career data lives across slow, rate-limited third-party services; fetching it inline would make the product slow and fragile.",
+			"og:description": "International-student career data lives across slow, rate-limited third-party services; fetching it inline would make the product slow and fragile.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Interstride — Danial Asghar",
+			"og:type": "article",
+			"og:url": "https://danialasghar.com/projects/interstride/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "International-student career data lives across slow, rate-limited third-party services; fetching it inline would make the product slow and fragile.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Interstride — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@type": "Article",
+						"author": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"description": "International-student career data lives across slow, rate-limited third-party services; fetching it inline would make the product slow and fragile.",
+						"headline": "Interstride — Danial Asghar",
+						"image": "https://danialasghar.com/og-default.png",
+						"mainEntityOfPage": "https://danialasghar.com/projects/interstride/",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/projects/interstride/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/",
+						"name": "Projects",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/projects/interstride/",
+						"name": "Interstride",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Interstride"
+		],
+		"headingIds": [
+			"cs-highlights-h",
+			"problem",
+			"requirements",
+			"constraints",
+			"architecture",
+			"engineering-decisions",
+			"tradeoffs",
+			"failure-modes",
+			"scaling",
+			"monitoring",
+			"security",
+			"outcome",
+			"lessons-learned"
+		]
+	},
+	"/services/": {
+		"loc": "https://danialasghar.com/services/",
+		"lastmod": null,
+		"title": "Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres",
+		"canonical": "https://danialasghar.com/services/",
+		"meta": {
+			"description": "Fixed-scope audits and tuning for production Rails: background-job reliability, Sidekiq/Solid Queue scaling, and Postgres concurrency reviews.",
+			"og:description": "Fixed-scope audits and tuning for production Rails: background-job reliability, Sidekiq/Solid Queue scaling, and Postgres concurrency reviews.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/services/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Fixed-scope audits and tuning for production Rails: background-job reliability, Sidekiq/Solid Queue scaling, and Postgres concurrency reviews.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Rails Reliability Consulting — Background Jobs, Sidekiq, Postgres"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "Service",
+				"areaServed": "Worldwide",
+				"hasOfferCatalog": {
+					"@type": "OfferCatalog",
+					"itemListElement": [
+						{
+							"@type": "Offer",
+							"itemOffered": {
+								"@type": "Service",
+								"description": "Why your jobs run twice, lose data, or pile up — diagnosed against your real code, with a prioritized remediation plan. Fixed scope, delivered in one week.",
+								"name": "Background Job Reliability Audit"
+							}
+						},
+						{
+							"@type": "Offer",
+							"itemOffered": {
+								"@type": "Service",
+								"description": "Throughput, queue latency, connection-pool exhaustion, and retry-storm remediation for production queues under real load.",
+								"name": "Sidekiq / Solid Queue Scaling & Tuning"
+							}
+						},
+						{
+							"@type": "Offer",
+							"itemOffered": {
+								"@type": "Service",
+								"description": "Race conditions, locking, and deadlocks — found and fixed before they corrupt data.",
+								"name": "Postgres Concurrency & Lock Review"
+							}
+						}
+					],
+					"name": "Rails Reliability Services"
+				},
+				"provider": {
+					"@id": "https://danialasghar.com/#person"
+				},
+				"serviceType": "Rails Reliability Engineering Consulting"
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/services/",
+						"name": "Services",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Your Rails background jobs are double-charging customers, losing data, or backing up under load."
+		],
+		"headingIds": [
+			"offers-h",
+			"how-h"
+		]
+	},
+	"/tools/": {
+		"loc": "https://danialasghar.com/tools/",
+		"lastmod": null,
+		"title": "Developer Tools — Rails & Background Jobs | Danial Asghar",
+		"canonical": "https://danialasghar.com/tools/",
+		"meta": {
+			"description": "Free, client-side developer tools for Rails reliability: connection-pool sizing for Puma, Sidekiq, and Postgres.",
+			"og:description": "Free, client-side developer tools for Rails reliability: connection-pool sizing for Puma, Sidekiq, and Postgres.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Developer Tools — Rails & Background Jobs | Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/tools/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Free, client-side developer tools for Rails reliability: connection-pool sizing for Puma, Sidekiq, and Postgres.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Developer Tools — Rails & Background Jobs | Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/tools/",
+						"name": "Tools",
+						"position": 2
+					}
+				]
+			}
+		],
+		"h1": [
+			"Tools for Rails reliability"
+		],
+		"headingIds": []
+	},
+	"/tools/connection-pool-calculator/": {
+		"loc": "https://danialasghar.com/tools/connection-pool-calculator/",
+		"lastmod": null,
+		"title": "Sidekiq Connection Pool Calculator — Fix Pool Exhaustion",
+		"canonical": "https://danialasghar.com/tools/connection-pool-calculator/",
+		"meta": {
+			"description": "Free calculator: size your Rails database pool for Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres exhaustion.",
+			"og:description": "Free calculator: size your Rails database pool for Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres exhaustion.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Sidekiq Connection Pool Calculator — Fix Pool Exhaustion",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/tools/connection-pool-calculator/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Free calculator: size your Rails database pool for Puma threads and Sidekiq concurrency. Avoid ActiveRecord::ConnectionTimeoutError and Postgres exhaustion.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Sidekiq Connection Pool Calculator — Fix Pool Exhaustion"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			[
+				{
+					"@context": "https://schema.org",
+					"@type": "FAQPage",
+					"mainEntity": [
+						{
+							"@type": "Question",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "One per running worker thread. If Sidekiq concurrency is 10, its process needs a pool of at least 10 (plus a little headroom) so no job stalls waiting to check out a connection."
+							},
+							"name": "How many connections does Sidekiq need?"
+						},
+						{
+							"@type": "Question",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "They don't have to. They're separate processes with separate pools, so size each to its own thread count — Puma threads for the web pool, Sidekiq concurrency for the worker pool. One database.yml can serve both if the pool is read from an environment variable you set per process."
+							},
+							"name": "Should Puma and Sidekiq share the same pool size?"
+						},
+						{
+							"@type": "Question",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "A thread asked the pool for a connection and none was free within the timeout. Almost always it means the pool is smaller than the number of threads contending for it — a configuration issue, not a database fault."
+							},
+							"name": "What causes ActiveRecord::ConnectionTimeoutError?"
+						}
+					]
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "SoftwareApplication",
+					"applicationCategory": "DeveloperApplication",
+					"author": {
+						"@id": "https://danialasghar.com/#person"
+					},
+					"name": "Sidekiq & Puma Connection Pool Calculator",
+					"offers": {
+						"@type": "Offer",
+						"price": "0",
+						"priceCurrency": "USD"
+					},
+					"operatingSystem": "Web",
+					"url": "https://danialasghar.com/tools/connection-pool-calculator/"
+				}
+			],
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/",
+						"name": "Home",
+						"position": 1
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/tools/",
+						"name": "Tools",
+						"position": 2
+					},
+					{
+						"@type": "ListItem",
+						"item": "https://danialasghar.com/tools/connection-pool-calculator/",
+						"name": "Connection Pool Calculator",
+						"position": 3
+					}
+				]
+			}
+		],
+		"h1": [
+			"Sidekiq & Puma Connection Pool Calculator"
+		],
+		"headingIds": []
+	},
+	"/topics/": {
+		"loc": "https://danialasghar.com/topics/",
+		"lastmod": null,
+		"title": "Topics — Danial Asghar",
+		"canonical": "https://danialasghar.com/topics/",
+		"meta": {
+			"description": "Browse the blog by topic — curated hubs on backend reliability engineering.",
+			"og:description": "Browse the blog by topic — curated hubs on backend reliability engineering.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Topics — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/topics/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Browse the blog by topic — curated hubs on backend reliability engineering.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Topics — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/topics/",
+						"@type": "CollectionPage",
+						"description": "Browse the blog by topic — curated hubs on backend reliability engineering.",
+						"isPartOf": {
+							"@id": "https://danialasghar.com/#website"
+						},
+						"mainEntity": {
+							"@type": "ItemList",
+							"itemListElement": [
+								{
+									"@type": "ListItem",
+									"name": "Background Jobs & Async",
+									"position": 1,
+									"url": "https://danialasghar.com/topics/background-jobs/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Database Reliability",
+									"position": 2,
+									"url": "https://danialasghar.com/topics/database-reliability/"
+								}
+							]
+						},
+						"name": "Topics",
+						"url": "https://danialasghar.com/topics/"
+					},
+					{
+						"@type": "BreadcrumbList",
+						"itemListElement": [
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/",
+								"name": "Home",
+								"position": 1
+							},
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/topics/",
+								"name": "Topics",
+								"position": 2
+							}
+						]
+					}
+				]
+			}
+		],
+		"h1": [
+			"Topics"
+		],
+		"headingIds": []
+	},
+	"/topics/background-jobs/": {
+		"loc": "https://danialasghar.com/topics/background-jobs/",
+		"lastmod": null,
+		"title": "Background Jobs & Async — Danial Asghar",
+		"canonical": "https://danialasghar.com/topics/background-jobs/",
+		"meta": {
+			"description": "Sidekiq, Solid Queue, and the reliability contract of at-least-once delivery.",
+			"og:description": "Sidekiq, Solid Queue, and the reliability contract of at-least-once delivery.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Background Jobs & Async — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/topics/background-jobs/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Sidekiq, Solid Queue, and the reliability contract of at-least-once delivery.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Background Jobs & Async — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/topics/background-jobs/",
+						"@type": "CollectionPage",
+						"description": "Sidekiq, Solid Queue, and the reliability contract of at-least-once delivery.",
+						"isPartOf": {
+							"@id": "https://danialasghar.com/#website"
+						},
+						"keywords": "rails background jobs, sidekiq reliability, at-least-once delivery, idempotent sidekiq workers, background job concurrency",
+						"mainEntity": {
+							"@type": "ItemList",
+							"itemListElement": [
+								{
+									"@type": "ListItem",
+									"name": "Solid Queue vs Sidekiq: How to Actually Decide (Rails 8)",
+									"position": 1,
+									"url": "https://danialasghar.com/blog/solid-queue-vs-sidekiq/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Why Your Rails Background Jobs Are Slow: Queue Latency vs. Execution Time",
+									"position": 2,
+									"url": "https://danialasghar.com/blog/why-background-jobs-are-slow/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "How Solid Queue Works Under the Hood (Rails 8)",
+									"position": 3,
+									"url": "https://danialasghar.com/blog/how-solid-queue-works/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Sidekiq Retry Strategy: Transient vs Permanent Failures",
+									"position": 4,
+									"url": "https://danialasghar.com/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Why Your Sidekiq Job Runs Twice (At-Least-Once Delivery Explained)",
+									"position": 5,
+									"url": "https://danialasghar.com/blog/sidekiq-job-runs-twice-at-least-once-delivery/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Designing Idempotent Background Workers for LLM Calls in Rails",
+									"position": 6,
+									"url": "https://danialasghar.com/blog/idempotent-ai-workers-rails/"
+								}
+							]
+						},
+						"name": "Background Jobs & Async",
+						"url": "https://danialasghar.com/topics/background-jobs/"
+					},
+					{
+						"@type": "BreadcrumbList",
+						"itemListElement": [
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/",
+								"name": "Home",
+								"position": 1
+							},
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/topics/",
+								"name": "Topics",
+								"position": 2
+							},
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/topics/background-jobs/",
+								"name": "Background Jobs & Async",
+								"position": 3
+							}
+						]
+					}
+				]
+			}
+		],
+		"h1": [
+			"Background Jobs & Async"
+		],
+		"headingIds": []
+	},
+	"/topics/database-reliability/": {
+		"loc": "https://danialasghar.com/topics/database-reliability/",
+		"lastmod": null,
+		"title": "Database Reliability — Danial Asghar",
+		"canonical": "https://danialasghar.com/topics/database-reliability/",
+		"meta": {
+			"description": "Postgres locking, transactions, isolation, and races — where correctness is enforced.",
+			"og:description": "Postgres locking, transactions, isolation, and races — where correctness is enforced.",
+			"og:image": "https://danialasghar.com/og-default.png",
+			"og:site_name": "Danial Asghar",
+			"og:title": "Database Reliability — Danial Asghar",
+			"og:type": "website",
+			"og:url": "https://danialasghar.com/topics/database-reliability/",
+			"twitter:card": "summary_large_image",
+			"twitter:creator": "@Danialasghar2",
+			"twitter:description": "Postgres locking, transactions, isolation, and races — where correctness is enforced.",
+			"twitter:image": "https://danialasghar.com/og-default.png",
+			"twitter:site": "@Danialasghar2",
+			"twitter:title": "Database Reliability — Danial Asghar"
+		},
+		"jsonLd": [
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/#person",
+						"@type": "Person",
+						"email": "mailto:hello@danialasghar.com",
+						"jobTitle": "Senior Backend Engineer",
+						"name": "Danial Asghar",
+						"sameAs": [
+							"https://github.com/danialasghar5",
+							"https://x.com/Danialasghar2"
+						],
+						"url": "https://danialasghar.com/"
+					},
+					{
+						"@id": "https://danialasghar.com/#website",
+						"@type": "WebSite",
+						"description": "Senior backend engineer building reliable Rails systems, high-volume APIs, async workflows, and AI-powered products.",
+						"name": "Danial Asghar",
+						"publisher": {
+							"@id": "https://danialasghar.com/#person"
+						},
+						"url": "https://danialasghar.com/"
+					}
+				]
+			},
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@id": "https://danialasghar.com/topics/database-reliability/",
+						"@type": "CollectionPage",
+						"description": "Postgres locking, transactions, isolation, and races — where correctness is enforced.",
+						"isPartOf": {
+							"@id": "https://danialasghar.com/#website"
+						},
+						"keywords": "rails database reliability, postgres concurrency rails, row locking, transaction isolation, atomic claim",
+						"mainEntity": {
+							"@type": "ItemList",
+							"itemListElement": [
+								{
+									"@type": "ListItem",
+									"name": "Rails Connection Pool Exhaustion: Fixing ActiveRecord::ConnectionTimeoutError",
+									"position": 1,
+									"url": "https://danialasghar.com/blog/rails-connection-pool-exhaustion/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01) in Production",
+									"position": 2,
+									"url": "https://danialasghar.com/blog/rails-deadlock-activerecord/"
+								},
+								{
+									"@type": "ListItem",
+									"name": "Fixing Postgres Race Conditions & Row-Level Deadlocks in Production Rails",
+									"position": 3,
+									"url": "https://danialasghar.com/blog/postgres-race-conditions-row-locks-rails/"
+								}
+							]
+						},
+						"name": "Database Reliability",
+						"url": "https://danialasghar.com/topics/database-reliability/"
+					},
+					{
+						"@type": "BreadcrumbList",
+						"itemListElement": [
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/",
+								"name": "Home",
+								"position": 1
+							},
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/topics/",
+								"name": "Topics",
+								"position": 2
+							},
+							{
+								"@type": "ListItem",
+								"item": "https://danialasghar.com/topics/database-reliability/",
+								"name": "Database Reliability",
+								"position": 3
+							}
+						]
+					}
+				]
+			}
+		],
+		"h1": [
+			"Database Reliability"
+		],
+		"headingIds": []
+	}
+}
