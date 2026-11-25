@@ -2,6 +2,7 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import cspHashes from './integrations/csp-hashes.mjs';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { defineConfig, fontProviders } from 'astro/config';
@@ -70,6 +71,8 @@ export default defineConfig({
 				return date ? { ...item, lastmod: new Date(date).toISOString() } : item;
 			},
 		}),
+		// Last: fills CSP script hashes into dist/_headers (TOOLS_ROADMAP.md §11.5).
+		cspHashes(),
 	],
 	// Hide the Astro dev toolbar (dev-only UI; never shipped to production anyway).
 	devToolbar: { enabled: false },
