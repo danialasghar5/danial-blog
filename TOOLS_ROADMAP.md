@@ -44,7 +44,7 @@
 |---|---|---|---|---|
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
 | 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 In progress: redesign merged (D1, D2 ✅), SEO baseline done (`607422d`), security plan added (§11, S0-1 to S0-8); waiting on D3, D4 and the S0 tasks | `chore/seo-baseline` | — |
-| 1 | Foundation and first five tools | ⏳ Not started | `feat/tools-foundation`, then `feat/tool-<slug>` | — |
+| 1 | Foundation and first five tools | 🔄 In progress: foundation done (`6b535c4`); Wave 1 tools being built in parallel (DEC-25) | `feat/tools-foundation`, then `feat/tool-<slug>` | — |
 | 2 | Signature depth and first utilities | ⏳ Not started | — | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
 | 4 | Long tail | ⏳ Not started | — | — |
@@ -1004,9 +1004,9 @@ Record the file and line reference in `logic.ts`:
 
 | Engine | Delay formula (to be verified) | Source to check |
 |---|---|---|
-| Sidekiq default (6.x, 7.x, 8.x) | `delay = count**4 + 15`, `jitter = rand(10) * (count + 1)`; `count` starts at 0 for the first retry | `lib/sidekiq/job_retry.rb` (`delay_for`) |
+| Sidekiq default | **Verified 2026-11-26 against source.** `delay = count**4 + 15`; `count` starts at 0 for the first retry; the job dies when `count >= retry` (25 by default). **Jitter differs by version:** 7.x (v7.3.9/v7.3.10) `rand(10) * (count + 1)`, giving multiples of (count + 1) from 0 to 9×; **8.x (from v8.0.0)** `rand(10 * (count + 1))`, giving any integer from 0 to 10(count + 1) − 1. Jitter is added to custom `sidekiq_retry_in` delays too. Dead set: `dead_max_jobs` 10,000, `dead_timeout_in_seconds` 180 days | `lib/sidekiq/job_retry.rb` (`delay_for`, `attempt_retry`), `lib/sidekiq/config.rb` |
 | Sidekiq custom | `sidekiq_retry_in { \|count, exc, job\| … }` returning seconds. The tool takes either a constant or a polynomial (a·count^p + b) | same |
-| Active Job `retry_on` | `wait:` an integer number of seconds, or `:polynomially_longer` (Rails 7.1+; formerly `:exponentially_longer`), with `attempts:` (default 5) and `jitter:` (default 0.15) | `activejob/lib/active_job/exceptions.rb` (`determine_delay`) for 7.1, 7.2, 8.0, 8.1 |
+| Active Job `retry_on` | **Verified for Rails 7.1.5, 7.2.2, 8.0.2, 8.1.0.** Defaults: `wait: 3.seconds`, `attempts: 5`. `executions` is 1 on the first failure, and a retry happens while `executions < attempts` (so 5 attempts = 4 retries). `:polynomially_longer` → `executions**4 + rand·executions**4·jitter + 2`. Integer or Duration wait → `wait + rand·wait·jitter`. Proc → `proc.call(executions)` with no jitter. Jitter defaults to `config.active_job.retry_jitter`: 0.15 with `load_defaults` 6.1+, 0.0 otherwise. `:exponentially_longer` exists only in 7.1, as a deprecated alias | `activejob/lib/active_job/exceptions.rb` (`retry_on`, `determine_delay`, `determine_jitter_for_delay`) |
 
 **Inputs and validation**
 
@@ -1035,10 +1035,14 @@ Record the file and line reference in `logic.ts`:
 
 **Test oracle (must pass)**
 - Sidekiq default, 25 retries, no jitter: Σ_{c=0}^{24}(c⁴ + 15) = **1,763,395 s** (≈ 20.41 days).
-- Expected jitter total: 4.5 × Σ(c+1) for c = 0..24 = **1,462.5 s**.
-- Max jitter total: **2,925 s**.
+- Sidekiq **7.x** jitter totals: expected 4.5 × Σ(c+1) for c = 0..24 = **1,462.5 s**; max 9 × 325 = **2,925 s**.
+- Sidekiq **8.x** jitter totals: expected Σ(10(c+1) − 1)/2 = **1,612.5 s**; max Σ(10(c+1) − 1) = **3,225 s**.
 - `retry: 0` → no retries, straight to the dead set.
-- Plus one hand-checked Active Job `:polynomially_longer` case per Rails version.
+- Active Job, `attempts: 5`, `:polynomially_longer`, jitter 0.15: four retries at executions 1–4. Minimum
+  delays 3, 18, 83, 258 s (total **362 s**); max jitter total 0.15 × 354 = **53.1 s**; expected total
+  **388.55 s**.
+- Active Job, defaults (`wait: 3.seconds`, `attempts: 5`, jitter 0.15): 4 × 3 s = **12 s** minimum, plus
+  up to **1.8 s** of jitter.
 
 **Result-aware CTA:** if the total to the dead set is over 7 days, or the retry count is above 25:
 "Long retry windows hide permanent failures — the Background Job Reliability Audit covers retry policy."
@@ -2446,8 +2450,14 @@ starts.**
 | DEC-20 | 2026-11-26 | Supply chain: `npm ci` with the lockfile, exact versions, `npm audit --audit-level=high` gate, Dependabot with a 7-day cooldown (3 days for security), actions pinned to SHAs | Proposed (S0-3/5/6) |
 | DEC-21 | 2026-11-26 | Banned: `eval`, `new Function`, `innerHTML`-family APIs, `document.write`. `set:html` only on the §11.6 allowlist; JSON-LD goes through an escaping `jsonLd()` helper. Enforced by `security:check` | Proposed (S0-2/7) |
 
-*Add a row for each new decision: test runner, analytics method, the ads gate, library choices with their
-licences.*
+| DEC-22 | 2026-11-26 | Postgres lock modes and conflict matrices live in `src/tools/_shared/pg-locks.ts` (not in #9's folder), so #8, #9 and #11 share one tested source | Foundation (`6b535c4`) |
+| DEC-23 | 2026-11-26 | Test runner: `node:test` with `--experimental-strip-types` on Node 22.23.5 works with the glob; no vitest (A6 resolved) | Foundation |
+| DEC-24 | 2026-11-26 | Node 22.12.0 → 22.23.5 (`.node-version`, `.nvmrc`, `engines >=22.23.4`), required by the patched Astro 7.4.13. Cloudflare's build accepted it (live shows Astro v7.4.13) | S0-3 (`5082160`) |
+| DEC-25 | 2026-11-26 | **Wave 1 built in parallel** (owner request): five Haiku sub-agents, one git worktree each (`feat/tool-<slug>` from `feat/tools-foundation`); Opus verifies specs and formulas, reviews security, and audits each branch against §10.8. No tool branch is merged or pushed without owner approval | Owner |
+| DEC-26 | 2026-11-26 | D3 versions taken as recommended, pending owner confirmation: Sidekiq 7.x + 8.x, Active Job on Rails 7.1–8.1, Postgres 13–17 | Provisional |
+| DEC-27 | 2026-11-26 | Foundation schema: dropped `icon` (no sprite yet; add with the hub redesign). `adsEligible` is `z.literal(false)` until the Phase 3 gate. Group pages need `intro` and `description` in `tool-groups.ts` or the build fails | Foundation |
+
+*Add a row for each new decision: analytics method, the ads gate, library choices with their licences.*
 
 ---
 
@@ -2456,10 +2466,10 @@ licences.*
 | ID | Assumption | How and when to verify |
 |---|---|---|
 | A1 | Demand and competition ratings in §6 are estimates | Keyword Planner + Search Console in Phase 0 (Wave 1–2), Phase 2 review (the rest) |
-| A2 | Sidekiq retry formula `count**4 + 15 + rand(10)*(count+1)` and the dead-set defaults | Read `job_retry.rb` at each pinned version in Phase 1 |
-| A3 | Active Job `:polynomially_longer` formula and defaults | Read the Rails source for 7.1–8.x in Phase 1 |
+| A2 | ~~Sidekiq retry formula and dead-set defaults~~ **Verified 2026-11-26.** The jitter formula changed in 8.0.0 (§8.1) | Done |
+| A3 | ~~Active Job `:polynomially_longer` formula and defaults~~ **Verified 2026-11-26** for 7.1/7.2/8.0/8.1 (§8.1) | Done |
 | A4 | The Postgres lock conflict matrix and the operation → lock mapping (Appendix A) | Check against the docs for each supported major version in Phase 1 |
-| A5 | Deadlock DETAIL formats listed in §8.3 cover Postgres 13–17 | Check `deadlock.c` messages and real logs in Phase 1 |
+| A5 | ~~Deadlock DETAIL formats~~ **Verified against `deadlock.c` and `lmgr.c` (REL_17_STABLE).** The client error (what Rails raises) has only the `Process N waits for <Mode> on <target>; blocked by process M.` lines. The **server log** repeats them and adds `Process N: <query>` lines. Targets in DETAIL are numeric OIDs; table names appear only in `CONTEXT` (`while updating tuple (0,7) in relation "accounts"`) and in SQL. Target forms: relation, extension of relation, page, tuple, transaction, virtual transaction, speculative token, object, advisory lock `[a,b,c,d]` | Done |
 | A6 | Node 22.12 `--experimental-strip-types` runs the test suite with a glob | Try it in Phase 1 (DEC-10) |
 | A7 | ~~Cloudflare Workers static assets honour `public/_headers`~~ **Verified 2026-11-26** (DEC-13) | Done |
 | A8 | Astro 7 supports `reference()` and `.refine()` in collection schemas | Check in Phase 1 |
