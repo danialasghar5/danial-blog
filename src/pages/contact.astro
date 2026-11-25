@@ -14,7 +14,7 @@ const channels = [
 <Page title={`Contact — ${SITE_TITLE}`} description={`Get in touch with ${SITE_TITLE} about freelance and contract engineering work.`} mainClass="container">
 	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
 	<section class="contact">
-		<PageHeader eyebrow="Contact" title="Let's build something.">
+		<PageHeader title="Let's build something.">
 			<p class="page-lede lede">
 				I'm open to freelance and contract work on Rails, Shopify, and AWS projects.
 				Tell me what you're building and I'll get back to you.
@@ -43,7 +43,7 @@ const channels = [
 <style>
 	main { padding-block: var(--space-16) var(--space-12); }
 	/* Left-aligned with the breadcrumb, like every other page. */
-	.contact { max-width: var(--container-prose); }
+	.contact { max-width: 880px; }
 	.lede { margin: 0 0 var(--space-4); }
 	.lede-sub { color: var(--text-muted); margin: 0 0 var(--space-10); }
 	.lede-sub a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); }

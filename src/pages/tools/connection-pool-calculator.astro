@@ -64,7 +64,7 @@ const jsonLd = [
 	</Fragment>
 	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools/' }, { label: 'Connection Pool Calculator' }]} />
 
-	<PageHeader class="tool-header" eyebrow="Developer Tools" title={TITLE}>
+	<PageHeader class="tool-header" title={TITLE}>
 		<p class="page-lede lede">
 			Size your Rails database pool against Puma threads and Sidekiq concurrency — and see
 			before you deploy whether you'll hit <code>ActiveRecord::ConnectionTimeoutError</code>
@@ -187,7 +187,7 @@ const jsonLd = [
 				verdict.className = 'verdict is-ok';
 				const p = document.createElement('p');
 				p.style.margin = '0';
-				p.innerHTML = `<strong>✓ Safe.</strong> `;
+				p.innerHTML = `<strong class="state-ok">Safe.</strong> `;
 				p.append(`Pool covers your threads, and peak connections (${totalPeak}) stay within the ${usable} usable Postgres connections.`);
 				verdict.append(p);
 				if (totalPeak > usable * 0.8) {
@@ -199,7 +199,8 @@ const jsonLd = [
 			} else {
 				verdict.className = 'verdict is-risk';
 				const head = document.createElement('strong');
-				head.textContent = '✗ Risk';
+				head.textContent = 'Risk';
+				head.className = 'state-risk';
 				const ul = document.createElement('ul');
 				for (const msg of problems) {
 					const li = document.createElement('li');
@@ -241,7 +242,7 @@ const jsonLd = [
 </Page>
 
 <style>
-	main { padding-block: var(--space-16) var(--space-8); max-width: var(--container-prose); }
+	main { padding-block: var(--space-16) var(--space-8); max-width: 880px; }
 
 	.lede { margin: 0 0 var(--space-10); max-width: 66ch; }
 
@@ -272,17 +273,24 @@ const jsonLd = [
 	.field input:hover { border-color: var(--text-faint); }
 	.field input:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
 
-	/* Verdict: a full-width strip with a 2px state bar on the left. */
+	/* Verdict: a tinted strip with a full state-coloured border. */
 	.verdict {
 		margin-top: var(--space-6); padding: var(--space-4) var(--space-5);
-		border-left: 2px solid var(--border-strong);
+		border: 1px solid var(--border-strong); border-radius: var(--radius);
 		background: var(--bg-subtle);
 		font-size: var(--fs-sm); line-height: var(--lh-normal); color: var(--text);
 	}
-	.verdict.is-ok { border-left-color: var(--brand); background: var(--brand-soft); }
-	.verdict.is-risk { border-left-color: var(--dg-hazard); background: var(--dg-hazard-fill); }
+	.verdict.is-ok { border-color: var(--dg-accent); background: var(--dg-accent-fill); }
+	.verdict.is-risk { border-color: var(--dg-hazard); background: var(--dg-hazard-fill); }
 	.verdict :global(strong) { font-weight: 600; }
-	.verdict.is-ok :global(strong) { color: var(--brand); }
+	/* State icons: drawn check / cross, tinted with the state colour. */
+	.verdict :global(:is(.state-ok, .state-risk))::before {
+		content: ''; display: inline-block; width: .9em; height: .9em; margin-right: .35em; vertical-align: -.1em;
+	}
+	.verdict :global(.state-ok)::before { background: var(--dg-accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3L13 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+	.verdict :global(.state-risk) { color: var(--dg-hazard); }
+	.verdict :global(.state-risk)::before { background: var(--dg-hazard); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+	.verdict.is-ok :global(strong) { color: var(--dg-accent); }
 	.verdict.is-risk :global(strong) { color: var(--dg-hazard); }
 	.verdict :global(ul) { margin: .4rem 0 0; padding-left: 1.2rem; }
 	.verdict :global(li) { margin-bottom: .25rem; }
