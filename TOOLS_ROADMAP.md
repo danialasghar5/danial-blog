@@ -43,7 +43,7 @@
 | Phase | Name | Status | Branch | Approved |
 |---|---|---|---|---|
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
-| 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 In progress: redesign merged (D1, D2 ✅), SEO baseline done (`607422d`); waiting on D3, D4 | `chore/seo-baseline` | — |
+| 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 In progress: redesign merged (D1, D2 ✅), SEO baseline done (`607422d`), security plan added (§11, S0-1 to S0-8); waiting on D3, D4 and the S0 tasks | `chore/seo-baseline` | — |
 | 1 | Foundation and first five tools | ⏳ Not started | `feat/tools-foundation`, then `feat/tool-<slug>` | — |
 | 2 | Signature depth and first utilities | ⏳ Not started | — | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
@@ -111,12 +111,49 @@ is recorded in §17.
 
 15. **All work happens on feature branches with clear names**: `feat/tools-foundation`,
     `feat/tool-<slug>`, `docs/<topic>`, `fix/tool-<slug>-<issue>`.
-16. **Nothing is pushed or merged without the owner's explicit permission**, given in the current
-    conversation.
+16. **Pushing and merging.**
+    - **Standing permission (owner, 2026-11-26, DEC-16):** once a branch is finished and verified
+      (tests, `seo:check`, `security:check`), it may be fast-forwarded or merged into `main` and pushed.
+      Local `main` is then updated from `origin/main`.
+    - Still needs explicit permission each time: force pushes, rewriting history on `main`, deleting
+      branches, pushing unfinished work, and anything that changes live security headers for the first
+      time (HSTS in particular, §11.4).
 17. **Git identity:** `Danial <danialasghar5@yahoo.com>`. State the author before every commit.
 18. **One concern per commit.** Unrelated files never go into a commit.
 19. **Existing work is preserved.** Never discard or overwrite uncommitted changes, stashes or backup
     branches (`backup/premium-redesign-before-split`, `stash@{0}`).
+
+### 1.7 Security (site-wide: blog, tools, build pipeline, infrastructure)
+
+20. **Security headers apply to every route** (`/`, `/blog/*`, `/topics/*`, `/tools/*` and all other
+    pages), not only to tools. The required set is in §11.4. A change that would drop or weaken a header
+    fails `security:check` (§11.10).
+21. **No `'unsafe-inline'` or `'unsafe-eval'` in `script-src`.** Inline scripts are allowed only with a
+    SHA-256 hash in the CSP (§11.5).
+22. **No dynamic code or HTML from untrusted data**, in blog components and tool widgets alike:
+    - no `eval()`, `new Function()`, or string arguments to `setTimeout` / `setInterval`
+    - no `innerHTML`, `outerHTML`, `insertAdjacentHTML` or `document.write`
+    - `set:html` only for build-time, author-controlled content on the §11.6 allowlist
+
+    Enforced by `security:check`.
+23. **Third-party scripts:** none, apart from the Cloudflare Web Analytics beacon (§11.5). Any external
+    script needs Subresource Integrity (SRI) and a pinned version, or a recorded exception in §17.
+24. **Supply chain** (§11.7):
+    - installs use `npm ci` against the committed lockfile
+    - `npm audit --audit-level=high` must pass
+    - dependency updates come through automated PRs with a cooldown
+    - runtime dependencies stay minimal, with no UI framework
+25. **Secrets never reach the client.**
+    - `PUBLIC_*` variables are public by definition and may only hold public identifiers (e.g. the
+      analytics beacon token).
+    - Tokens, API keys and credentials never go in `PUBLIC_*`, in the repo or in `dist/`.
+26. **Accounts and infrastructure are hardened and checked every phase** (§11.8–§11.9):
+    - passkey or hardware-key 2FA on Cloudflare, the registrar and GitHub
+    - DNSSEC and registrar lock
+    - TLS mode Full (Strict)
+    - WAF managed rules
+    - branch protection
+    - least-privilege deploy tokens
 
 ---
 
@@ -1578,6 +1615,15 @@ and outputs, and it talks to the layout through a small DOM event contract:
 - [ ] Manual check done: 3 browsers, 3 widths, both themes, keyboard only, VoiceOver spot check.
 - [ ] Performance budget met (Lighthouse mobile).
 - [ ] CSP header active and no console errors.
+- [ ] `npm run security:check` passes:
+  - all headers present
+  - no unhashed inline scripts
+  - no banned APIs, and `set:html` only from the allowlist
+  - no `.map` files, dotfiles, drafts or secrets in `dist/`
+  - `npm audit` clean at high or above
+- [ ] After deploy: `npm run security:live` passes for the new URL.
+- [ ] No new dependency, or a new one that passes §11.1 item 8: licence, size, pinned version, recorded
+      in §17.
 - [ ] SEO regression check (§14.8) is clean.
 - [ ] Linked from the related posts (callouts) and the topic hub, after the owner approves those edits to
       the posts (§13.2).
@@ -1585,6 +1631,32 @@ and outputs, and it talks to the layout through a small DOM event contract:
 ---
 
 ## 11. Security, privacy, browser-only processing
+
+Scope: the **whole site and its supply chain**, not only `/tools/*`. The stack is static Astro 7 output on
+Cloudflare Workers, with no backend, database or logins. The realistic threats are:
+- XSS through injected scripts or markup
+- defacement through a compromised build, dependency, deploy token or account
+- domain or DNS takeover
+- clickjacking
+- automated scanning and scraping
+
+### 11.0 Current security state (verified 2026-11-26)
+
+| Check | Result | Status |
+|---|---|---|
+| Response security headers on `/` (HSTS, CSP, XFO, XCTO, Referrer-Policy, Permissions-Policy, COOP) | **None present.** Only `server: cloudflare` | ✕ Fix in Phase 0 (S0-4) |
+| HTTP → HTTPS | `301` to `https://danialasghar.com/` | ✓ |
+| `/.git/HEAD`, `/.env` | `403` (blocked at the edge; see `docs/cloudflare-waf-rules.md`) | ✓ |
+| Source maps (`*.map`) or dotfiles in `dist/` | None | ✓ |
+| DNSSEC | **No DS record published** | ✕ Owner action (S0-1) |
+| Registrar transfer lock | `clientTransferProhibited` | ✓ |
+| HSTS preload list | Not listed (`status: unknown`) | Decision D10 |
+| `npm audit --audit-level=high` | **12 advisories: 1 critical (`astro`: reflected XSS via View Transition animation properties) and 11 high** (`devalue`, `fast-xml-parser`, `js-yaml`, `nanoid`, `postcss`, `sharp`, `smol-toml`, `source-map-js`, `svgo`, `vite`, `zod`). All have fixes that need no major version upgrade | ✕ Fix in Phase 0 (S0-3) |
+| CI | No `.github/` directory, so there is no CI and no Dependabot | ✕ Phase 0 (S0-5, S0-6) |
+| Inline scripts per page (homepage) | 3 `type="module"` and 2 classic inline scripts (theme toggle, header, newsletter), plus JSON-LD data blocks | Needs CSP hashes (§11.5) |
+| `set:html` / `innerHTML` in `src/` | `set:html` only with build-time content: JSON-LD, author SVG diagrams, topic intros. One `innerHTML` with a constant string in `connection-pool-calculator.astro` | Allowlist + migrate (§11.6) |
+| `PUBLIC_*` variables | `PUBLIC_CF_BEACON_TOKEN`, `PUBLIC_GISCUS_*`, all public identifiers | ✓ |
+| Analytics beacon live | Not present on the live homepage (token not set at build time) | — (§11.5) |
 
 ### 11.1 Requirements
 
@@ -1594,26 +1666,11 @@ and outputs, and it talks to the layout through a small DOM event contract:
 2. **Share links use only the URL `#hash`**, which browsers never send to the server. They never use the
    query string, which can end up in logs and analytics.
 3. **Recently used** stores **only tool slugs** in `localStorage`, never inputs.
-4. **Content-Security-Policy on `/tools/*`.** A starting policy (to be tuned in Phase 1):
-
-   ```
-   default-src 'self';
-   script-src 'self' https://static.cloudflareinsights.com;
-   connect-src 'self' https://cloudflareinsights.com;
-   worker-src 'self' blob:;
-   img-src 'self' data:;
-   style-src 'self' 'unsafe-inline';
-   font-src 'self';
-   frame-ancestors 'none';
-   base-uri 'self';
-   form-action 'self'
-   ```
-
-   - Delivery: either Astro's built-in hash-based CSP support (check it exists in the installed Astro 7)
-     or a `public/_headers` file for Cloudflare Workers static assets (check it is supported). Pick one in
-     Phase 1 and record it in §17.
-   - If Astro inlines scripts, the policy needs hashes rather than `'unsafe-inline'` for scripts.
-   - Tools that must never touch the network (#20 credentials) get `connect-src 'none'`.
+4. **Content-Security-Policy.** The site-wide policy (§11.5) applies to `/tools/*`, with tool-specific
+   tightening:
+   - `worker-src 'self'` for tools that use Web Workers.
+   - Tools that must never touch the network (#20 credentials) get a per-path override with
+     `connect-src 'none'`.
 5. **Treat all pasted input as untrusted text.**
    - Never insert it as HTML (`textContent` only; no `innerHTML` with user data).
    - No `eval` / `new Function`.
@@ -1628,9 +1685,7 @@ and outputs, and it talks to the layout through a small DOM event contract:
    - The page explains this.
 8. **Dependencies.** Each new library needs: a licence check (MIT, BSD or Apache only; **no AGPL or
    GPL**), a size check, a pinned version, and an entry in §17.
-9. **Other headers** (whole site, if the delivery mechanism allows): `X-Content-Type-Options: nosniff`,
-   `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` turning off camera,
-   microphone and geolocation.
+9. **Other headers:** site-wide, as specified in §11.4.
 
 ### 11.2 Privacy policy
 
@@ -1647,6 +1702,206 @@ and outputs, and it talks to the layout through a small DOM event contract:
 `ToolPrivacyBadge` reads "Runs in your browser — nothing you enter leaves this page" and links to
 `#how-it-works`, where each tool's written content says specifically what happens to the data (e.g. "The
 log is parsed in a Web Worker in this tab").
+
+### 11.4 Site-wide HTTP security headers
+
+Delivered through `public/_headers`. The live site honours that file (DEC-13). The `/*` rule applies to
+every route; more specific rules only add to it.
+
+```
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload   # final stage, see rollout
+  Content-Security-Policy: <generated, §11.5>
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), serial=(), usb=(), xr-spatial-tracking=(), browsing-topics=()
+```
+
+- **`X-Frame-Options: DENY`** sits alongside CSP `frame-ancestors 'none'`. Older browsers use the first,
+  current ones use the second.
+- **`Cross-Origin-Embedder-Policy` is not set.** It would block cross-origin embeds without any security
+  gain for a static site. Revisit only if a tool needs `SharedArrayBuffer`.
+- **The existing `Cache-Control` rules** for `/_astro/*` and `/fonts/*` stay as they are and combine with
+  `/*`. Verify in Phase 0 that Cloudflare merges both rules (A15).
+
+**HSTS rollout.** This is order-sensitive, and the last step is hard to undo.
+
+1. Before step 1, check that **every subdomain** of `danialasghar.com` that resolves (e.g. `www`, mail
+   or verification records) serves HTTPS. `includeSubDomains` breaks any that don't.
+2. Stage 1: `max-age=300` (5 minutes), without `preload`. Deploy, run `security:check`, and keep it for
+   1 day.
+3. Stage 2: `max-age=604800` (1 week) with `includeSubDomains`. Keep for 1–2 weeks.
+4. Stage 3: `max-age=63072000; includeSubDomains; preload`.
+5. Stage 4: submit to hstspreload.org **only with explicit owner approval** (D10). Leaving the preload
+   list takes months and makes plain HTTP impossible for the domain and every subdomain.
+
+Each stage is a separate commit, and the first deploy that changes HSTS needs explicit permission (rule
+16).
+
+### 11.5 Content-Security-Policy strategy (no `'unsafe-inline'` for scripts)
+
+**Target policy** (site-wide; tools add only what they need):
+
+```
+default-src 'self';
+script-src 'self' <sha256 hashes of every inline script in dist/>;
+style-src 'self' 'unsafe-inline';
+img-src 'self' data:;
+font-src 'self';
+connect-src 'self';
+worker-src 'self';
+manifest-src 'self';
+frame-src 'none';
+frame-ancestors 'none';
+object-src 'none';
+base-uri 'self';
+form-action 'self' <newsletter form endpoint, verified in Phase 0>;
+upgrade-insecure-requests
+```
+
+- **How hashes are produced.** A post-build step, `scripts/csp-hashes.mjs`:
+  1. scans every `dist/**/*.html` for executable inline `<script>` elements (JSON-LD
+     `type="application/ld+json"` data blocks are skipped; they don't execute)
+  2. computes `sha256-…` for each
+  3. writes the final `Content-Security-Policy` line into `dist/_headers`
+
+  The build fails if the header would exceed Cloudflare's header size limit (A16).
+  - **Alternative:** Astro's own CSP support, if the installed Astro 7 has it (A17). It emits a per-page
+    `<meta http-equiv>` tag, which **cannot carry `frame-ancestors`**, so the header approach stays
+    primary. The choice is recorded in §17.
+- **Keep the hash count small.** Prefer bundled external scripts (`<script>` that Astro processes) over
+  `is:inline`. The theme script that prevents a flash of the wrong theme must stay inline, and is hashed.
+- **`style-src 'unsafe-inline'` is kept deliberately.** Astro emits inline style attributes and
+  `<style>` blocks. Style injection without script execution is a much lower risk. Revisit in Phase 4.
+- **Newsletter (MailerLite):** the form posts to a third-party endpoint. Its exact origin is added to
+  `form-action` (and to `connect-src` if it's submitted via `fetch`). Verify in Phase 0 which one the
+  `nl-form` script uses.
+- **Cloudflare Web Analytics beacon** (only when `PUBLIC_CF_BEACON_TOKEN` is set at build time; it isn't
+  live today):
+  - Allow `https://static.cloudflareinsights.com` in `script-src` and `https://cloudflareinsights.com`
+    in `connect-src`.
+  - **SRI:** Cloudflare serves `beacon.min.js` at an unversioned URL that changes over time, so an SRI
+    hash would break silently. Options (decision D11):
+    - (a) a versioned beacon URL with SRI, if Cloudflare publishes a stable one
+    - (b) record an explicit exception: first-party infrastructure, origin pinned in CSP
+    - (c) Cloudflare's automatic injection at the edge, which then also needs a CSP allowance
+- **Report-only first.** Ship the CSP as `Content-Security-Policy-Report-Only` for one deploy, confirm no
+  violations in the browser console across the page checklist, then switch to enforcing.
+
+### 11.6 XSS and untrusted input rules (blog and tools)
+
+| Pattern | Rule |
+|---|---|
+| `eval`, `new Function`, `setTimeout("…")`, `setInterval("…")` | Banned everywhere |
+| `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` | Banned. Use `textContent`, `createElement` and `replaceChildren`. The existing `innerHTML` in `connection-pool-calculator.astro` (constant string) is migrated in Wave 2 (#10); until then it's on the allowlist |
+| `set:html` | Allowed **only** on the allowlist below. Each use renders build-time, author-controlled content, never URL, hash, storage or user input |
+| JSON-LD via `set:html={JSON.stringify(x)}` | Must use a `jsonLd()` helper that escapes `<`, `>`, `&`, U+2028 and U+2029 (so a `</script>` inside a frontmatter string can't break out of the tag). Migrate every existing call in Phase 0 (S0-7) |
+| URL / `#hash` / `localStorage` values | Parsed and validated by the tool's validators (§12.6). Inserted only as text |
+| User-supplied links | Never rendered as `href` unless the scheme is `https:`/`http:` and the user chooses it |
+
+**`set:html` allowlist** (as of 2026-11-26). `security:check` fails on any `set:html` not listed here:
+
+| File | Content |
+|---|---|
+| `src/components/BaseHead.astro` | JSON-LD |
+| `src/components/Breadcrumbs.astro` | JSON-LD |
+| `src/layouts/BlogPost.astro` | JSON-LD |
+| `src/layouts/CaseStudy.astro` | JSON-LD |
+| `src/pages/services.astro` | JSON-LD |
+| `src/pages/tools/connection-pool-calculator.astro` | JSON-LD |
+| `src/pages/topics/index.astro` | JSON-LD |
+| `src/pages/topics/[slug].astro` | JSON-LD, and author HTML intro paragraphs from `src/data/topics.ts` |
+| `src/components/diagram/figures/*.astro` (4 files) | Author SVG, imported at build time |
+| `src/layouts/ToolLayout.astro` (Phase 1) | JSON-LD via the `jsonLd()` helper |
+
+### 11.7 Supply chain and build pipeline
+
+- **Lockfile:** `package-lock.json` is committed. CI and Cloudflare builds use **`npm ci`**, never
+  `npm install`. Check that the Cloudflare build command uses `npm ci` (A18).
+- **Audit gate:** `npm audit --audit-level=high` runs in CI and in `security:check`. A high or critical
+  advisory blocks a merge unless it's recorded in §17 as not exploitable in this static build, with a
+  review date.
+- **Exact versions:** pin direct dependencies to exact versions (`"astro": "7.0.x"`, no `^`). Updates
+  come only through automated PRs.
+- **Automated updates:** Dependabot (`.github/dependabot.yml`):
+  - weekly npm and GitHub Actions updates, grouped
+  - **cooldown:** new releases must be 7 days old (3 days for security updates) before a PR opens; use
+    Dependabot's `cooldown` option, or Renovate's `minimumReleaseAge` if switching (A19)
+- **Minimal runtime:** no UI framework and no client-side npm packages, apart from the lazy-loaded tool
+  libraries in §7, each approved through §11.1 item 8.
+- **Install scripts:** CI runs `npm ci --ignore-scripts`, followed by an explicit rebuild of the packages
+  that need native install steps (`sharp`, `esbuild`), so new transitive dependencies can't run install
+  scripts silently (A20).
+- **CI workflow:** `.github/workflows/ci.yml`, on every push and PR:
+
+  `npm ci` → `npm audit --audit-level=high` → `npm test` → `astro build` → `seo:check` →
+  `security:check --dist`
+
+  Use least-privilege `permissions: contents: read`, and pin actions to commit SHAs.
+
+### 11.8 Infrastructure, DNS and accounts (owner actions; Claude cannot do these)
+
+| # | Action | Where | Verify |
+|---|---|---|---|
+| I-1 | Passkey or hardware-key 2FA. Remove SMS fallback. Store recovery codes offline | Cloudflare, domain registrar, GitHub, MailerLite | Account security pages |
+| I-2 | **Enable DNSSEC** (currently off) and publish the DS record at the registrar | Cloudflare DNS → DNSSEC | `dig +short DS danialasghar.com` returns a record |
+| I-3 | Keep the registrar lock (currently on) | Registrar | whois `clientTransferProhibited` |
+| I-4 | SSL/TLS mode **Full (Strict)**, minimum TLS 1.2, Always Use HTTPS on | Cloudflare SSL/TLS | Dashboard; `security:check` live mode |
+| I-5 | WAF managed rules on. **Bot Fight Mode** on. Keep the existing custom rules (`docs/cloudflare-waf-rules.md`) | Cloudflare Security | Dashboard |
+| I-6 | Deploy token: **scoped Cloudflare API token** ("Workers Scripts: Edit" on this account only), never the Global API Key. Rotate yearly | Cloudflare API Tokens; CI secrets | Token list |
+| I-7 | No secrets in `PUBLIC_*`, in the repo or in `dist/`. Secret scanning and push protection on | GitHub settings | `security:check` grep; GitHub |
+| I-8 | CAA DNS records restricting which certificate authorities may issue for the domain | Cloudflare DNS | `dig CAA danialasghar.com` |
+| I-9 | Remove dangling DNS records (subdomains pointing at services no longer used), to prevent subdomain takeover | Cloudflare DNS | Review the record list |
+| I-10 | Cloudflare account audit log and email alerts for DNS, SSL and Workers changes | Cloudflare Notifications | Dashboard |
+
+### 11.9 Git and deployment
+
+- **Branch protection on `main`:**
+  - no force pushes, no deletion
+  - required status check: the CI workflow
+  - linear history
+- **Conflict to resolve:** the owner has also allowed direct pushes to `main` (rule 16). Branch
+  protection must either let the owner and agent push directly when checks pass (an admin bypass with
+  required checks), or require PRs, which turns rule 16 into "open the PR, wait for CI, merge". Decision
+  D12.
+- **Signed commits:** require signed commits on `main` once the owner has an SSH signing key configured
+  locally (`gpg.format=ssh`, `user.signingkey`, `commit.gpgsign=true`). Until then, agent commits are
+  unsigned and **enabling "require signed commits" would block them**. Decision D13.
+- **Deploys:** only from `main` through Cloudflare's Git integration or CI with the scoped token (I-6).
+  No manual `wrangler deploy` from a laptop with broad credentials.
+- **GitHub:** 2FA required for the account; Actions limited to verified creators and pinned SHAs;
+  `GITHUB_TOKEN` read-only by default.
+
+### 11.10 `security:check`
+
+`scripts/security-check.mjs`, built in Phase 0. No dependencies. Two modes:
+
+**Build mode** (`--dist`, runs in CI and before every merge):
+1. `dist/_headers` contains every required header from §11.4 on `/*`, and the CSP has no
+   `'unsafe-inline'` or `'unsafe-eval'` in `script-src`.
+2. Every executable inline script in `dist/**/*.html` has a hash in the CSP.
+3. Nothing in `dist/` that shouldn't be there:
+   - `*.map` files, dotfiles or dot-directories (`.git`, `.env*`), `node_modules`
+   - draft content (any built page for a `draft: true` post or tool)
+   - files matching secret patterns (private keys, `AKIA…`, `ghp_…`, `sk_live_…`, high-entropy
+     `TOKEN=`)
+4. A source scan of `src/` for the banned APIs in §11.6, with `set:html` checked against the allowlist.
+5. Every external `<script src>` is on the allowed origin list, and has `integrity` unless covered by a
+   §17 exception.
+6. `npm audit --audit-level=high` passes.
+
+**Live mode** (`--live https://danialasghar.com`, run after every deploy and weekly):
+1. `curl -I`-equivalent requests to a sample of routes (`/`, a post, a topic, `/tools/`, a tool, `/404`)
+   check that every required header is present and that HSTS matches the current rollout stage.
+2. `http://` returns a 301 to `https://`.
+3. `/.git/HEAD`, `/.env`, `/package.json`, `/src/` and any `*.map` path return 403 or 404.
+4. DNS: a DS record exists (DNSSEC), and CAA records exist. Reported as a warning until I-2 and I-8 are
+   done.
+
+Exit codes: 0 pass, 1 fail, 2 setup error. Scripts: `npm run security:check` (build mode) and
+`npm run security:live`.
 
 ---
 
@@ -2059,14 +2314,26 @@ starts.**
 4. Create the SEO baseline snapshot for every current URL (`scripts/seo-regression.mjs --baseline`).
    This is the first code in the project, on `chore/seo-baseline`.
 5. Settle the open decisions in §19 that block Phase 1 (D1–D4).
+6. **Site-wide security hardening** (§11). Each item is a separate branch and commit.
+
+| ID | Task | Who | Branch |
+|---|---|---|---|
+| S0-1 | Infrastructure and account items I-1 to I-10 (§11.8) | **Owner** (checklist supplied) | — |
+| S0-2 | `scripts/security-check.mjs` (build and live modes) + npm scripts | Claude | `chore/security-check` |
+| S0-3 | Fix the 12 `npm audit` advisories (`npm audit fix`, no major upgrades), then pin direct dependencies to exact versions. Followed by a full build, `seo:check` and a manual check of the site | Claude | `fix/deps-audit` |
+| S0-4 | Site-wide headers in `public/_headers` + `scripts/csp-hashes.mjs`. CSP as **Report-Only** first, then enforcing. HSTS at stage 1 (§11.4 rollout) | Claude, deploy with explicit permission | `feat/security-headers` |
+| S0-5 | CI workflow (§11.7) | Claude | `chore/ci` |
+| S0-6 | Dependabot with cooldown (§11.7) | Claude | `chore/ci` |
+| S0-7 | `jsonLd()` escaping helper; migrate every JSON-LD `set:html`. The output must be byte-identical for current content (`seo:check` clean) | Claude | `fix/jsonld-escaping` |
+| S0-8 | Branch protection and signed commits (after D12 and D13) | **Owner** | — |
 
 | | |
 |---|---|
-| Dependencies | Owner availability, Search Console access |
-| Risks | The redesign isn't final, so tools get built on a moving base. Mitigation: Phase 1 does not start until the merge |
-| Testing | Baseline snapshot generated; the build passes on `main` after the merge |
-| Exit criteria | Redesign on `main` · Search Console baseline saved · §6 Wave 1–2 ratings checked · SEO baseline committed · D1–D4 decided |
-| Deliverables | Baseline data (kept out of git if it's private), updated §6, `.seo-baseline/`, decisions in §17 |
+| Dependencies | Owner availability, Search Console access, Cloudflare and GitHub admin access for S0-1 and S0-8 |
+| Risks | **HSTS `includeSubDomains`/`preload` is hard to undo** (staged rollout, D10); a strict CSP could break inline scripts or the newsletter form (Report-Only first); dependency fixes could change the build output (`seo:check` and a manual check); branch protection could block the agreed push flow (D12) |
+| Testing | Baseline snapshot generated; the build passes on `main`; `security:check` passes in build and live modes; the CSP shows no console violations on the page checklist (home, post with diagrams, topic, tools, calculator, about, services, contact, 404) in both themes |
+| Exit criteria | Redesign on `main` · Search Console baseline saved · §6 Wave 1–2 ratings checked · SEO baseline committed · D1–D4 decided · **S0-2 to S0-7 merged · `security:live` passes with all headers live (CSP enforcing, HSTS at stage 2 or later) · owner confirms S0-1 and S0-8 done or scheduled** |
+| Deliverables | Baseline data (kept out of git if it's private), updated §6, `.seo-baseline/`, `security-check.mjs`, `csp-hashes.mjs`, `_headers`, CI + Dependabot, a clean `npm audit`, decisions in §17 |
 
 ### Phase 1: Foundation and first five tools (weeks 1–6)
 
@@ -2080,7 +2347,8 @@ starts.**
    - `_shared/*` with tests
    - the hub rewrite (same URL)
    - the Tools dropdown and mobile accordion
-   - the CSP mechanism
+   - tool-route CSP additions (`worker-src`) on top of the site-wide policy from S0-4
+   - `security:check` covering the new files
    - the test script
    - `generate-tool-og.mjs`
 2. One branch per tool, in the order of §8: `feat/tool-postgres-lock-modes` → `feat/tool-sidekiq-retry-calculator`
@@ -2091,10 +2359,10 @@ starts.**
 
 | | |
 |---|---|
-| Dependencies | Phase 0 complete; the §17 decisions on CSP delivery and the test runner |
+| Dependencies | Phase 0 complete, including the S0 security tasks; the §17 decision on the test runner |
 | Risks | Version-specific formulas wrong (check the sources); deadlock log variants (add fixtures); DST bugs in cron (fixtures); header dropdown breaking the redesign (manual QA); scope creep (rule 3: only these five) |
 | Testing | Unit tests and fixtures for every module; build assertions; the §10.8 checklist for each tool; SEO regression clean |
-| Exit criteria | All five tools meet the Definition of Done · hub, menu and chaining work · SEO regression clean · Lighthouse budgets met · owner sign-off |
+| Exit criteria | All five tools meet the Definition of Done · hub, menu and chaining work · SEO regression clean · `security:check` and `security:live` pass · Lighthouse budgets met · owner sign-off |
 | Deliverables | 5 live tools, the shared architecture, updated hub and navigation, callouts, the updated privacy page, §0 and §6 status updated |
 
 ### Phase 2: Signature depth and first utilities (weeks 7–12)
@@ -2171,6 +2439,13 @@ starts.**
 | DEC-14 | 2026-11-26 | SEO baseline: `.seo-baseline/baseline.json` (25 URLs) taken from `feat/premium-redesign` at `f9a3e87` with `scripts/seo-regression.mjs`; no new dependencies | Phase 0 (`607422d`) |
 | DEC-15 | 2026-11-26 | Tools work happens in a separate git worktree, because another session edits the main checkout at the same time. Only files named explicitly are added to commits | Process |
 
+| DEC-16 | 2026-11-26 | **Standing push permission:** finished, verified branches may be merged or fast-forwarded into `main` and pushed, then local `main` updated. Force pushes, history rewrites, branch deletion, unfinished work and first-time HSTS changes still need explicit permission | Owner |
+| DEC-17 | 2026-11-26 | Security scope is site-wide (blog, tools, build pipeline, infrastructure). Rules 20–26 added; §11.0 and §11.4–§11.10 added | Owner (requested) |
+| DEC-18 | 2026-11-26 | Security headers on `/*` through `public/_headers`. CSP `script-src` uses SHA-256 hashes generated after the build (`scripts/csp-hashes.mjs`); no `'unsafe-inline'`/`'unsafe-eval'` for scripts; `style-src 'unsafe-inline'` accepted for now | Proposed (S0-4) |
+| DEC-19 | 2026-11-26 | HSTS is rolled out in stages (300 s → 1 week → 2 years + preload). Submitting to the preload list needs owner approval (D10) | Proposed |
+| DEC-20 | 2026-11-26 | Supply chain: `npm ci` with the lockfile, exact versions, `npm audit --audit-level=high` gate, Dependabot with a 7-day cooldown (3 days for security), actions pinned to SHAs | Proposed (S0-3/5/6) |
+| DEC-21 | 2026-11-26 | Banned: `eval`, `new Function`, `innerHTML`-family APIs, `document.write`. `set:html` only on the §11.6 allowlist; JSON-LD goes through an escaping `jsonLd()` helper. Enforced by `security:check` | Proposed (S0-2/7) |
+
 *Add a row for each new decision: test runner, analytics method, the ads gate, library choices with their
 licences.*
 
@@ -2194,6 +2469,12 @@ licences.*
 | A12 | Being covered for a subdomain once the root domain is approved by AdSense (only relevant if that option is ever revisited) | AdSense Sites documentation, only if needed |
 | A13 | Library sizes and licences (YAML, `sql-formatter`) | Check at selection time in Phase 3 |
 | A14 | FAQ rich results are limited to certain sites; the markup is still worth keeping | Not blocking |
+| A15 | Cloudflare `_headers` merges a `/*` rule with more specific rules (`/_astro/*` Cache-Control) instead of replacing them | S0-4: check with `security:live` |
+| A16 | One CSP header holding every inline-script hash stays within Cloudflare's header size limits | S0-4: `csp-hashes.mjs` measures it and fails the build if too large |
+| A17 | Whether Astro 7 has built-in CSP hash support (and whether it can be used alongside `_headers`) | S0-4: read the Astro 7 docs and config types |
+| A18 | The Cloudflare build uses `npm ci` (not `npm install`) | S0-5: check the Workers Builds settings (owner) |
+| A19 | Dependabot supports a `cooldown` setting for npm | S0-6: GitHub docs |
+| A20 | `npm ci --ignore-scripts` followed by an explicit rebuild works for `sharp`/`esbuild` | S0-5: try it in CI |
 
 ---
 
@@ -2210,6 +2491,10 @@ licences.*
 | D7 | Whether the hub's title and meta description may change (currently "Developer Tools — Rails & Background Jobs") | Phase 1 hub rewrite | Owner |
 | D8 | Licence for tool code if the repo is ever made public | Not blocking | Owner |
 | D9 | Final AdSense traffic threshold | Phase 3 gate | Owner |
+| D10 | HSTS preload submission (hard to undo; covers every subdomain). Recommendation: reach stage 3, then decide | S0-4 stage 4 | Owner |
+| D11 | Analytics beacon SRI: (a) versioned URL + SRI, (b) documented exception, or (c) leave analytics off | Only if the beacon is turned on | Owner |
+| D12 | Branch protection vs direct push to `main`: admin bypass with required CI checks (recommended, keeps DEC-16), or PRs required | S0-8 | Owner |
+| D13 | Signed commits: set up an SSH signing key locally so agent commits can be signed, then require them | S0-8 | Owner |
 
 **Repository state (do not disturb), updated 2026-11-26 in Phase 0:**
 - `main` = `origin/main` = `feat/premium-redesign` = `f9a3e87`. The redesign and this roadmap
