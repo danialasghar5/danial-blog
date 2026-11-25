@@ -12,6 +12,8 @@
     "icons": "node scripts/generate-icons.mjs",
     "seo:baseline": "astro build && node scripts/seo-regression.mjs --baseline",
     "seo:check": "astro build && node scripts/seo-regression.mjs",
+    "security:check": "astro build && node scripts/security-check.mjs",
+    "security:live": "node scripts/security-check.mjs --live https://danialasghar.com",
     "astro": "astro"
   },
   "dependencies": {
