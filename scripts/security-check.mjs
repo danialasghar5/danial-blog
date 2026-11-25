@@ -60,6 +60,7 @@ const SET_HTML_ALLOWLIST = {
 	'src/components/diagram/figures/LatencyExecutionTimeline.astro': 1, // author SVG
 	'src/components/diagram/figures/SolidQueueSidekiqMatrix.astro': 1, // author SVG
 	'src/components/diagram/figures/PushVsPollComparison.astro': 1, // author SVG
+	'src/layouts/ToolLayout.astro': 1, // JSON-LD via jsonLd() (escaped)
 };
 const INNER_HTML_ALLOWLIST = {
 	'src/pages/tools/connection-pool-calculator.astro': 1, // constant string; migrate in Wave 2 (#10)

@@ -1,0 +1,203 @@
+---
+// Shared tool page (TOOLS_ROADMAP.md §9.5). The layout owns everything common
+// to every tool; a widget owns only its inputs and outputs and talks to the
+// layout through bubbling DOM events dispatched on its root:
+//
+//   tool:result  detail: { text: string; filename?: string; mime?: string;
+//                          state?: Record<string, string|number|boolean>; cta?: boolean;
+//                          tone?: 'ok' | 'risk' }
+//   tool:clear   detail: {}
+//   tool:error   detail: { message: string }
+//
+// Slots: "widget" (the tool, inside the instrument surface) and default (the
+// rendered MDX guide). Sections without live data are omitted, never empty.
+import { existsSync } from 'node:fs';
+import type { CollectionEntry } from 'astro:content';
+import Page from './Page.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PageHeader from '../components/PageHeader.astro';
+import ServicesCta from '../components/ServicesCta.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { groupById, SERVICE_CTAS } from '../data/tool-groups';
+import { getTopic } from '../data/topics';
+import { jsonLd } from '../utils/json-ld';
+import { toolJsonLd } from '../utils/tool-schema';
+import '../styles/tools.css';
+
+interface Props {
+	entry: CollectionEntry<'tools'>;
+	/** Live tools this one chains to (already filtered to status: live). */
+	next: CollectionEntry<'tools'>[];
+	/** Related posts (already filtered to non-draft). */
+	posts: CollectionEntry<'blog'>[];
+	/** Whether /tools/<group>/ exists (≥3 live tools + intro). */
+	groupPage: boolean;
+}
+
+const { entry, next, posts, groupPage } = Astro.props;
+const t = entry.data;
+const slug = entry.id;
+const group = groupById(t.group);
+const topic = t.relatedTopic ? getTopic(t.relatedTopic) : undefined;
+const liveTopic = topic?.live ? topic : undefined;
+const site = Astro.site?.toString() ?? 'https://danialasghar.com/';
+const url = new URL(Astro.url.pathname, site).toString();
+const ogPath = `/og/tools/${slug}.png`;
+const ogImageUrl = existsSync(`public${ogPath}`) ? ogPath : undefined;
+const cta = t.tier === 'signature' && t.serviceCta ? SERVICE_CTAS[t.serviceCta] : undefined;
+const schema = toolJsonLd({ title: t.title, description: t.seoDescription ?? t.description, url, site, pubDate: t.pubDate, updatedDate: t.updatedDate, faq: t.faq });
+const hasNext = next.length > 0 || posts.length > 0 || !!liveTopic;
+const crumbs = [
+	{ label: 'Home', href: '/' },
+	{ label: 'Tools', href: '/tools/' },
+	...(groupPage ? [{ label: group.label, href: `/tools/${group.id}/` }] : []),
+	{ label: t.title },
+];
+---
+
+<Page title={t.seoTitle ?? t.title} description={t.seoDescription ?? t.description} ogImageUrl={ogImageUrl} mainClass="container tool-page">
+	<Fragment slot="head">
+		{schema.map((s) => <script type="application/ld+json" set:html={jsonLd(s)} is:inline />)}
+	</Fragment>
+	<Breadcrumbs items={crumbs} />
+
+	<PageHeader title={t.title}>
+		<p class="page-lede lede tool-lede">{t.description}</p>
+	</PageHeader>
+	<div class="tool-meta">
+		<a class="tool-badge" href="#tool-guide">
+			<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+			Runs in your browser — nothing you enter leaves this page
+		</a>
+		{t.versions.length > 0 && <span class="tool-versions">{t.versions.join(' · ')}</span>}
+	</div>
+
+	<section class="tool-surface" data-tool-surface data-slug={slug} data-shareable={String(t.shareable)} aria-label={t.title}>
+		<div class="tool-faceplate" aria-hidden="true">
+			<span><span class="dot"></span>{group.label}</span>
+			<span>{slug}</span>
+		</div>
+		<div class="tool-body">
+			<slot name="widget" />
+		</div>
+		<div class="tool-result-actions" data-result-actions hidden>
+			<button type="button" class="btn btn-secondary btn-sm" data-action="copy">Copy result</button>
+			{t.shareable && <button type="button" class="btn btn-secondary btn-sm" data-action="share">Copy share link</button>}
+			<button type="button" class="btn btn-secondary btn-sm" data-action="download" hidden>Download</button>
+			<span class="status" data-action-status role="status" aria-live="polite"></span>
+		</div>
+	</section>
+	<p class="sr-only" data-tool-announcer role="status" aria-live="polite"></p>
+
+	{cta && (
+		<aside class="tool-cta" data-tool-cta hidden aria-label="Consulting">
+			Seeing this in production? The <a href={cta.href}>{cta.label}</a> is built for exactly this.
+		</aside>
+	)}
+
+	{hasNext && (
+		<nav class="tool-next" aria-labelledby="tool-next-heading">
+			<h2 id="tool-next-heading">Next steps</h2>
+			<ul>
+				{next.map((n) => <li><a href={`/tools/${n.id}/`}>{n.data.title} &rarr;</a></li>)}
+				{posts.map((p) => <li><a href={`/blog/${p.id}/`}>Read: {p.data.title} &rarr;</a></li>)}
+				{liveTopic && <li><a href={`/topics/${liveTopic.slug}/`}>{liveTopic.title} hub &rarr;</a></li>}
+			</ul>
+		</nav>
+	)}
+
+	<article class="tool-content prose" id="tool-guide">
+		<slot />
+		{t.faq.length > 0 && (
+			<section class="tool-faq" aria-labelledby="faq">
+				<h2 id="faq">Frequently asked questions</h2>
+				{t.faq.map((f) => (
+					<>
+						<h3>{f.q}</h3>
+						<p>{f.a}</p>
+					</>
+				))}
+			</section>
+		)}
+	</article>
+
+	{t.tier === 'signature' && <ServicesCta category={t.relatedTopic} />}
+	<Fragment slot="after-main">{t.tier === 'utility' && <Newsletter />}</Fragment>
+</Page>
+
+<script>
+	import { copyText } from '../tools/_shared/copy';
+	import { encodeHashState } from '../tools/_shared/hash-state';
+	import { pushRecent } from '../tools/_shared/recent';
+
+	type ResultDetail = {
+		text: string;
+		filename?: string;
+		mime?: string;
+		state?: Record<string, string | number | boolean>;
+		cta?: boolean;
+		tone?: 'ok' | 'risk';
+	};
+
+	const surface = document.querySelector<HTMLElement>('[data-tool-surface]');
+	if (surface) {
+		const slug = surface.dataset.slug ?? '';
+		const actions = surface.querySelector<HTMLElement>('[data-result-actions]');
+		const status = surface.querySelector<HTMLElement>('[data-action-status]');
+		const download = surface.querySelector<HTMLButtonElement>('[data-action="download"]');
+		const announcer = document.querySelector<HTMLElement>('[data-tool-announcer]');
+		const cta = document.querySelector<HTMLElement>('[data-tool-cta]');
+		let last: ResultDetail | null = null;
+		let recorded = false;
+
+		const say = (el: HTMLElement | null | undefined, msg: string) => {
+			if (el) el.textContent = msg;
+		};
+
+		surface.addEventListener('tool:result', (e) => {
+			const d = (e as CustomEvent<ResultDetail>).detail;
+			if (!d || typeof d.text !== 'string') return;
+			last = d;
+			surface.dataset.state = d.tone ?? '';
+			if (actions) actions.hidden = false;
+			if (download) download.hidden = !d.filename;
+			if (cta) cta.hidden = !d.cta;
+			say(status, '');
+			if (!recorded) {
+				pushRecent(slug);
+				recorded = true;
+			}
+		});
+		surface.addEventListener('tool:clear', () => {
+			last = null;
+			surface.dataset.state = '';
+			if (actions) actions.hidden = true;
+			if (cta) cta.hidden = true;
+		});
+		surface.addEventListener('tool:error', (e) => {
+			surface.dataset.state = 'error';
+			say(announcer, (e as CustomEvent<{ message: string }>).detail?.message ?? '');
+		});
+
+		actions?.addEventListener('click', async (e) => {
+			const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+			if (!button || !last) return;
+			const action = button.dataset.action;
+			if (action === 'copy') {
+				say(status, (await copyText(last.text)) ? 'Copied.' : 'Copy failed — select the text manually.');
+			} else if (action === 'share') {
+				const hash = last.state ? encodeHashState(last.state) : null;
+				if (!hash) return say(status, 'This result is too large to share as a link.');
+				history.replaceState(null, '', hash);
+				say(status, (await copyText(location.href)) ? 'Share link copied.' : 'Copy failed — copy the address bar.');
+			} else if (action === 'download' && last.filename) {
+				const blob = new Blob([last.text], { type: last.mime ?? 'text/plain;charset=utf-8' });
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = last.filename;
+				a.click();
+				setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+			}
+		});
+	}
+</script>

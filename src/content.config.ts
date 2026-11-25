@@ -1,7 +1,8 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { TOPIC_SLUGS } from './data/topics';
+import { GROUP_IDS } from './data/tool-groups';
 
 // Frontmatter convention (enforced by this schema — unknown keys are silently
 // stripped by Zod, so do NOT add ones like `slug`, `excerpt`, `ogTitle`,
@@ -63,4 +64,38 @@ const projects = defineCollection({
 		}),
 });
 
-export const collections = { blog, projects };
+// Developer Tools Hub (TOOLS_ROADMAP.md §9.3). One MDX per tool: frontmatter is
+// the registry entry (hub card, menu, chaining, JSON-LD); the body is the
+// tool's written guide. Only `status: live` entries produce pages, cards or
+// links anywhere — drafts are invisible (zero dead UI).
+const tools = defineCollection({
+	loader: glob({ base: './src/content/tools', pattern: '**/*.{md,mdx}' }),
+	schema: z
+		.object({
+			title: z.string(),
+			seoTitle: z.string().max(60).optional(),
+			description: z.string(),
+			seoDescription: z.string().max(160).optional(),
+			tier: z.enum(['signature', 'utility']),
+			group: z.enum(GROUP_IDS),
+			status: z.enum(['draft', 'live']).default('draft'),
+			order: z.number().default(100),
+			featured: z.boolean().default(false),
+			pubDate: z.coerce.date(),
+			updatedDate: z.coerce.date().optional(),
+			keywords: z.array(z.string()).default([]),
+			versions: z.array(z.string()).default([]),
+			relatedPosts: z.array(reference('blog')).default([]),
+			relatedTopic: z.enum(TOPIC_SLUGS).optional(),
+			nextTools: z.array(reference('tools')).max(4).default([]),
+			serviceCta: z.enum(['jobs-audit', 'scaling', 'postgres-review']).optional(),
+			adsEligible: z.literal(false).default(false), // stays false until the Phase 3 gate (§15)
+			shareable: z.boolean().default(true),
+			worker: z.boolean().default(false),
+			newUntil: z.coerce.date().optional(),
+			faq: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+		})
+		.refine((t) => t.tier === 'signature' || !t.serviceCta, { message: 'serviceCta is signature-only' }),
+});
+
+export const collections = { blog, projects, tools };

@@ -3,15 +3,11 @@ import Page from '../../layouts/Page.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { NAME } from '../../consts';
+import { liveTools, toolHref } from '../../utils/tools';
 
-// Add future tools here (each one is its own page under /tools/).
-const tools = [
-	{
-		href: '/tools/connection-pool-calculator/',
-		title: 'Sidekiq & Puma Connection Pool Calculator',
-		blurb: 'Size your Rails database pool against Puma threads and Sidekiq concurrency, and check total connections against Postgres max_connections.',
-	},
-];
+// Every live entry in src/content/tools/ (drafts never appear). The discovery
+// hub (search, filters, signature row) replaces this list once Wave 1 is live.
+const tools = (await liveTools()).map((t) => ({ href: toolHref(t.id), title: t.data.title, blurb: t.data.description }));
 ---
 
 <Page title={`Developer Tools — Rails & Background Jobs | ${NAME}`}

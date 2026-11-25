@@ -1,0 +1,90 @@
+---
+// Every live tool page, plus gated group pages (TOOLS_ROADMAP.md §9.4).
+// Tools with a hand-built static page (STATIC_TOOL_PAGES) are skipped here.
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import { getCollection, render } from 'astro:content';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+import Page from '../../layouts/Page.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { STATIC_TOOL_PAGES, type ToolGroup } from '../../data/tool-groups';
+import { assertRegistry, groupsWithPages, liveTools, toolHref, type Tool } from '../../utils/tools';
+import '../../styles/tools.css';
+
+export async function getStaticPaths() {
+	await assertRegistry();
+	const live = await liveTools();
+	const byId = new Map(live.map((t) => [t.id, t]));
+	const posts = new Map((await getCollection('blog', (p) => !p.data.draft)).map((p) => [p.id, p]));
+	const groups = groupsWithPages(live);
+	const isStatic = (id: string) => (STATIC_TOOL_PAGES as readonly string[]).includes(id);
+
+	return [
+		...live
+			.filter((t) => !isStatic(t.id))
+			.map((t) => ({
+				params: { slug: t.id },
+				props: {
+					kind: 'tool' as const,
+					entry: t,
+					next: t.data.nextTools.map((n) => byId.get(n.id)).filter((n): n is Tool => !!n),
+					posts: t.data.relatedPosts.map((p) => posts.get(p.id)).filter((p) => !!p),
+					groupPage: groups.some((g) => g.id === t.data.group),
+				},
+			})),
+		...groups.map((g) => ({
+			params: { slug: g.id },
+			props: { kind: 'group' as const, group: g, tools: live.filter((t) => t.data.group === g.id) },
+		})),
+	];
+}
+
+type Props =
+	| { kind: 'tool'; entry: Tool; next: Tool[]; posts: import('astro:content').CollectionEntry<'blog'>[]; groupPage: boolean }
+	| { kind: 'group'; group: ToolGroup; tools: Tool[] };
+
+const props = Astro.props as Props;
+const widgets = import.meta.glob<{ default: AstroComponentFactory }>('../../tools/*/Widget.astro', { eager: true });
+let Widget: AstroComponentFactory | null = null;
+let Content: AstroComponentFactory | null = null;
+if (props.kind === 'tool') {
+	Widget = widgets[`../../tools/${props.entry.id}/Widget.astro`]?.default ?? null;
+	if (!Widget) throw new Error(`Missing widget for ${props.entry.id}`);
+	Content = (await render(props.entry)).Content as AstroComponentFactory;
+}
+---
+
+{props.kind === 'tool' && Widget && Content && (
+	<ToolLayout entry={props.entry} next={props.next} posts={props.posts} groupPage={props.groupPage}>
+		<Widget slot="widget" />
+		<Content />
+	</ToolLayout>
+)}
+
+{props.kind === 'group' && (
+	<Page title={`${props.group.label} Tools | Danial Asghar`} description={props.group.description ?? ''} mainClass="container tool-page">
+		<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Tools', href: '/tools/' }, { label: props.group.label }]} />
+		<PageHeader title={`${props.group.label} tools`}>
+			{(props.group.intro ?? []).map((p) => <p class="page-lede lede tool-lede">{p}</p>)}
+		</PageHeader>
+		<ul class="tool-group-list">
+			{props.tools.map((t) => (
+				<li>
+					<a href={toolHref(t.id)}>
+						<strong>{t.data.title}</strong>
+						<span>{t.data.description}</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	</Page>
+)}
+
+<style>
+	.tool-group-list { list-style: none; margin: var(--space-10) 0 0; padding: 0; border-bottom: 1px solid var(--border); }
+	.tool-group-list li { border-top: 1px solid var(--border); }
+	.tool-group-list a { display: grid; gap: var(--space-1); padding: var(--space-5) 0; color: var(--text); text-decoration: none; }
+	.tool-group-list strong { font-size: var(--fs-xl); font-weight: 600; }
+	.tool-group-list a:hover strong { color: var(--brand); }
+	.tool-group-list span { color: var(--text-muted); max-width: 68ch; }
+</style>
