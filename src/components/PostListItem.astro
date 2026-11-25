@@ -9,15 +9,18 @@ interface Props {
 	post: any;
 	/** Smaller title, no summary: for related-post lists. */
 	compact?: boolean;
+	/** Heading level for the title: 2 directly under the page h1, 3 under a section h2. */
+	level?: 2 | 3;
 }
-const { post, compact = false } = Astro.props;
+const { post, compact = false, level = 3 } = Astro.props;
+const Heading = level === 2 ? 'h2' : 'h3';
 const { title, description, pubDate, tags = [], category } = post.data;
 const minutes = readingTime(post.body);
 const topic = getTopic(category);
 const href = `/blog/${post.id}/`;
 ---
 <article class:list={['entry', { compact }]} data-category={category ?? ''} data-tags={tags.join(',')}>
-	<h3 class="entry-title"><a href={href}>{title.split('::').map((part: string, i: number) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</a></h3>
+	<Heading class="entry-title"><a href={href}>{title.split('::').map((part: string, i: number) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</a></Heading>
 	{!compact && <p class="entry-dek">{description.split('::').map((part: string, i: number) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</p>}
 	<p class="entry-meta">
 		{!compact && <Avatar size={26} />}
@@ -56,7 +59,7 @@ const href = `/blog/${post.id}/`;
 		font-variant-numeric: tabular-nums;
 	}
 	.entry-author { color: var(--text-muted); font-weight: 500; }
-	.entry-topic { color: var(--text-faint); text-decoration: none; }
+	.entry-topic { display: inline-block; padding-block: 2px; color: var(--text-faint); text-decoration: none; }
 	.entry-topic:hover { color: var(--brand); }
 	.dot { color: var(--border-strong); }
 

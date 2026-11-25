@@ -18,6 +18,8 @@ const all = (await getCollection('projects'))
   .sort((a, b) => a.data.order - b.data.order);
 const displayProjects = showAll ? all : all.filter((p) => p.data.featured);
 const title = heading ?? (showAll ? 'All projects' : 'Featured work');
+// Project titles sit under the section h2, or straight under the page h1 when the section header is hidden.
+const Title = withHeader ? 'h3' : 'h2';
 ---
 <section class:list={['projects', { 'container block': !bare }]}>
   {withHeader && (
@@ -31,9 +33,9 @@ const title = heading ?? (showAll ? 'All projects' : 'Featured work');
     {displayProjects.map((p) => (
       <li>
         <a class="proj" href={`/projects/${p.id}/`}>
-          <h3 class="proj-title">
+          <Title class="proj-title">
             {splitTitle(p.data.title)[0]}<span class="nowrap">{splitTitle(p.data.title)[1]}<svg class="arrow" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-          </h3>
+          </Title>
           <div class="proj-body">
             <p class="desc">{p.data.problem}</p>
             {p.data.tech.length > 0 && <p class="tech">{p.data.tech.join(' · ')}</p>}

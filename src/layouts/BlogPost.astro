@@ -283,7 +283,7 @@ const showUpdated =
 	.post-desc {
 		font-family: var(--font-prose);
 		font-size: var(--fs-xl); line-height: var(--lh-normal); color: var(--text-muted);
-		margin: 0 0 var(--space-6);
+		margin: 0 0 var(--space-6); max-width: 58ch;
 	}
 	.post-meta {
 		display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem;
@@ -307,7 +307,7 @@ const showUpdated =
 	}
 	.contents > summary {
 		cursor: pointer; list-style: none;
-		display: flex; align-items: center; gap: .5rem;
+		display: flex; align-items: center; gap: .5rem; min-height: 44px;
 		font-size: var(--fs-sm); font-weight: 600; color: var(--text);
 	}
 	.contents > summary::-webkit-details-marker { display: none; }

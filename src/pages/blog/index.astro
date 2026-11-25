@@ -25,7 +25,7 @@ const posts = (await getCollection('blog'))
 	) : (
 		<div class="index-grid">
 			<section class="post-list" aria-label="All articles">
-				{posts.map((post) => <PostListItem post={post} />)}
+				{posts.map((post) => <PostListItem post={post} level={2} />)}
 			</section>
 			<div class="rail">
 				<div class="rail-sticky">
