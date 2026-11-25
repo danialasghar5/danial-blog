@@ -1,72 +1,66 @@
 ---
 import FormattedDate from './FormattedDate.astro';
+import Avatar from './Avatar.astro';
 import { readingTime } from '../utils/reading-time';
-import { getTopic } from '../data/topics';
+import { getTopic, topicUrl } from '../data/topics';
+import { NAME } from '../consts';
 
 interface Props {
 	post: any;
-	/** Title-only row (homepage); the full index also shows the description. */
+	/** Smaller title, no summary: for related-post lists. */
 	compact?: boolean;
 }
 const { post, compact = false } = Astro.props;
 const { title, description, pubDate, tags = [], category } = post.data;
 const minutes = readingTime(post.body);
 const topic = getTopic(category);
-const label = topic?.title ?? tags[0];
+const href = `/blog/${post.id}/`;
 ---
-<article class:list={['post-row', { compact }]} data-category={category ?? ''} data-tags={tags.join(',')}>
-	<a class="row-link" href={`/blog/${post.id}/`}>
-		<span class="row-date"><FormattedDate date={pubDate} /></span>
-		<div class="row-main">
-			<h3 class="row-title">{title}</h3>
-			{!compact && <p class="row-dek">{description}</p>}
-			<p class="row-meta">
-				{label && <span>{label}</span>}
-				{label && <span class="row-dot" aria-hidden="true">·</span>}
-				<span>{minutes}</span>
-			</p>
-		</div>
-	</a>
+<article class:list={['entry', { compact }]} data-category={category ?? ''} data-tags={tags.join(',')}>
+	<h3 class="entry-title"><a href={href}>{title.split('::').map((part: string, i: number) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</a></h3>
+	{!compact && <p class="entry-dek">{description.split('::').map((part: string, i: number) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</p>}
+	<p class="entry-meta">
+		{!compact && <Avatar size={26} />}
+		{!compact && <span class="entry-author">{NAME}</span>}
+		{!compact && <span class="dot" aria-hidden="true">·</span>}
+		<FormattedDate date={pubDate} />
+		{topic && <span class="dot" aria-hidden="true">·</span>}
+		{topic && (topic.live ? <a class="entry-topic" href={topicUrl(topic.slug)}>{topic.title}</a> : <span>{topic.title}</span>)}
+		<span class="dot" aria-hidden="true">·</span>
+		<span>{minutes}</span>
+	</p>
 </article>
 
 <style>
-	/* Index row: a faint date column on the left, the title and its meta on the
-	   right, separated from the next row by a hairline. No cards, no colour until
-	   hover. */
-	.post-row { border-top: 1px solid var(--border); }
-	.row-link {
-		display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-1) var(--space-6);
-		align-items: baseline;
-		padding: var(--space-6) 0;
-		text-decoration: none; color: var(--text);
-	}
-	.compact .row-link { padding: var(--space-5) 0; }
-	.row-date {
-		font-size: var(--fs-sm); color: var(--text-faint);
-		font-variant-numeric: tabular-nums; white-space: nowrap;
-	}
-	.row-main { min-width: 0; }
-	.row-title {
+	/* Feed entry: big bold title, a serif summary, a byline row. Entries are
+	   divided by a hairline; no cards. */
+	.entry { padding: var(--space-8) 0; border-top: 1px solid var(--border); }
+	.entry-title {
 		font-family: var(--font-sans);
-		font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-snug);
+		font-size: var(--fs-2xl); font-weight: 800; line-height: 1.12;
 		letter-spacing: var(--tracking-tight); margin: 0;
-		transition: color .15s ease;
+		text-wrap: balance; overflow-wrap: break-word; hyphens: manual;
 	}
-	.compact .row-title { font-size: var(--fs-lg); }
-	.row-link:hover .row-title { color: var(--brand); }
-	.row-dek {
+	.entry-title a { color: var(--text); text-decoration: none; }
+	.entry-title a:hover { color: var(--brand); }
+	.entry-dek {
 		font-family: var(--font-prose);
-		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
-		margin: var(--space-2) 0 0; max-width: 68ch;
+		color: var(--text-muted); font-size: var(--fs-lg); line-height: var(--lh-normal);
+		margin: var(--space-3) 0 0; max-width: 62ch;
+		overflow-wrap: break-word;
 	}
-	.row-meta {
-		display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem;
-		margin: var(--space-2) 0 0;
+	.entry-meta {
+		display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem;
+		margin: var(--space-4) 0 0;
 		font-size: var(--fs-sm); color: var(--text-faint);
+		font-variant-numeric: tabular-nums;
 	}
+	.entry-author { color: var(--text-muted); font-weight: 500; }
+	.entry-topic { color: var(--text-faint); text-decoration: none; }
+	.entry-topic:hover { color: var(--brand); }
+	.dot { color: var(--border-strong); }
 
-	/* Narrow screens: the date moves above the title. */
-	@media (max-width: 640px) {
-		.row-link { grid-template-columns: 1fr; }
-	}
+	.compact { padding: var(--space-5) 0; }
+	.compact .entry-title { font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-snug); }
+	.compact .entry-meta { margin-top: var(--space-2); }
 </style>

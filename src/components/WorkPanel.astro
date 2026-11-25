@@ -1,0 +1,37 @@
+---
+// The rail's one consulting card (Honeybadger's "Try Honeybadger" box, for a
+// consultant). Copy follows the reader's topic when one is known.
+interface Props { category?: string; }
+const { category } = Astro.props;
+
+const COPY: Record<string, { title: string; body: string }> = {
+	'background-jobs': {
+		title: 'Jobs misbehaving in production?',
+		body: 'A fixed-scope Background Job Reliability Audit finds why jobs run twice, lose data or pile up, against your real code.',
+	},
+	'database-reliability': {
+		title: 'Fighting locks or races?',
+		body: 'A Postgres Concurrency & Lock Review finds the race conditions and deadlocks before they corrupt data.',
+	},
+};
+const DEFAULT = {
+	title: 'Need help in production?',
+	body: 'I run fixed-scope reliability audits for production Rails teams: Sidekiq, Solid Queue and Postgres concurrency.',
+};
+const { title, body } = (category && COPY[category]) || DEFAULT;
+---
+<aside class="panel work-panel" aria-label="Consulting">
+	<h2>{title}</h2>
+	<p>{body}</p>
+	<a class="btn btn-outline work-btn" href="/services/">See services and prices</a>
+	<p class="work-note">Fixed scope, from $1,000.</p>
+</aside>
+
+<style>
+	.work-panel p { margin: 0 0 var(--space-5); }
+	.work-btn { width: 100%; }
+	.work-panel .work-note {
+		font-family: var(--font-sans); font-size: var(--fs-xs); color: var(--text-faint);
+		text-align: center; margin: var(--space-3) 0 0;
+	}
+</style>

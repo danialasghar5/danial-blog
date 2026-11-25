@@ -5,12 +5,18 @@
 // and reads the JSON result for real success/error states — no API key, no
 // server, fully static-deploy compatible.
 import { newsletter, newsletterLive } from '../data/newsletter';
+
+interface Props {
+	/** "band": full-width closing section. "panel": bordered card for the right rail. */
+	variant?: 'band' | 'panel';
+}
+const { variant = 'band' } = Astro.props;
 ---
-<section class="container newsletter" aria-labelledby="nl-heading">
+<section class:list={['newsletter', variant === 'panel' ? 'panel is-panel' : 'container']} aria-labelledby="nl-heading">
 	<div class="nl-inner">
 		<div class="nl-copy">
-			<h2 id="nl-heading" class="nl-title">Newsletter</h2>
-			<p class="nl-blurb">New technical articles, occasionally. No spam.</p>
+			<h2 id="nl-heading" class="nl-title">Get new articles by email</h2>
+			<p class="nl-blurb">Deep dives on Rails reliability, when they're published. No spam.</p>
 		</div>
 
 		{newsletterLive ? (
@@ -58,7 +64,7 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 	}
 	@media (min-width: 820px) { .nl-inner { grid-template-columns: 1fr 1fr; } }
 
-	.nl-title { font-size: var(--fs-xl); font-weight: 600; margin: 0 0 var(--space-2); letter-spacing: var(--tracking-tight); }
+	.nl-title { font-size: var(--fs-xl); font-weight: 800; margin: 0 0 var(--space-2); letter-spacing: var(--tracking-tight); }
 	.nl-blurb {
 		font-family: var(--font-prose);
 		color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal);
@@ -94,6 +100,16 @@ import { newsletter, newsletterLive } from '../data/newsletter';
 	.nl-status.is-error { color: var(--dg-hazard); }
 
 	.nl-fallback { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; }
+
+	/* Panel variant: everything stacks inside the rail card. */
+	.is-panel.newsletter { padding: var(--space-6); }
+	.is-panel .nl-inner { display: block; padding: 0; border: 0; }
+	.is-panel .nl-blurb { margin-bottom: var(--space-5); }
+	.is-panel .nl-field { flex-direction: column; }
+	.is-panel .nl-field input[type="email"] { flex: none; width: 100%; }
+	.is-panel .nl-submit { width: 100%; background: transparent; color: var(--brand) !important; border-color: var(--brand); }
+	.is-panel .nl-submit:hover { background: var(--brand-soft); }
+	.is-panel .nl-fallback { flex-direction: column; align-items: stretch; gap: var(--space-3); }
 	.nl-note { font-size: var(--fs-sm); color: var(--text-faint); }
 </style>
 

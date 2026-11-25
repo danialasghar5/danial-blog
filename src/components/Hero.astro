@@ -1,44 +1,29 @@
 ---
-import { SOCIALS } from '../consts';
+// Publication masthead: what this site is, in one heading and one serif line.
+// The feed below is the content; there is no button row here.
 ---
 <section class="hero container">
   <h1 class="hero-thesis">Reliability engineering for Rails and AI backends.</h1>
   <p class="hero-lede">
-    I write about the systems that have to stay correct when things go wrong —
-    background jobs, databases, and AI backends — with each piece grounded in
-    open-source code I build and ship, not just opinions.
+    Deep dives on the systems that have to stay correct when things go wrong:
+    background jobs, Postgres, and AI backends. Each one is grounded in open-source
+    code I build and ship.
   </p>
-  <nav class="hero-links" aria-label="Quick links">
-    <a class="hero-primary" href="/blog/">Read the writing <span aria-hidden="true">&rarr;</span></a>
-    <a href="/about/">About</a>
-    <a href={SOCIALS.github} target="_blank" rel="noopener">GitHub</a>
-    <a href="/rss.xml">RSS</a>
-  </nav>
 </section>
 
 <style>
-  /* A statement, not a banner: big type, a serif lede at the reading measure,
-     one row of quiet links. The header's Services button stays the page's only
-     filled button. */
-  .hero { padding-block: var(--space-24) var(--space-16); }
+  .hero { padding-block: var(--space-16) var(--space-10); }
   .hero-thesis {
-    font-size: clamp(2.5rem, 1.6rem + 4vw, 4.25rem); font-weight: 700;
-    line-height: 1.05; letter-spacing: -0.03em;
-    margin: 0 0 var(--space-8); max-width: 16ch;
+    font-size: var(--fs-4xl); font-weight: 800;
+    line-height: 1.02; letter-spacing: -0.035em;
+    margin: 0 0 var(--space-5); max-width: 18ch;
   }
   .hero-lede {
     font-family: var(--font-prose);
-    font-size: var(--fs-xl); line-height: var(--lh-normal); color: var(--text-muted);
-    max-width: var(--measure); margin: 0 0 var(--space-10);
+    font-size: var(--fs-lg); line-height: var(--lh-normal); color: var(--text-muted);
+    max-width: 58ch; margin: 0;
   }
-  .hero-links { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-8); }
-  .hero-links a { font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted); text-decoration: none; }
-  .hero-links a:hover { color: var(--text); }
-  .hero-links .hero-primary { font-size: var(--fs-base); font-weight: 600; color: var(--brand); }
-  .hero-links .hero-primary:hover { color: var(--brand-hover); }
-
   @media (max-width: 560px) {
-    .hero { padding-block: var(--space-16) var(--space-12); }
-    .hero-lede { font-size: var(--fs-lg); }
+    .hero { padding-block: var(--space-10) var(--space-8); }
   }
 </style>

@@ -4,97 +4,145 @@ import Hero from '../components/Hero.astro';
 import PostListItem from '../components/PostListItem.astro';
 import Projects from '../components/Projects.astro';
 import Newsletter from '../components/Newsletter.astro';
+import WorkPanel from '../components/WorkPanel.astro';
+import Avatar from '../components/Avatar.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import AtLeastOnceLoop from '../components/diagram/figures/AtLeastOnceLoop.astro';
 import { getCollection } from 'astro:content';
 import { readingTime } from '../utils/reading-time';
-import { getTopic } from '../data/topics';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import { getTopic, liveTopics, topicUrl } from '../data/topics';
+import { SITE_TITLE, SITE_DESCRIPTION, NAME, ROLE } from '../consts';
 
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-// Featured: the cornerstone "start here" piece, shown with its own diagram as
-// proof-of-depth. Falls back to the newest post if the cornerstone is absent.
+// Lead: the cornerstone "start here" piece, shown with its own diagram as
+// proof of depth. Falls back to the newest post if the cornerstone is absent.
 const FEATURED_ID = 'sidekiq-job-runs-twice-at-least-once-delivery';
 const featured = posts.find((p) => p.id === FEATURED_ID) ?? posts[0];
-const recent = posts.filter((p) => p.id !== featured?.id).slice(0, 5);
+const feed = posts.filter((p) => p.id !== featured?.id).slice(0, 6);
 const featuredTopic = getTopic(featured?.data.category);
+const counts = Object.fromEntries(liveTopics().map((t) => [t.slug, posts.filter((p) => p.data.category === t.slug).length]));
 ---
 
 <Page title={`${SITE_TITLE} — Reliability Engineering for Rails & AI Backends`} description={SITE_DESCRIPTION}>
-	<Hero />
+  <Hero />
 
-	{featured && (
-	  <section class="container featured">
-	    <div class="featured-inner">
-	      <div class="featured-text">
-	        <p class="eyebrow">Featured writing</p>
-	        <h2 class="featured-title"><a href={`/blog/${featured.id}/`}>{featured.data.title}</a></h2>
-	        <p class="featured-dek">{featured.data.description}</p>
-	        <div class="featured-meta">
-	          {featuredTopic && <span>{featuredTopic.title}</span>}
-	          {featuredTopic && <span class="dot">·</span>}
-	          <FormattedDate date={featured.data.pubDate} />
-	          <span class="dot">·</span>
-	          <span>{readingTime(featured.body)}</span>
-	        </div>
-	        <a class="featured-cta" href={`/blog/${featured.id}/`}>Read the article →</a>
-	      </div>
-	      <div class="featured-figure" aria-hidden="false">
-	        <AtLeastOnceLoop />
-	      </div>
-	    </div>
-	  </section>
-	)}
+  <div class="container home-grid">
+    <div class="feed">
+      {featured && (
+        <article class="lead">
+          <h2 class="lead-title"><a href={`/blog/${featured.id}/`}>{featured.data.title.split('::').map((part, i) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</a></h2>
+          <p class="lead-dek">{featured.data.description}</p>
+          <p class="lead-meta">
+            <Avatar size={28} />
+            <span class="lead-author">{NAME}</span>
+            <span class="dot" aria-hidden="true">·</span>
+            <FormattedDate date={featured.data.pubDate} />
+            {featuredTopic && <span class="dot" aria-hidden="true">·</span>}
+            {featuredTopic && <a href={topicUrl(featuredTopic.slug)}>{featuredTopic.title}</a>}
+            <span class="dot" aria-hidden="true">·</span>
+            <span>{readingTime(featured.body)}</span>
+          </p>
+          <div class="lead-figure">
+            <AtLeastOnceLoop />
+          </div>
+        </article>
+      )}
 
-	{recent.length > 0 && (
-	  <section class="container block">
-	    <div class="section-head">
-	      <h2>Recent writing</h2>
-	      <a class="more" href="/blog/">All posts &rarr;</a>
-	    </div>
-	    <div class="home-list">
-	      {recent.map((post) => <PostListItem post={post} compact />)}
-	    </div>
-	  </section>
-	)}
+      {feed.map((post) => <PostListItem post={post} />)}
 
-	<Projects
-	  heading="Selected work"
-	  blurb="Open-source systems and experiments behind the ideas I write about."
-	/>
-	<Newsletter />
+      <p class="feed-more"><a href="/blog/">All {posts.length} articles <span aria-hidden="true">&rarr;</span></a></p>
+    </div>
+
+    <div class="rail">
+      <div class="rail-sticky">
+        <WorkPanel />
+        <Newsletter variant="panel" />
+        <nav class="rail-block" aria-labelledby="rail-topics">
+          <h2 class="rail-heading" id="rail-topics">Topics</h2>
+          <ul class="rail-topics">
+            {liveTopics().map((t) => (
+              <li><a href={topicUrl(t.slug)}>{t.title}</a> <span>{counts[t.slug]}</span></li>
+            ))}
+          </ul>
+        </nav>
+        <section class="rail-block rail-author" aria-labelledby="rail-author">
+          <h2 class="rail-heading" id="rail-author">About the author</h2>
+          <p class="author-line"><Avatar size={36} /> <span><strong>{NAME}</strong><br />{ROLE}</span></p>
+          <p class="author-bio">I build and fix production Rails systems: background jobs, Postgres and AI-backed workflows. <a href="/about/">More about me</a></p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <Projects
+    heading="Selected work"
+    blurb="Open-source systems and experiments behind the ideas I write about."
+  />
 </Page>
 
 <style>
-  .block { padding-block: var(--space-12); }
-
-  /* Featured lead — an editorial pairing of the cornerstone piece and its
-     diagram. A top rule, not a heavy card, so it reads as writing, not product. */
-  .featured { padding-block: var(--space-12); }
-  .featured-inner {
-    display: grid; grid-template-columns: 1fr; gap: var(--space-10);
-    padding-top: var(--space-10); border-top: 1px solid var(--border);
-    align-items: center;
+  /* Feed on the left, a sticky rail on the right (Honeybadger's blog index). */
+  .home-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-12);
+    padding-bottom: var(--space-16);
   }
-  @media (min-width: 900px) {
-    .featured-inner { grid-template-columns: 1fr 1fr; gap: var(--space-16); }
+  @media (min-width: 1000px) {
+    .home-grid { grid-template-columns: minmax(0, 1fr) var(--rail); gap: var(--space-16); }
   }
-  .featured-text { min-width: 0; }
-  .featured-title { font-size: var(--fs-2xl); font-weight: 700; line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); margin: var(--space-2) 0 var(--space-4); max-width: 20ch; }
-  .featured-title a { color: var(--text); }
-  .featured-title a:hover { color: var(--brand); }
-  .featured-dek { font-family: var(--font-prose); font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0 0 var(--space-6); max-width: 54ch; }
-  .featured-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: var(--fs-sm); color: var(--text-faint); margin-bottom: var(--space-6); }
-  .featured-meta .dot { color: var(--text-faint); }
-  .featured-cta { font-weight: 600; font-size: var(--fs-base); color: var(--brand); }
-  .featured-cta:hover { color: var(--brand-hover); }
-  /* The figure component brings its own canvas + caption; give it room. */
-  .featured-figure { min-width: 0; }
+  .feed { min-width: 0; border-top: 1px solid var(--border); }
+  .feed > :global(.entry:first-child) { border-top: 0; }
 
-  /* The section head already draws the top hairline. */
-  .home-list { border-bottom: 1px solid var(--border); }
-  .home-list > :global(.post-row:first-child) { border-top: 0; }
+  .lead { padding: var(--space-10) 0 var(--space-10); }
+  .lead-title {
+    font-size: var(--fs-3xl); font-weight: 800; line-height: 1.06;
+    letter-spacing: var(--tracking-tighter); margin: 0; max-width: 22ch;
+  }
+  .lead-title a { color: var(--text); text-decoration: none; }
+  .lead-title a:hover { color: var(--brand); }
+  .lead-dek {
+    font-family: var(--font-prose); font-size: var(--fs-xl); line-height: 1.5;
+    color: var(--text-muted); margin: var(--space-4) 0 0; max-width: 56ch;
+  }
+  .lead-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem;
+    margin: var(--space-5) 0 0; font-size: var(--fs-sm); color: var(--text-faint);
+  }
+  .lead-meta a { color: var(--text-faint); text-decoration: none; }
+  .lead-meta a:hover { color: var(--brand); }
+  .lead-author { color: var(--text-muted); font-weight: 500; }
+  .dot { color: var(--border-strong); }
+  .lead-figure { margin-top: var(--space-8); }
+  /* The diagram's own title reads as a kicker in the feed; phones get no figure (its labels would shrink below legibility). */
+  .lead-figure :global(.dg-canvas-label) { display: none; }
+  @media (max-width: 639px) { .lead-figure { display: none; } }
+  .lead-figure :global(.dg-figure) { margin: 0; }
+
+  .feed-more { margin: 0; padding-top: var(--space-6); border-top: 1px solid var(--border); }
+  .feed-more a { font-weight: 700; font-size: var(--fs-base); color: var(--brand); text-decoration: none; }
+  .feed-more a:hover { color: var(--brand-hover); }
+
+  /* Rail */
+  .rail { min-width: 0; padding-top: var(--space-10); }
+  .rail-sticky { display: flex; flex-direction: column; gap: var(--space-8); }
+  @media (min-width: 1000px) {
+    .rail-sticky { position: sticky; top: calc(var(--header-h) + var(--space-6)); }
+  }
+  .rail-topics { list-style: none; margin: 0; padding: 0; }
+  .rail-topics li {
+    display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4);
+    padding: var(--space-2) 0; border-top: 1px solid var(--border);
+    font-size: var(--fs-base);
+  }
+  .rail-topics li:first-child { border-top: 0; }
+  .rail-topics a { color: var(--text); font-weight: 500; text-decoration: none; }
+  .rail-topics a:hover { color: var(--brand); }
+  .rail-topics span { color: var(--text-faint); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+  .author-line { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-3); font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.35; }
+  .author-line strong { color: var(--text); font-size: var(--fs-base); }
+  .author-bio { font-family: var(--font-prose); font-size: var(--fs-base); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; }
+  .author-bio a { color: var(--brand); }
 </style>

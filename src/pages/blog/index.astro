@@ -4,85 +4,48 @@ import PageHeader from '../../components/PageHeader.astro';
 import { getCollection } from 'astro:content';
 import PostListItem from '../../components/PostListItem.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import WorkPanel from '../../components/WorkPanel.astro';
+import Newsletter from '../../components/Newsletter.astro';
 import { SITE_TITLE } from '../../consts';
-import { liveTopics, getTopic } from '../../data/topics';
 
 const posts = (await getCollection('blog'))
 	.filter((p) => !p.data.draft)
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-// Topic filter — only surface hubs that actually have posts here (folds the old
-// standalone "Topics" nav item into the writing index).
-const usedCategories = new Set(posts.map((p) => p.data.category).filter(Boolean));
-const topics = liveTopics().filter((t) => usedCategories.has(t.slug));
 ---
 
 <Page title={`Writing on Rails Reliability & Background Jobs — ${SITE_TITLE}`} description="Production-grounded writing on Rails architecture, background processing, database reliability, and AI-powered backends." mainClass="container">
 	<Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Writing' }]} />
-	<PageHeader class="blog-header" eyebrow="Writing" title="Notes on shipping production software">
-		<p class="page-lede">Deep dives on Rails architecture, background processing, database reliability, and AI-powered backends — each one grounded in systems I build and ship.</p>
+	<PageHeader class="blog-header" title="Writing">
+		<p class="page-lede">Deep dives on Rails reliability: background jobs, Postgres concurrency and AI-powered backends, each grounded in systems I build and ship.</p>
 	</PageHeader>
 
 	{posts.length === 0 ? (
-		<p class="no-posts">Articles are on the way — deep dives on backend architecture, async pipelines, and AI systems. Check back soon.</p>
+		<p class="no-posts">Articles are on the way: deep dives on backend architecture, async pipelines, and AI systems. Check back soon.</p>
 	) : (
-		<>
-			{topics.length > 1 && (
-				<div class="filters" role="tablist" aria-label="Filter writing by topic">
-					<button class="filter active" data-cat="all" role="tab" aria-selected="true">All</button>
-					{topics.map((t) => (
-						<button class="filter" data-cat={t.slug} role="tab" aria-selected="false">{t.title}</button>
-					))}
-				</div>
-			)}
-
-			<section class="post-list" id="post-list">
+		<div class="index-grid">
+			<section class="post-list" aria-label="All articles">
 				{posts.map((post) => <PostListItem post={post} />)}
 			</section>
-			<p class="empty" id="empty-state" hidden>No posts in that topic yet.</p>
-		</>
+			<div class="rail">
+				<div class="rail-sticky">
+					<WorkPanel />
+					<Newsletter variant="panel" />
+				</div>
+			</div>
+		</div>
 	)}
-
-	<script>
-		const filters = document.querySelectorAll<HTMLButtonElement>('.filter');
-		const rows = document.querySelectorAll<HTMLElement>('#post-list > [data-category]');
-		const empty = document.getElementById('empty-state');
-		filters.forEach((btn) => {
-			btn.addEventListener('click', () => {
-				const cat = btn.getAttribute('data-cat');
-				filters.forEach((b) => {
-					const on = b === btn;
-					b.classList.toggle('active', on);
-					b.setAttribute('aria-selected', String(on));
-				});
-				let shown = 0;
-				rows.forEach((row) => {
-					const match = cat === 'all' || row.getAttribute('data-category') === cat;
-					row.hidden = !match;
-					if (match) shown++;
-				});
-				if (empty) empty.hidden = shown !== 0;
-			});
-		});
-	</script>
 </Page>
 
 <style>
-	main { padding-block: var(--space-12) var(--space-8); }
-	.blog-header { margin-bottom: var(--space-10); max-width: 62ch; }
-	.blog-header :global(.page-title) { max-width: 20ch; }
+	main { padding-block: var(--space-10) var(--space-16); }
+	.blog-header { margin-bottom: var(--space-8); }
 	.no-posts { color: var(--text-muted); font-size: var(--fs-lg); line-height: var(--lh-normal); max-width: 60ch; padding: var(--space-8) 0; border-top: 1px solid var(--border); margin-top: var(--space-6); }
 
-	.filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: var(--space-4); }
-	.filter {
-		font: inherit; font-size: var(--fs-sm); font-weight: 500;
-		padding: .4rem .85rem; border-radius: 999px; cursor: pointer;
-		border: 1px solid var(--border); background: transparent; color: var(--text-muted);
-		transition: color .15s ease, background .15s ease, border-color .15s ease;
-	}
-	.filter:hover { color: var(--text); border-color: var(--border-strong); }
-	.filter.active { color: var(--brand-contrast); background: var(--brand); border-color: var(--brand); }
-
-	.post-list { border-bottom: 1px solid var(--border); }
-	.empty { color: var(--text-muted); text-align: center; padding: var(--space-12) 0; }
+	.index-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-12); }
+	@media (min-width: 1000px) { .index-grid { grid-template-columns: minmax(0, 1fr) var(--rail); gap: var(--space-16); } }
+	.post-list { min-width: 0; border-bottom: 1px solid var(--border); }
+	.rail { min-width: 0; padding-top: var(--space-8); }
+	.rail-sticky { display: flex; flex-direction: column; gap: var(--space-8); }
+	@media (min-width: 1000px) { .rail-sticky { position: sticky; top: calc(var(--header-h) + var(--space-6)); } }
 </style>
