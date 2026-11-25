@@ -5,6 +5,9 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import FormattedDate from '../components/FormattedDate.astro';
 import Newsletter from '../components/Newsletter.astro';
 import ServicesCta from '../components/ServicesCta.astro';
+import WorkPanel from '../components/WorkPanel.astro';
+import Avatar from '../components/Avatar.astro';
+import { NAME } from '../consts';
 import { readingTime } from '../utils/reading-time';
 import { getTopic, topicUrl } from '../data/topics';
 import { breadcrumbJsonLd } from '../utils/breadcrumbs';
@@ -88,14 +91,17 @@ const showUpdated =
 	<Fragment slot="before-main">
 		<div class="read-progress" aria-hidden="true"><span id="read-progress-bar"></span></div>
 	</Fragment>
+	<div class="post-layout">
 	<article class="blog-post reading-column">
-		<a class="back" href="/blog/">&larr; Writing</a>
 
 		<header class="post-header">
 			{/* Allow a line break after "::" so long Ruby constants wrap at a sensible point. */}
 			<h1 class="post-title">{title.split('::').map((part, i) => <>{i > 0 && <>::<wbr /></>}{part}</>)}</h1>
 			{description && <p class="post-desc">{description}</p>}
 			<p class="post-meta">
+				<Avatar size={36} />
+				<span class="meta-author">{NAME}</span>
+				<span class="dot" aria-hidden="true">·</span>
 				{topic && (topic.live
 					? <a class="meta-topic" href={topicUrl(topic.slug)}>{topic.title}</a>
 					: <span class="meta-topic">{topic.title}</span>)}
@@ -115,7 +121,7 @@ const showUpdated =
 		)}
 
 		{showToc && (
-			<details class="contents" open>
+			<details class="contents toc-inline" open>
 				<summary>Contents</summary>
 				<ol>
 					{toc.map((h) => (
@@ -174,6 +180,23 @@ const showUpdated =
 		</footer>
 	</article>
 
+	<aside class="post-rail" aria-label="Article sidebar">
+		<div class="rail-sticky">
+			{showToc && (
+				<nav class="toc-rail" aria-labelledby="toc-rail-head">
+					<h2 class="rail-heading" id="toc-rail-head">On this page</h2>
+					<ol>
+						{toc.map((h) => (
+							<li class:list={[{ sub: h.depth === 3 }]}><a href={`#${h.slug}`} data-toc={h.slug}>{h.text}</a></li>
+						))}
+					</ol>
+				</nav>
+			)}
+			<WorkPanel category={category} />
+		</div>
+	</aside>
+	</div>
+
 	<script>
 		// Reading-progress bar: a thin fill under the header tracking how far
 		// through the article you are.
@@ -189,6 +212,22 @@ const showUpdated =
 		addEventListener('scroll', onScroll, { passive: true });
 		addEventListener('resize', onScroll, { passive: true });
 		onScroll();
+
+		// "On this page": highlight the section currently being read.
+		const links = new Map(
+			[...document.querySelectorAll<HTMLAnchorElement>('.toc-rail a[data-toc]')].map((a) => [a.dataset.toc!, a]),
+		);
+		const heads = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+		if (heads.length) {
+			const mark = () => {
+				const y = 120;
+				let current = heads[0];
+				for (const h of heads) if (h.getBoundingClientRect().top <= y) current = h;
+				links.forEach((a, id) => a.toggleAttribute('aria-current', id === current.id));
+			};
+			addEventListener('scroll', mark, { passive: true });
+			mark();
+		}
 	</script>
 	<Fragment slot="after-main">
 		<Newsletter />
@@ -196,8 +235,37 @@ const showUpdated =
 </Page>
 
 <style>
-	/* Full-width main; the article itself is the centred .reading-column. */
+	/* Reading column on the left, sticky sidebar on the right (Honeybadger's
+	   article page). Below 1100px the sidebar drops and the inline contents show. */
 	main { padding: var(--space-12) var(--space-6) var(--space-8); }
+	.post-layout {
+		max-width: var(--container); margin-inline: auto;
+		display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-16);
+	}
+	.post-rail { display: none; }
+	@media (min-width: 1100px) {
+		.post-layout { grid-template-columns: minmax(0, 1fr) var(--rail); }
+		.post-layout .reading-column { margin-inline: 0 auto; }
+		.post-rail { display: block; }
+		.toc-inline { display: none; }
+		/* Diagrams stay in the column beside the sidebar. */
+		.post-layout .reading-column :global(.prose > :is(.dg-figure, img.diagram)) { width: 100%; margin-inline: 0; }
+	}
+	.rail-sticky {
+		position: sticky; top: calc(var(--header-h) + var(--space-8));
+		display: flex; flex-direction: column; gap: var(--space-8);
+		max-height: calc(100vh - var(--header-h) - var(--space-12)); overflow-y: auto;
+		scrollbar-width: thin;
+	}
+	.toc-rail ol { list-style: none; margin: 0; padding: 0; }
+	.toc-rail a {
+		display: block; padding: .35rem 0;
+		font-size: var(--fs-sm); line-height: var(--lh-snug);
+		color: var(--text-muted); text-decoration: none;
+	}
+	.toc-rail li.sub a { padding-left: var(--space-4); font-size: var(--fs-xs); }
+	.toc-rail a:hover { color: var(--text); }
+	.toc-rail a[aria-current] { color: var(--brand); font-weight: 600; }
 
 	.read-progress {
 		position: fixed; top: var(--header-h); left: 0; right: 0; height: 2px;
@@ -205,16 +273,10 @@ const showUpdated =
 	}
 	.read-progress span { display: block; height: 100%; width: 0; background: var(--brand); }
 
-	.back {
-		display: inline-block; margin-bottom: var(--space-10);
-		font-size: var(--fs-sm); color: var(--text-muted); text-decoration: none;
-	}
-	.back:hover { color: var(--text); }
-
 	/* Header: title, summary, one meta line. */
 	.post-header { margin-bottom: var(--space-10); }
 	.post-title {
-		font-size: var(--fs-4xl); font-weight: 700;
+		font-size: clamp(2.2rem, 1.5rem + 2.6vw, 3.25rem); font-weight: 800;
 		letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight);
 		margin: 0 0 var(--space-5);
 	}
@@ -224,10 +286,12 @@ const showUpdated =
 		margin: 0 0 var(--space-6);
 	}
 	.post-meta {
-		display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem;
+		display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem;
 		margin: 0; font-size: var(--fs-sm); color: var(--text-faint);
 		font-variant-numeric: tabular-nums;
 	}
+	.meta-author { color: var(--text); font-weight: 600; }
+	.dot { color: var(--border-strong); }
 	.meta-topic { color: var(--text-muted); font-weight: 500; text-decoration: none; }
 	a.meta-topic:hover { color: var(--brand); }
 	.meta-updated { color: var(--text-muted); }
