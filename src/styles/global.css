@@ -1,53 +1,56 @@
 /*
-  Design system — danialasghar.com  ("Ink & Signal")
-  Near-monochrome surfaces; one forest-green accent for links, current state and
-  the primary action; clay only for hazards. Hierarchy comes from type and space.
+  Design system: danialasghar.com, "Developer Publication"
+  A developer publication in the Honeybadger / Medium / Ruby Weekly tradition.
+  White page, near-black ink, one ruby for the wordmark, links and the primary
+  action. Heavy grotesk titles, a Medium-style serif for reading, mono for code.
+  Diagram colours are semantic (green = correct path, clay = failure) and never
+  borrow the brand ruby. Full reference: DESIGN.md.
 
-  Type roles (enforced through the --font-* tokens; never name a font directly):
-    --font-sans  IBM Plex Sans    headings, navigation, UI, labels
-    --font-prose Source Serif 4   long-form reading text (.prose, ledes, deks)
-    --font-mono  JetBrains Mono   code, numbers in tools, diagram labels
+  Type roles (use the --font-* tokens; never name a font directly):
+    --font-sans  Bricolage Grotesque  titles, navigation, UI, labels
+    --font-prose Charter / Charis SIL reading text (.prose, ledes, deks)
+    --font-mono  JetBrains Mono       code, numbers in tools, diagram labels
 */
 
 :root {
-	/* ---- Color: light ("crisp paper") ---- */
-	--bg: #FCFCFB;            /* page */
-	--card-bg: #FFFFFF;       /* surface: raised panels, code */
-	--bg-subtle: #F5F5F3;     /* surface-2: inline code, hover */
+	color-scheme: light;
+	/* ---- Color: light ---- */
+	--bg: #FFFFFF;            /* page */
+	--card-bg: #FFFFFF;       /* bordered panels */
+	--bg-subtle: #F5F4F2;     /* code, sub-bar, hover */
 	--bg-elevated: #FFFFFF;
-	--text: #0B0B0C;          /* primary */
-	--text-muted: #55555C;    /* secondary: subtitles, captions */
-	--text-faint: #6B6B71;    /* meta: ≥4.5:1 on every light surface */
-	--border: #E7E7E4;        /* hairline */
-	--border-strong: #D6D6D2; /* inputs, table header rule */
+	--text: #121216;          /* ink */
+	--text-muted: #4D4D57;    /* deks, secondary */
+	--text-faint: #696973;    /* meta: >=4.5:1 on --bg and --bg-subtle */
+	--border: #E6E5E1;        /* hairline */
+	--border-strong: #CFCDC8; /* inputs, card edges */
 
-	--brand: #1F6F55;         /* forest green: links, current state, primary action */
-	--brand-hover: #185A45;
+	--brand: #B8123A;         /* ruby: wordmark, links, primary action, current state */
+	--brand-hover: #960C2D;
 	--brand-contrast: #FFFFFF;
-	--brand-soft: color-mix(in srgb, var(--brand) 10%, transparent);
-	--brand-ring: color-mix(in srgb, var(--brand) 28%, transparent);
+	--brand-soft: color-mix(in srgb, var(--brand) 8%, transparent);
+	--brand-ring: color-mix(in srgb, var(--brand) 35%, transparent);
+	--selection: color-mix(in srgb, var(--brand) 18%, transparent);
 
-	/* ---- Diagram system: light ("blueprint on paper") ----
-	   green = guarantees/correct paths · clay = failures/hazards · grey = infra */
-	--dg-canvas: #F7F7F6;
+	/* ---- Diagram system: light. green = correct path, clay = failure, grey = infra ---- */
+	--dg-canvas: #FAFAF8;
 	--dg-surface: #FFFFFF;
-	--dg-boundary: #F1F1EF;
-	--dg-stroke: #D6D6D2;
-	--dg-stroke-2: #B9B9B4;
-	--dg-label: #0B0B0C;
-	--dg-sub: #55555C;
-	--dg-mono: #55555C;
-	--dg-flow: #A3A3A0;
-	--dg-accent: #1F6F55;
-	--dg-accent-fill: #E5F1EB;
+	--dg-boundary: #F3F2EF;
+	--dg-stroke: #D3D1CC;
+	--dg-stroke-2: #B6B4AE;
+	--dg-label: #121216;
+	--dg-sub: #4D4D57;
+	--dg-mono: #4D4D57;
+	--dg-flow: #A19F99;
+	--dg-accent: #18704F;
+	--dg-accent-fill: #E3F1EA;
 	--dg-accent-ink: #FFFFFF;
-	--dg-hazard: #B4432F;     /* clay: also the calculator's risk state */
+	--dg-hazard: #B4432F;     /* also the calculator's risk state */
 	--dg-hazard-fill: #FBEDEA;
-	--dg-decision: #F0F0EE;
-	--dg-future: #6B6B71;
+	--dg-decision: #F1F0ED;
+	--dg-future: #696973;
 
-	/* ---- Spacing: one linear scale, --space-N = N × 4px ----
-	   Steps follow the Tailwind numbering, so the name always tells the size. */
+	/* ---- Spacing: --space-N = N x 4px ---- */
 	--space-1: 4px;
 	--space-2: 8px;
 	--space-3: 12px;
@@ -62,89 +65,88 @@
 	--space-24: 96px;
 	--space-32: 128px;
 
-	/* ---- Reading measure ----
-	   ch is relative to the element's own font, so apply --measure on the text
-	   element itself (e.g. .prose), not on a sans-serif wrapper. */
-	--measure: 68ch;          /* body text column (≈683px at 19px Source Serif) */
-	--measure-wide: 880px;    /* code blocks, diagrams, tables */
+	/* ---- Reading measure (apply on the serif element itself) ---- */
+	--measure: 66ch;          /* ~700px at 20px Charis */
+	--measure-wide: 880px;    /* diagrams */
 
 	/* ---- Type scale ---- */
 	--fs-xs: 0.8125rem;
 	--fs-sm: 0.9375rem;
-	--fs-base: 1rem;
-	--fs-lg: 1.1875rem;      /* 19px — article body */
-	--fs-xl: 1.375rem;
-	--fs-2xl: clamp(1.6rem, 1.1rem + 2vw, 2rem);
-	--fs-3xl: clamp(2rem, 1.4rem + 2.6vw, 2.6rem);
-	--fs-4xl: clamp(2.4rem, 1.6rem + 3.4vw, 3.4rem);
+	--fs-base: 1.0625rem;    /* 17px UI text */
+	--fs-lg: 1.25rem;        /* 20px article body */
+	--fs-xl: 1.5rem;
+	--fs-2xl: clamp(1.6rem, 1.2rem + 1.6vw, 2rem);
+	--fs-3xl: clamp(2rem, 1.4rem + 2.4vw, 2.75rem);
+	--fs-4xl: clamp(2.5rem, 1.6rem + 3.8vw, 4rem);
 
-	--lh-tight: 1.15;
-	--lh-snug: 1.35;
-	--lh-normal: 1.6;
-	--lh-prose: 1.7;
+	--lh-tight: 1.08;
+	--lh-snug: 1.3;
+	--lh-normal: 1.55;
+	--lh-prose: 1.65;
 
-	--tracking-tight: -0.011em;
-	--tracking-tighter: -0.02em;
-	--tracking-wide: 0.06em;
+	--tracking-tight: -0.015em;
+	--tracking-tighter: -0.03em;
+	--tracking-wide: 0.04em;
 
-	/* ---- Fonts (self-hosted via astro.config; vars carry their own fallbacks) ---- */
-	--font-sans: var(--font-plex), system-ui, -apple-system, "Segoe UI", sans-serif;
-	--font-prose: var(--font-serif), Georgia, Cambria, "Times New Roman", serif;
+	/* ---- Fonts (self-hosted via astro.config) ---- */
+	--font-sans: var(--font-display), system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-prose: Charter, "Bitstream Charter", var(--font-serif), Georgia, Cambria, serif;
 	--font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-	/* ---- Radius ---- */
-	--radius-sm: 6px;
-	--radius: 10px;
-	--radius-lg: 16px;
+	/* ---- Radius: square-ish, editorial ---- */
+	--radius-sm: 4px;
+	--radius: 6px;
+	--radius-lg: 8px;
 	--radius-full: 999px;
 
-	/* ---- Shadows: subtle, editorial ---- */
-	--shadow-sm: 0 1px 2px rgba(26, 26, 24, .04);
-	--shadow: 0 1px 3px rgba(26, 26, 24, .05), 0 4px 14px rgba(26, 26, 24, .06);
-	--shadow-lg: 0 8px 30px rgba(26, 26, 24, .09);
+	/* ---- Shadows: only the stuck header and focusable panels ---- */
+	--shadow-sm: 0 1px 2px rgba(18, 18, 22, .05);
+	--shadow: 0 2px 6px rgba(18, 18, 22, .06), 0 8px 24px rgba(18, 18, 22, .06);
+	--shadow-lg: 0 10px 32px rgba(18, 18, 22, .10);
 
 	/* ---- Layout ---- */
-	--container: 1120px;
-	--container-prose: 920px;   /* centered article reading column (text + code + tables); responsive below via padding */
-	--header-h: 56px;
+	--container: 1180px;
+	--rail: 300px;            /* right rail on home, blog, posts */
+	--header-h: 64px;
 }
 
 [data-theme="dark"] {
-	/* ---- Color: dark ("obsidian") ---- */
-	--bg: #0A0A0B;            /* page */
-	--card-bg: #111113;       /* surface: raised panels, code */
-	--bg-subtle: #18181B;     /* surface-2: inline code, hover */
-	--bg-elevated: #111113;
-	--text: #EDEDEF;
-	--text-muted: #A1A1AA;
-	--text-faint: #8B8B94;    /* meta: ≥4.5:1 on every dark surface */
-	--border: #1F1F23;        /* hairline */
-	--border-strong: #2A2A30;
+	color-scheme: dark;
+	/* ---- Color: dark ---- */
+	--bg: #0F0F12;
+	--card-bg: #15151A;
+	--bg-subtle: #1A1A20;
+	--bg-elevated: #15151A;
+	--text: #EDEDF0;
+	--text-muted: #B0B0BA;
+	--text-faint: #8F8F9A;
+	--border: #26262D;
+	--border-strong: #383841;
 
-	--brand: #62C9A0;
-	--brand-hover: #7DD6B2;
-	--brand-contrast: #0A0A0B;
+	--brand: #FF6F8E;
+	--brand-hover: #FF96AC;
+	--brand-contrast: #0F0F12;
 
-	/* ---- Diagram system: dark ("schematic on ink") ---- */
-	--dg-canvas: #0A0A0B;
-	--dg-surface: #111113;
-	--dg-boundary: #0E0E10;
-	--dg-stroke: #2A2A30;
-	--dg-stroke-2: #45454D;
-	--dg-label: #EDEDEF;
-	--dg-sub: #A1A1AA;
-	--dg-mono: #A1A1AA;
-	--dg-flow: #6B6B73;
-	--dg-accent: #62C9A0;
-	--dg-accent-fill: #11251D;
-	--dg-accent-ink: #0A0A0B;
+	/* ---- Diagram system: dark ---- */
+	--dg-canvas: #121216;
+	--dg-surface: #17171C;
+	--dg-boundary: #131317;
+	--dg-stroke: #33333B;
+	--dg-stroke-2: #4A4A53;
+	--dg-label: #EDEDF0;
+	--dg-sub: #B0B0BA;
+	--dg-mono: #B0B0BA;
+	--dg-flow: #6E6E78;
+	--dg-accent: #5FC89E;
+	--dg-accent-fill: #112820;
+	--dg-accent-ink: #0F0F12;
 	--dg-hazard: #F08A6E;
-	--dg-hazard-fill: #2A1714;
-	--dg-decision: #141416;
-	--dg-future: #8B8B94;
+	--dg-hazard-fill: #2B1814;
+	--dg-decision: #18181D;
+	--dg-future: #8F8F9A;
 
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
-	--shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .45);
+	--shadow: 0 2px 6px rgba(0, 0, 0, .35), 0 8px 24px rgba(0, 0, 0, .4);
 	--shadow-lg: 0 10px 34px rgba(0, 0, 0, .55);
 }
 
@@ -165,7 +167,10 @@ body {
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 	transition: background .2s ease, color .2s ease;
+	caret-color: var(--brand);
 }
+::selection { background: var(--selection); color: inherit; }
+html { scrollbar-color: var(--border-strong) transparent; accent-color: var(--brand); }
 
 @media (prefers-reduced-motion: reduce) {
 	html { scroll-behavior: auto; }
@@ -179,10 +184,11 @@ h1, h2, h3, h4, h5, h6 {
 	color: var(--text);
 	line-height: var(--lh-tight);
 	letter-spacing: var(--tracking-tight);
-	font-weight: 600;
+	font-weight: 700;
+	text-wrap: balance;
 }
-h1 { font-size: var(--fs-4xl); letter-spacing: var(--tracking-tighter); font-weight: 700; }
-h2 { font-size: var(--fs-3xl); }
+h1 { font-size: var(--fs-4xl); letter-spacing: var(--tracking-tighter); font-weight: 800; }
+h2 { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); }
 h3 { font-size: var(--fs-2xl); }
 h4 { font-size: var(--fs-xl); }
 h5 { font-size: var(--fs-lg); }
@@ -219,7 +225,7 @@ main { display: block; }
 /* ---- Buttons ---- */
 .btn {
 	display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-	padding: 10px 18px;
+	padding: 11px 18px;
 	border-radius: var(--radius);
 	font-family: var(--font-sans);
 	font-weight: 600; font-size: var(--fs-sm);
@@ -230,10 +236,13 @@ main { display: block; }
 	transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease;
 }
 .btn-primary { background: var(--brand); color: var(--brand-contrast) !important; }
-.btn-primary:hover { background: var(--brand-hover); box-shadow: var(--shadow-sm); }
-/* .btn-secondary and legacy .btn-ghost are the same outline style */
-.btn-secondary, .btn-ghost { border-color: var(--border-strong); color: var(--text); background: transparent; }
-.btn-secondary:hover, .btn-ghost:hover { background: var(--bg-subtle); border-color: var(--text-faint); }
+.btn-primary:hover { background: var(--brand-hover); }
+/* Outline in ruby: the Honeybadger "Let me in" button. */
+.btn-outline { border-color: var(--brand); color: var(--brand); background: transparent; }
+.btn-outline:hover { background: var(--brand-soft); color: var(--brand-hover); }
+/* .btn-secondary and legacy .btn-ghost: neutral outline */
+.btn-secondary, .btn-ghost { border-color: var(--border-strong); color: var(--text); background: var(--bg); }
+.btn-secondary:hover, .btn-ghost:hover { border-color: var(--text-faint); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; box-shadow: none; }
 .btn-sm { padding: 7px 13px; font-size: var(--fs-xs); }
 
@@ -242,24 +251,25 @@ main { display: block; }
 	background: var(--card-bg);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-lg);
-	transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+	transition: border-color .15s ease;
 }
-.card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-strong); }
+.card:hover { border-color: var(--border-strong); }
 
-/* ---- Eyebrow / labels ---- */
-.eyebrow {
-	display: inline-block;
-	color: var(--brand);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: var(--tracking-wide);
-	text-transform: uppercase;
-	margin: 0 0 var(--space-2);
+/* ---- Rail panel: the one bordered box in the right rail (Honeybadger's
+   newsletter card). Never nested, never a grid of them. ---- */
+.panel {
+	background: var(--card-bg);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-lg);
+	padding: var(--space-6);
 }
+.panel h2, .panel h3 { font-size: var(--fs-xl); font-weight: 800; letter-spacing: var(--tracking-tight); margin: 0 0 var(--space-3); }
+.panel p { font-family: var(--font-prose); color: var(--text-muted); font-size: var(--fs-base); line-height: var(--lh-normal); }
+.rail-heading { font-size: var(--fs-sm); font-weight: 700; color: var(--text); margin: 0 0 var(--space-3); letter-spacing: 0; }
 
 /* ---- Page header (PageHeader.astro) ---- */
-.page-title { font-size: var(--fs-3xl); font-weight: 800; letter-spacing: var(--tracking-tighter); margin: 0 0 var(--space-4); }
-.page-lede { font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; }
+.page-title { font-size: var(--fs-4xl); font-weight: 800; letter-spacing: var(--tracking-tighter); line-height: var(--lh-tight); margin: 0 0 var(--space-4); }
+.page-lede { font-family: var(--font-prose); font-size: var(--fs-lg); color: var(--text-muted); line-height: var(--lh-normal); margin: 0; max-width: 60ch; }
 
 /* ---- Chips ---- */
 .chip {
@@ -280,7 +290,7 @@ main { display: block; }
 	padding-bottom: var(--space-4);
 	border-bottom: 1px solid var(--border);
 }
-.section-head h2 { font-size: var(--fs-2xl); margin: 0; }
+.section-head h2 { font-size: var(--fs-2xl); font-weight: 800; margin: 0; }
 .section-head .more { color: var(--brand); font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; }
 .section-head .more:hover { opacity: .8; }
 
@@ -301,8 +311,9 @@ code {
 	background: var(--bg-subtle);
 	color: var(--text);
 	border: 1px solid var(--border);
-	padding: .12em .38em;
+	padding: .1em .35em;
 	border-radius: var(--radius-sm);
+	overflow-wrap: anywhere;
 }
 /* Code blocks (Shiki dual-theme). Container styling is ours; syntax colors are
    the light theme by default, swapped to dark tokens under [data-theme="dark"]. */
@@ -331,7 +342,7 @@ pre code {
 }
 
 blockquote {
-	border-left: 3px solid var(--brand);
+	border-left: 3px solid var(--text);
 	padding: 0 0 0 var(--space-4);
 	margin: 0;
 	color: var(--text-muted);
@@ -374,22 +385,25 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0
 	line-height: var(--lh-prose);
 }
 .prose p { margin: 0 0 var(--space-6); }
-.prose h2 { font-size: var(--fs-2xl); font-weight: 700; margin: var(--space-12) 0 var(--space-4); letter-spacing: var(--tracking-tight); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
-.prose h3 { font-size: var(--fs-xl); font-weight: 700; margin: var(--space-10) 0 var(--space-4); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose h2 { font-family: var(--font-sans); font-size: var(--fs-2xl); font-weight: 800; margin: var(--space-16) 0 var(--space-4); letter-spacing: var(--tracking-tight); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose h3 { font-family: var(--font-sans); font-size: var(--fs-xl); font-weight: 700; margin: var(--space-10) 0 var(--space-3); scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
+.prose h4 { font-family: var(--font-sans); }
 .prose h4 { scroll-margin-top: calc(var(--header-h) + var(--space-6)); }
 .prose ul, .prose ol { margin: 0 0 var(--space-6); padding-left: var(--space-6); }
 .prose li { margin-bottom: .5rem; }
 .prose img { border-radius: var(--radius); margin: var(--space-4) 0; }
-.prose a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
-.prose a:hover { text-decoration-color: var(--brand); }
+.prose a { color: var(--brand); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--brand-ring); }
+.prose a:hover { color: var(--brand-hover); text-decoration-color: currentColor; }
+.prose strong { font-weight: 700; color: var(--text); }
+/* Medium-style quote: a plain ink rule beside larger italic text, no box. */
 .prose blockquote {
-	border-left: 3px solid var(--brand);
-	padding: var(--space-2) var(--space-6);
-	margin: var(--space-6) 0;
-	color: var(--text-muted); font-style: italic;
-	background: var(--bg-subtle);
-	border-radius: 0 var(--radius) var(--radius) 0;
+	border-left: 3px solid var(--text);
+	padding: 0 0 0 var(--space-6);
+	margin: var(--space-8) 0;
+	color: var(--text); font-style: italic;
+	font-size: 1.1em;
 }
+.prose blockquote p:last-child { margin-bottom: 0; }
 .prose pre { margin: 0 0 var(--space-6); }
 .prose hr { margin: var(--space-10) 0; }
 .prose img { display: block; max-width: 100%; margin-inline: auto; }
@@ -401,7 +415,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0
 	font-family: var(--font-sans); font-size: var(--fs-sm);
 	line-height: var(--lh-snug);
 	border: 1px solid var(--border); border-radius: var(--radius);
-	overflow: hidden; margin: var(--space-4) 0 var(--space-6);
+	overflow: hidden; margin: var(--space-4) 0 var(--space-8);
+	font-variant-numeric: tabular-nums;
 }
 .prose thead th {
 	text-align: left; font-weight: 600; color: var(--text);
@@ -419,7 +434,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--space-8) 0
 
 /* ---- Reading column (articles, case studies) ----
    One centred column at the reading measure. It takes the prose font so `ch`
-   resolves against Source Serif — every child (title, meta, prose, footer)
+   resolves against the reading serif — every child (title, meta, prose, footer)
    then shares one left edge. Non-prose children reset to the UI font.
    Code blocks and tables stay in the column (one left edge for reading);
    only diagrams break out symmetrically to --measure-wide. */

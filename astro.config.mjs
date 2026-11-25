@@ -88,18 +88,18 @@ export default defineConfig({
 	fonts: [
 		{
 			provider: fontProviders.google(),
-			name: 'IBM Plex Sans',
-			cssVariable: '--font-plex',
-			weights: [400, 600, 700],
+			name: 'Bricolage Grotesque',
+			cssVariable: '--font-display',
+			weights: [400, 500, 600, 700, 800],
 			styles: ['normal'],
 			subsets: ['latin'],
 			fallbacks: ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
 		},
 		{
 			provider: fontProviders.google(),
-			name: 'Source Serif 4',
+			name: 'Charis SIL',
 			cssVariable: '--font-serif',
-			weights: [400, 600],
+			weights: [400, 700],
 			styles: ['normal', 'italic'],
 			subsets: ['latin'],
 			fallbacks: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
