@@ -1,0 +1,263 @@
+---
+// Server-rendered markup only. Defaults are rendered into value="" so the page works before JS.
+import { DEFAULT_FORM, DURATION_UNITS, RATE_UNITS } from './logic.ts';
+---
+
+<div data-tool-widget class="cap">
+	<div class="tool-fields two-col">
+		<div class="tool-field">
+			<label class="tool-label" for="cap-rate">Arrival rate</label>
+			<input class="tool-input" id="cap-rate" name="rate" inputmode="decimal" autocomplete="off" value={DEFAULT_FORM.rate} aria-describedby="cap-rate-error" />
+			<p class="tool-error" id="cap-rate-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-rateUnit">Rate unit</label>
+			<select class="tool-select" id="cap-rateUnit" name="rateUnit" aria-describedby="cap-rateUnit-error">
+				{RATE_UNITS.map((u) => <option value={u} selected={u === DEFAULT_FORM.rateUnit}>{`jobs per ${u === 's' ? 'second' : u === 'min' ? 'minute' : 'hour'}`}</option>)}
+			</select>
+			<p class="tool-error" id="cap-rateUnit-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-duration">Average job duration</label>
+			<input class="tool-input" id="cap-duration" name="duration" inputmode="decimal" autocomplete="off" value={DEFAULT_FORM.duration} aria-describedby="cap-duration-error" />
+			<p class="tool-error" id="cap-duration-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-durationUnit">Duration unit</label>
+			<select class="tool-select" id="cap-durationUnit" name="durationUnit" aria-describedby="cap-durationUnit-error">
+				{DURATION_UNITS.map((u) => <option value={u} selected={u === DEFAULT_FORM.durationUnit}>{u === 'ms' ? 'milliseconds' : 'seconds'}</option>)}
+			</select>
+			<p class="tool-error" id="cap-durationUnit-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-processes">Processes</label>
+			<input class="tool-input" id="cap-processes" name="processes" inputmode="numeric" autocomplete="off" value={DEFAULT_FORM.processes} aria-describedby="cap-processes-error" />
+			<p class="tool-error" id="cap-processes-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-threads">Threads per process</label>
+			<input class="tool-input" id="cap-threads" name="threads" inputmode="numeric" autocomplete="off" value={DEFAULT_FORM.threads} aria-describedby="cap-threads-error" />
+			<p class="tool-error" id="cap-threads-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-target">Target p95 wait, seconds <span class="cap-optional">(optional)</span></label>
+			<input class="tool-input" id="cap-target" name="target" inputmode="decimal" autocomplete="off" value={DEFAULT_FORM.target} aria-describedby="cap-target-error" />
+			<p class="tool-error" id="cap-target-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-peak">Peak multiplier</label>
+			<input class="tool-input" id="cap-peak" name="peak" inputmode="decimal" autocomplete="off" value={DEFAULT_FORM.peak} aria-describedby="cap-peak-error" />
+			<p class="tool-hint">Peak arrivals = normal rate × this (1 to 20).</p>
+			<p class="tool-error" id="cap-peak-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="cap-backlog">Current backlog, jobs <span class="cap-optional">(optional)</span></label>
+			<input class="tool-input" id="cap-backlog" name="backlog" inputmode="numeric" autocomplete="off" value={DEFAULT_FORM.backlog} aria-describedby="cap-backlog-error" />
+			<p class="tool-error" id="cap-backlog-error"></p>
+		</div>
+	</div>
+
+	<div class="tool-result" data-result hidden>
+		<div class="tool-verdict" data-verdict role="status" aria-live="polite"></div>
+
+		<div class="cap-scenarios">
+			<section class="cap-scenario" data-scenario="normal" aria-label="Normal load">
+				<h3 class="cap-scenario-title" data-title></h3>
+				<dl class="tool-metrics" data-metrics></dl>
+			</section>
+			<section class="cap-scenario" data-scenario="peak" aria-label="Peak load">
+				<h3 class="cap-scenario-title" data-title></h3>
+				<dl class="tool-metrics" data-metrics></dl>
+			</section>
+		</div>
+
+		<p class="tool-hint" data-db></p>
+		<p class="tool-hint">
+			Assumes Poisson arrivals, exponential service times, FIFO, and one shared queue. Bursts and heavy-tailed job
+			durations make real waits longer than this predicts. Pool sizing:
+			<a href="/tools/connection-pool-calculator/">Sidekiq &amp; Puma Connection Pool Calculator</a>.
+		</p>
+	</div>
+</div>
+
+<style>
+	.cap-optional { font-weight: 400; color: var(--text-faint); }
+	.cap-scenarios { display: grid; gap: var(--space-5); margin-top: var(--space-5); }
+	@media (min-width: 720px) { .cap-scenarios { grid-template-columns: 1fr 1fr; } }
+	.cap-scenario { min-width: 0; }
+	.cap-scenario-title { margin: 0; font-size: var(--fs-base); }
+	.cap-scenario .tool-metrics { margin-top: var(--space-3); grid-template-columns: 1fr; }
+	.cap-scenario dd { overflow-wrap: anywhere; }
+</style>
+
+<script>
+	import { decodeHashState } from '../_shared/hash-state';
+	import { formatDuration, formatNumber, formatPercent } from '../_shared/format';
+	import type { FieldError } from '../_shared/validate';
+	import {
+		DEFAULT_FORM,
+		HASH_KEYS,
+		analyze,
+		parseCapacityForm,
+		summarize,
+		toHashState,
+		type Analysis,
+		type CapacityForm,
+		type RawForm,
+		type Scenario,
+	} from './logic';
+
+	const FIELD_NAMES = Object.keys(DEFAULT_FORM) as (keyof RawForm)[];
+	const DEBOUNCE_MS = 150;
+
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
+	if (root) init(root);
+
+	function init(root: HTMLElement) {
+		const result = root.querySelector<HTMLElement>('[data-result]')!;
+		const verdict = root.querySelector<HTMLElement>('[data-verdict]')!;
+		const dbLine = root.querySelector<HTMLElement>('[data-db]')!;
+		const scenarioEls = {
+			normal: root.querySelector<HTMLElement>('[data-scenario="normal"]')!,
+			peak: root.querySelector<HTMLElement>('[data-scenario="peak"]')!,
+		};
+		let timer = 0;
+		let lastError = '';
+
+		const control = (name: keyof RawForm) => root.querySelector<HTMLInputElement | HTMLSelectElement>(`#cap-${name}`);
+		const errorEl = (name: keyof RawForm) => root.querySelector<HTMLElement>(`#cap-${name}-error`);
+
+		const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
+			const node = document.createElement(tag);
+			if (className) node.className = className;
+			if (text !== undefined) node.textContent = text;
+			return node;
+		};
+
+		const readRaw = (): RawForm => {
+			const raw = {} as Record<keyof RawForm, string>;
+			for (const name of FIELD_NAMES) raw[name] = control(name)?.value ?? '';
+			return raw;
+		};
+
+		const setErrors = (errors: FieldError[]) => {
+			for (const name of FIELD_NAMES) {
+				const message = errors.find((e) => e.field === name)?.message ?? '';
+				const box = errorEl(name);
+				if (box) box.textContent = message;
+				const input = control(name);
+				if (input) {
+					if (message) input.setAttribute('aria-invalid', 'true');
+					else input.removeAttribute('aria-invalid');
+				}
+			}
+		};
+
+		const metricRow = (label: string, value: string) => {
+			const row = el('div', 'tool-metric');
+			row.append(el('dt', '', label), el('dd', '', value));
+			return row;
+		};
+
+		const renderScenario = (sc: Scenario, analysis: Analysis, form: CapacityForm) => {
+			const section = scenarioEls[sc.label];
+			const title = sc.label === 'normal' ? `Normal: ${formatNumber(sc.rate, 2)} jobs/s` : `Peak ×${formatNumber(form.peak, 2)}: ${formatNumber(sc.rate, 2)} jobs/s`;
+			section.querySelector<HTMLElement>('[data-title]')!.textContent = title;
+			const rows: Node[] = [metricRow('Utilization (ρ)', formatPercent(sc.queue.utilization))];
+			if (sc.queue.stable) {
+				rows.push(
+					metricRow('P(wait)', sc.queue.pWait < 0.001 ? 'under 0.1%' : formatPercent(sc.queue.pWait)),
+					metricRow('Average wait', formatDuration(sc.queue.avgWait)),
+					metricRow('p95 wait', formatDuration(sc.queue.p95Wait)),
+					metricRow('Jobs waiting (average)', formatNumber(sc.queue.jobsWaiting, 2)),
+				);
+			} else {
+				const growth = sc.queue.growthRate > 0 ? `+${formatNumber(sc.queue.growthRate, 2)} jobs/s` : 'none spare; any burst grows it';
+				rows.push(
+					metricRow('Average wait', 'grows without bound'),
+					metricRow('p95 wait', 'grows without bound'),
+					metricRow('Backlog growth', growth),
+				);
+			}
+			if (form.target !== undefined) {
+				const req =
+					sc.requiredConcurrency === 'unreachable'
+						? 'not reachable below 100,000'
+						: `${formatNumber(sc.requiredConcurrency ?? 0, 0)} (now ${formatNumber(analysis.concurrency, 0)})`;
+				rows.push(metricRow(`Concurrency for p95 ≤ ${formatDuration(form.target)}`, req));
+			}
+			if (form.backlog !== undefined) {
+				rows.push(metricRow('Backlog drain time', sc.drain === null ? 'never at this rate' : formatDuration(sc.drain)));
+			}
+			section.querySelector<HTMLElement>('[data-metrics]')!.replaceChildren(...rows);
+		};
+
+		const render = (form: CapacityForm, analysis: Analysis) => {
+			verdict.className = `tool-verdict ${analysis.verdict.cssClass}`;
+			verdict.replaceChildren(el('span', 'state', analysis.verdict.word), el('p', '', analysis.meaning));
+			renderScenario(analysis.normal, analysis, form);
+			renderScenario(analysis.peak, analysis, form);
+			const { sidekiq, solidQueue } = analysis.dbConnections;
+			dbLine.textContent = `Database connections for ${analysis.processes} process${analysis.processes === 1 ? '' : 'es'}: ${formatNumber(sidekiq, 0)} with Sidekiq (pool ≥ threads), or ${formatNumber(solidQueue, 0)} with Solid Queue (threads + 2).`;
+		};
+
+		const update = () => {
+			const parsed = parseCapacityForm(readRaw());
+			if (!parsed.ok) {
+				setErrors(parsed.errors);
+				result.hidden = true;
+				root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true, detail: {} }));
+				const message = parsed.errors[0]?.message ?? 'Check the highlighted fields.';
+				if (message !== lastError) {
+					lastError = message;
+					root.dispatchEvent(new CustomEvent('tool:error', { bubbles: true, detail: { message } }));
+				}
+				return;
+			}
+			lastError = '';
+			setErrors([]);
+			const form = parsed.value;
+			const analysis = analyze(form);
+			render(form, analysis);
+			result.hidden = false;
+			root.dispatchEvent(
+				new CustomEvent('tool:result', {
+					bubbles: true,
+					detail: {
+						text: summarize(form, analysis),
+						state: toHashState(form),
+						cta: analysis.cta,
+						tone: analysis.cta ? 'risk' : 'ok',
+					},
+				}),
+			);
+		};
+
+		const schedule = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(update, DEBOUNCE_MS);
+		};
+
+		// Shared links: each value goes through the same validators as typed input. Invalid values are ignored.
+		const loadFromHash = () => {
+			const shared = decodeHashState(location.hash, HASH_KEYS);
+			if (!shared) return;
+			const next: RawForm = { ...DEFAULT_FORM, target: '', backlog: '' };
+			for (const key of HASH_KEYS) {
+				const value = shared[key];
+				if (value === undefined) continue;
+				const trial = parseCapacityForm({ ...next, [key]: value });
+				if (trial.ok || !trial.errors.some((e) => e.field === key)) next[key] = value;
+			}
+			for (const name of FIELD_NAMES) {
+				const input = control(name);
+				if (input) input.value = next[name];
+			}
+		};
+
+		loadFromHash();
+		root.addEventListener('input', schedule);
+		root.addEventListener('change', schedule);
+		update();
+	}
+</script>
