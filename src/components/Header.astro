@@ -3,6 +3,8 @@ import ThemeToggle from './ThemeToggle.astro';
 import BrandMark from './BrandMark.astro';
 import { SITE_TITLE, SOCIALS } from '../consts';
 import { liveTopics, topicUrl } from '../data/topics';
+import { TOOL_GROUPS, groupById } from '../data/tool-groups';
+import { liveTools, toolHref } from '../utils/tools';
 
 const { pathname } = Astro.url;
 // Topics is folded into the Writing index, so "Writing" also lights up on the
@@ -22,6 +24,17 @@ const isActive = (link: { href: string; match?: string[] }) => matches(link.matc
 const onServices = matches(['/services']);
 // Honeybadger-style topic bar under the header, on the reading pages only.
 const showTopicBar = trim(pathname) === '' || matches(['/blog', '/topics']);
+// Tools dropdown (TOOLS_ROADMAP.md §12.1): live tools only, grouped by menu
+// column, up to 4 per column; empty columns are dropped. Rendered only once at
+// least two tools are live, otherwise "Tools" stays a plain link.
+const live = await liveTools();
+const toolColumns = [...new Set(TOOL_GROUPS.map((g) => g.menuColumn))]
+  .map((col) => ({
+    col,
+    tools: live.filter((t) => groupById(t.data.group).menuColumn === col).slice(0, 4),
+  }))
+  .filter((c) => c.tools.length > 0);
+const showToolsMenu = live.length >= 2;
 const topicLinks = [
   { href: '/blog/', label: 'All writing', current: trim(pathname) === '/blog' },
   ...liveTopics().map((t) => ({ href: topicUrl(t.slug), label: t.title, current: matches([topicUrl(t.slug)]) })),
@@ -38,12 +51,35 @@ const topicLinks = [
     <nav class="nav-desktop" aria-label="Primary">
       <ul>
         {navLinks.map((l) => (
-          <li>
+          <li class:list={[{ 'has-menu': showToolsMenu && l.href === '/tools/' }]}>
             <a
               href={l.href}
               class:list={['nav-link', { active: isActive(l) }]}
               aria-current={isActive(l) ? 'page' : undefined}
             >{l.label}</a>
+            {showToolsMenu && l.href === '/tools/' && (
+              <>
+                <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="tools-menu" aria-label="Show tools">
+                  <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <div class="tools-menu" id="tools-menu" hidden>
+                  <div class="tools-cols">
+                    {toolColumns.map((c) => (
+                      <div>
+                        <p class="tools-col-title">{c.col}</p>
+                        <ul>
+                          {c.tools.map((t) => <li><a href={toolHref(t.id)}>{t.data.title}</a></li>)}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                  <div class="tools-foot">
+                    <a href="/tools/">All {live.length} tools &rarr;</a>
+                    <span>Runs in your browser · nothing uploaded</span>
+                  </div>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -72,6 +108,11 @@ const topicLinks = [
             class:list={['m-link', { active: isActive(l) }]}
             aria-current={isActive(l) ? 'page' : undefined}
           >{l.label}</a>
+          {showToolsMenu && l.href === '/tools/' && (
+            <ul class="m-sub" aria-label="Tools">
+              {live.map((t) => <li><a href={toolHref(t.id)}>{t.data.title}</a></li>)}
+            </ul>
+          )}
         </li>
       ))}
     </ul>
@@ -131,6 +172,43 @@ const topicLinks = [
   /* Desktop nav: ink links; the current page gets ruby text and a 2px ruby
      rule sitting on the header's bottom hairline. */
   .nav-desktop ul { display: flex; align-items: center; gap: var(--space-8); list-style: none; margin: 0; padding: 0; }
+
+  /* Tools dropdown: link + disclosure chevron; flat panel separated by hairlines (DESIGN.md: no shadows). */
+  .has-menu { position: relative; display: flex; align-items: center; gap: 2px; }
+  .menu-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm);
+    background: transparent; color: var(--text-muted); cursor: pointer;
+  }
+  .menu-toggle:hover { color: var(--brand); background: var(--bg-subtle); }
+  .menu-toggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .menu-toggle svg { transition: transform .15s ease; }
+  .menu-toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .tools-menu {
+    position: absolute; top: calc(100% + 14px); left: 50%; transform: translateX(-50%); z-index: 60;
+    width: min(44rem, calc(100vw - 2 * var(--space-6)));
+    border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
+    background: var(--bg);
+  }
+  .tools-menu[hidden] { display: none; }
+  .tools-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-6); padding: var(--space-5) var(--space-6); }
+  .tools-col-title {
+    margin: 0 0 var(--space-2); font-family: var(--font-mono); font-size: var(--fs-xs);
+    text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint);
+  }
+  .tools-menu ul { display: grid; gap: var(--space-2); }
+  .tools-menu ul a { font-size: var(--fs-sm); font-weight: 500; color: var(--text); text-decoration: none; }
+  .tools-menu ul a:hover { color: var(--brand); }
+  .tools-foot {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2) var(--space-6);
+    padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border);
+    font-size: var(--fs-xs); color: var(--text-faint);
+  }
+  .tools-foot a { font-weight: 600; color: var(--brand); text-decoration: none; }
+  .m-sub { padding-left: var(--space-4) !important; margin: 0 0 var(--space-2) !important; border-left: 1px solid var(--border); }
+  .m-sub a { display: block; padding: var(--space-2) 0; font-size: var(--fs-sm); color: var(--text-muted); text-decoration: none; }
+  .m-sub a:hover { color: var(--brand); }
+  @media (prefers-reduced-motion: reduce) { .menu-toggle svg { transition: none; } }
   .nav-link {
     position: relative; display: inline-flex; align-items: center;
     height: var(--header-h);
@@ -211,6 +289,13 @@ const topicLinks = [
   .m-link.active { color: var(--brand); }
   .m-cta { justify-content: center; padding-block: .9rem; font-size: var(--fs-base); }
 
+  /* Narrow phones (≤360px): brand + three 44px buttons overflow 320px. Tighten
+     spacing and drop the GitHub icon here; it stays in the footer. */
+  @media (max-width: 360px) {
+    .header-inner { padding-inline: var(--space-4); gap: var(--space-3); }
+    .brand-name { font-size: 1.125rem; }
+    .actions a.icon-btn { display: none; }
+  }
   @media (max-width: 780px) {
     .nav-desktop, .header-cta { display: none; }
     .menu-btn { display: inline-flex; }
@@ -237,4 +322,26 @@ const topicLinks = [
   });
   // Leaving the mobile breakpoint with the sheet open must not leave the page locked.
   matchMedia('(min-width: 781px)').addEventListener('change', (e) => { if (e.matches) setOpen(false); });
+
+  // Tools dropdown: a disclosure button next to the "Tools" link. Click/Enter
+  // toggles; Escape closes and returns focus; clicking or tabbing out closes.
+  const toolsItem = document.querySelector<HTMLElement>('.has-menu');
+  const toolsBtn = toolsItem?.querySelector<HTMLButtonElement>('.menu-toggle');
+  const toolsMenu = document.getElementById('tools-menu');
+  const setTools = (open: boolean) => {
+    if (!toolsBtn || !toolsMenu) return;
+    toolsMenu.hidden = !open;
+    toolsBtn.setAttribute('aria-expanded', String(open));
+    toolsBtn.setAttribute('aria-label', open ? 'Hide tools' : 'Show tools');
+  };
+  toolsBtn?.addEventListener('click', () => setTools(toolsMenu?.hidden ?? false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && toolsMenu && !toolsMenu.hidden) { setTools(false); toolsBtn?.focus(); }
+  });
+  document.addEventListener('click', (e) => {
+    if (toolsItem && toolsMenu && !toolsMenu.hidden && !toolsItem.contains(e.target as Node)) setTools(false);
+  });
+  toolsItem?.addEventListener('focusout', (e) => {
+    if (!toolsItem.contains(e.relatedTarget as Node | null)) setTools(false);
+  });
 </script>

@@ -1,0 +1,8 @@
+ERROR:  deadlock detected
+DETAIL:  Process 3001 waits for AccessExclusiveLock on relation 16420 of database 16384; blocked by process 3002.
+	Process 3002 waits for ShareLock on transaction 9120; blocked by process 3001.
+	Process 3001: ALTER TABLE accounts ADD COLUMN flagged boolean NOT NULL DEFAULT false
+	Process 3002: UPDATE accounts SET balance = balance - 10 WHERE id = 5
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,5) in relation "accounts"
+STATEMENT:  UPDATE accounts SET balance = balance - 10 WHERE id = 5

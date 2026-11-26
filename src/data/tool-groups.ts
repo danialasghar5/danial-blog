@@ -23,7 +23,19 @@ export interface ToolGroup {
 
 export const TOOL_GROUPS: ToolGroup[] = [
 	{ id: 'jobs', label: 'Jobs & Queues', tier: 'signature', menuColumn: 'Jobs & Queues', order: 1 },
-	{ id: 'postgres', label: 'Postgres & ActiveRecord', tier: 'signature', menuColumn: 'Postgres', order: 2 },
+	{
+		id: 'postgres',
+		label: 'Postgres & ActiveRecord',
+		tier: 'signature',
+		menuColumn: 'Postgres',
+		order: 2,
+		description:
+			'Postgres tools for Rails teams: read a deadlock report, look up which lock a statement or migration takes, and size your connection pool. Runs in your browser.',
+		intro: [
+			'Most Postgres incidents in a Rails app are not about slow queries. They are about waiting: a migration queued for a lock behind a long report, two transactions updating the same rows in opposite order, a pool with fewer connections than the threads asking for them.',
+			'These tools answer those questions directly. Paste the error you were handed, or the statement you are about to run, and see which lock is involved, who is waiting for whom, and what to change. Everything runs in this tab; nothing you paste is sent anywhere.',
+		],
+	},
 	{ id: 'rails', label: 'Rails Runtime', tier: 'signature', menuColumn: 'Rails & AI', order: 3 },
 	{ id: 'ai', label: 'AI Backends', tier: 'signature', menuColumn: 'Rails & AI', order: 4 },
 	{ id: 'data', label: 'Data Formats', tier: 'utility', menuColumn: 'Developer utilities', order: 5 },

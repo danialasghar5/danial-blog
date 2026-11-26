@@ -1,0 +1,94 @@
+---
+title: 'Sidekiq Retry Schedule Calculator'
+seoTitle: 'Sidekiq Retry Schedule Calculator — Every Retry Time'
+description: 'Work out when each Sidekiq or Active Job retry runs, how long a failing job lives before the Dead set, and how much jitter adds.'
+seoDescription: 'Calculate every Sidekiq and Active Job retry time, with min, expected and max jitter, and when a failing job reaches the Dead set. Runs in your browser.'
+tier: signature
+group: jobs
+status: live
+order: 10
+featured: true
+pubDate: 2026-11-26
+keywords: ['sidekiq retry', 'sidekiq retry schedule', 'sidekiq retry calculator', 'retry_count', 'dead set', 'active job retry_on', 'polynomially_longer']
+versions: ['Sidekiq 7.x', 'Sidekiq 8.x', 'Active Job (Rails 7.1–8.1)']
+relatedPosts: ['sidekiq-retry-strategy-transient-vs-permanent-failures', 'sidekiq-job-runs-twice-at-least-once-delivery']
+relatedTopic: background-jobs
+nextTools: ['job-queue-capacity-calculator']
+serviceCta: jobs-audit
+shareable: true
+worker: false
+faq:
+  - q: 'How many times does a Sidekiq job run with the default retry setting?'
+    a: 'The default is retry: 25, so the job runs 26 times in total: the original attempt plus 25 retries. When the 25th retry fails, Sidekiq moves the job to the Dead set.'
+  - q: 'How long does a failing Sidekiq job take to reach the Dead set by default?'
+    a: 'With no jitter, the 25 delays add up to 1,763,395 seconds, about 20.4 days. Jitter adds up to about 3,225 seconds more on Sidekiq 8.x and 2,925 seconds on 7.x.'
+  - q: 'What changed in the Sidekiq 8.0 jitter?'
+    a: 'In 7.x the jitter was rand(10) times (count + 1), so the maximum was 9 × (count + 1). From 8.0 it is rand(10 × (count + 1)), so any whole number from 0 to 10 × (count + 1) − 1 is possible, and the maximum is 10 × (count + 1) − 1. The expected jitter also rises slightly.'
+  - q: 'Does the jitter apply to a custom sidekiq_retry_in delay?'
+    a: 'Yes. Sidekiq adds the same version-specific jitter on top of whatever sidekiq_retry_in returns, so a constant 60-second retry on 7.x lands between 60 and 60 + 9 × (count + 1) seconds, and on 8.x between 60 and 60 + 10 × (count + 1) − 1 seconds.'
+  - q: 'What does attempts mean in Active Job retry_on?'
+    a: 'attempts counts executions, including the first one. The first failure is execution 1, and a retry happens while executions is less than attempts. attempts: 5 therefore allows four retries, and the error is re-raised after the fifth execution fails.'
+  - q: 'Does this calculator send my inputs anywhere?'
+    a: 'No. The arithmetic runs in your browser. Share links store the settings in the URL fragment, which browsers do not send to the server.'
+---
+
+## How Sidekiq retries a failed job
+
+When a Sidekiq job raises an exception, Sidekiq computes a delay, stores the job in the retry set with that delay, and runs it again when the time comes. The job carries a retry counter. Each failure increments it, and when the counter reaches the `retry` option, Sidekiq moves the job to the Dead set instead of scheduling another attempt.
+
+The first execution is not a retry. `retry: 25` therefore means 26 executions in total. The Dead set is also a bounded store, not a permanent log. By default it keeps up to 10,000 jobs (`dead_max_jobs`) for 180 days (`dead_timeout_in_seconds`), and entries beyond either limit are removed.
+
+## The formula
+
+For each retry, Sidekiq uses a `count` that starts at 0. The base delay is:
+
+```
+delay = count**4 + 15
+```
+
+The first retry (count 0) waits 15 seconds. The second (count 1) waits 16. The tenth (count 9) waits 6,576 seconds, about 1 hour 50 minutes. The 25th (count 24) waits 331,791 seconds, about 3.8 days. The delay grows with the fourth power of the count, which is why a long retry count stretches the schedule so far.
+
+Sidekiq then adds jitter. The jitter changed in 8.0, and the calculator models both versions:
+
+- **Sidekiq 7.x:** `rand(10) * (count + 1)`. The jitter is one of 0, 1, …, 9 times `(count + 1)`. Expected jitter is 4.5 × (count + 1); maximum is 9 × (count + 1).
+- **Sidekiq 8.x:** `rand(10 * (count + 1))`. The jitter is any whole number from 0 to 10 × (count + 1) − 1. Expected jitter is (10 × (count + 1) − 1) / 2, about 5 × (count + 1); maximum is 10 × (count + 1) − 1.
+
+The jitter is random, so the calculator does not sample it. It reports the minimum (jitter 0), the expected value and the maximum, and these bounds are exact.
+
+A custom `sidekiq_retry_in` block replaces the base delay with any expression you return in seconds. The calculator models that as `a × count^p + b`. Setting `a` to 0 and `p` to 0 gives a constant. Sidekiq still adds the version's jitter on top.
+
+Sidekiq converts the returned value with `to_i`, so fractions are truncated to whole seconds, and it only uses a value greater than zero. If the block returns 0 or a negative number, Sidekiq falls back to the default `count**4 + 15`. The calculator does the same.
+
+## Transient and permanent errors
+
+A backoff schedule only helps with transient failures: a timeout, a 5xx response, a briefly locked row. A job that fails because a record was deleted or a payload is invalid will fail on every attempt. For that kind of error the schedule only delays the job's arrival in the Dead set. Decide per error whether to retry at all; the [retry strategy post](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/) walks through that split.
+
+Every retry is another execution of the job, so retries also widen the window where the same work can run twice. If the job has side effects, read the [at-least-once delivery post](/blog/sidekiq-job-runs-twice-at-least-once-delivery/) before raising the retry count.
+
+## Worked example: 25 retries
+
+Sidekiq's default is `retry: 25`. The delays for counts 0 to 24 sum to:
+
+Σ (count⁴ + 15) = **1,763,395 seconds**, which is 20 days 9 hours 49 minutes 55 seconds with no jitter.
+
+On Sidekiq 8.x the expected jitter adds 1,612.5 seconds and the maximum adds 3,225 seconds. A job that fails all 25 attempts therefore reaches the Dead set between 1,763,395 and 1,766,620 seconds after its first failure, with an expected value of 1,765,007.5 seconds. That is about 20.43 days, and the range is 20.41 to 20.45 days.
+
+On Sidekiq 7.x the expected jitter is 1,462.5 seconds and the maximum is 2,925 seconds, so the expected total is 1,764,857.5 seconds.
+
+The calculator shows the same arithmetic per retry, with a cumulative column and absolute times when you enter the time of the first failure. If the total is more than 7 days, or the retry count is above 25, the result is flagged. A long window means a permanent failure stays in the queue for a long time before anyone sees it.
+
+## Active Job `retry_on` versus native Sidekiq retries
+
+Active Job's `retry_on` is a separate mechanism. It re-enqueues the job itself, and it stops after `attempts` executions. The defaults are `wait: 3.seconds` and `attempts: 5`. With `attempts: 5` you get four retries, after executions 1 to 4 fail.
+
+With `wait: :polynomially_longer`, the delay before retry `e` is `e**4 + 2` seconds plus jitter. Those four delays are 3, 18, 83 and 258 seconds, a minimum of 362 seconds. The jitter is `U × e**4 × jitter` with U in [0, 1). The default `jitter` is 0.15 when `config.load_defaults` is 6.1 or later, and 0 otherwise. With 0.15 the expected total is 388.55 seconds and the maximum is 415.1 seconds. With a fixed integer wait W, each delay is W plus up to W × jitter.
+
+When `attempts` is used up, Active Job re-raises the error. What happens next is the queue adapter's decision, not `retry_on`'s. If the adapter applies its own retry policy on top, the real total is the sum of both schedules. Check your adapter's behaviour before you add them. The calculator models only the `retry_on` schedule.
+
+## Limitations
+
+- **Start time.** The calculator counts from the first failure. Real retries are due at the computed time, but they run when a worker is free, so the actual times are later. Queue depth and concurrency are not modelled.
+- **Ranges, not a distribution.** The output gives the minimum, expected and maximum. It does not give percentiles or a histogram.
+- **One error class.** A real application can have several `sidekiq_retry_in` blocks or several `retry_on` declarations. The calculator models one schedule at a time.
+- **Versions.** Sidekiq 7.x and 8.x are modelled from the source for those lines. Active Job's `retry_on` is modelled for Rails 7.1 to 8.1. Older or newer releases may differ.
+- **Not modelled.** Retry middleware, Sidekiq Pro or Enterprise features, Solid Queue, and per-job overrides such as `retry: false`.
