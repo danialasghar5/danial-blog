@@ -53,6 +53,7 @@ a.tool-badge:hover { border-color: var(--text-faint); color: var(--text); }
 	padding: var(--space-3) 0; border-bottom: 1px solid var(--border);
 }
 .tool-field.stacked { display: block; }
+.tool-field[hidden], .tool-result[hidden] { display: none; }
 .tool-field.stacked .tool-label { display: block; margin-bottom: var(--space-2); }
 .tool-label { font-size: var(--fs-sm); color: var(--text-muted); }
 .tool-hint { display: block; font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
