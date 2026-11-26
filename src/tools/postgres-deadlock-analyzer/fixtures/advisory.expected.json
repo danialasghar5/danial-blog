@@ -44,5 +44,32 @@
 			"query": "SELECT pg_advisory_xact_lock(4001)"
 		}
 	],
-	"warnings": []
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "advisory",
+		"confidence": "high",
+		"tables": [],
+		"focusTable": null,
+		"parentTable": null,
+		"evidence": [
+			"Process 4101 waits for ExclusiveLock on advisory lock [16384,0,4002,1].",
+			"Process 4102 waits for ExclusiveLock on advisory lock [16384,0,4001,1].",
+			"Process 4101 runs: SELECT pg_advisory_xact_lock(4002)",
+			"Process 4102 runs: SELECT pg_advisory_xact_lock(4001)"
+		],
+		"processes": [
+			{
+				"pid": 4101,
+				"table": null,
+				"kind": "advisory",
+				"waitsFor": "ExclusiveLock on advisory lock [16384,0,4002,1]"
+			},
+			{
+				"pid": 4102,
+				"table": null,
+				"kind": "advisory",
+				"waitsFor": "ExclusiveLock on advisory lock [16384,0,4001,1]"
+			}
+		]
+	}
 }

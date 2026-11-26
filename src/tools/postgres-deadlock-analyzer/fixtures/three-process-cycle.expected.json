@@ -61,5 +61,41 @@
 			"query": "SELECT id, status FROM orders WHERE id = 881 FOR UPDATE"
 		}
 	],
-	"warnings": []
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "cross-table-order",
+		"confidence": "medium",
+		"tables": [
+			"orders",
+			"inventory"
+		],
+		"focusTable": "orders",
+		"parentTable": null,
+		"evidence": [
+			"Process 2001 works on orders.",
+			"Process 2002 works on inventory.",
+			"Process 2003 works on orders.",
+			"Each process holds a row or lock on one table and waits for the other. Only the current statement of each process is in the report, so the earlier lock order is inferred."
+		],
+		"processes": [
+			{
+				"pid": 2001,
+				"table": "orders",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 7301"
+			},
+			{
+				"pid": 2002,
+				"table": "inventory",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 7305"
+			},
+			{
+				"pid": 2003,
+				"table": "orders",
+				"kind": "select-lock",
+				"waitsFor": "ExclusiveLock on tuple (0,4) of relation OID 16402"
+			}
+		]
+	}
 }

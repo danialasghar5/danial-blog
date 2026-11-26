@@ -49,5 +49,33 @@
 			"query": "UPDATE accounts SET balance = balance - 50 WHERE id = 9"
 		}
 	],
-	"warnings": []
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "same-table-row-order",
+		"confidence": "high",
+		"tables": [
+			"accounts"
+		],
+		"focusTable": "accounts",
+		"parentTable": null,
+		"evidence": [
+			"Process 18321 writes rows in accounts.",
+			"Process 18344 writes rows in accounts.",
+			"18321 waits on a row that 18344 holds; 18344 waits on a row that 18321 holds."
+		],
+		"processes": [
+			{
+				"pid": 18321,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 4412"
+			},
+			{
+				"pid": 18344,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 4410"
+			}
+		]
+	}
 }

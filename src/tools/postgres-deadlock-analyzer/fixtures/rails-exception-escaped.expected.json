@@ -46,5 +46,32 @@
 			"query": null
 		}
 	],
-	"warnings": []
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "same-table-row-order",
+		"confidence": "medium",
+		"tables": [
+			"accounts"
+		],
+		"focusTable": "accounts",
+		"parentTable": null,
+		"evidence": [
+			"Both waits are row-level, and the statements in the report all touch accounts.",
+			"Not every process has its statement in the report, so the row order is inferred."
+		],
+		"processes": [
+			{
+				"pid": 5010,
+				"table": null,
+				"kind": null,
+				"waitsFor": "ShareLock on transaction 6602"
+			},
+			{
+				"pid": 5012,
+				"table": null,
+				"kind": null,
+				"waitsFor": "ShareLock on transaction 6600"
+			}
+		]
+	}
 }

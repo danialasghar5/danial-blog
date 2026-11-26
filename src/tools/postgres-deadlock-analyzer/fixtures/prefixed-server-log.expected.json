@@ -49,5 +49,33 @@
 			"query": "UPDATE accounts SET balance = balance + 100 WHERE id = 3"
 		}
 	],
-	"warnings": []
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "same-table-row-order",
+		"confidence": "high",
+		"tables": [
+			"accounts"
+		],
+		"focusTable": "accounts",
+		"parentTable": null,
+		"evidence": [
+			"Process 5521 writes rows in accounts.",
+			"Process 5530 writes rows in accounts.",
+			"5521 waits on a row that 5530 holds; 5530 waits on a row that 5521 holds."
+		],
+		"processes": [
+			{
+				"pid": 5521,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 3340"
+			},
+			{
+				"pid": 5530,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 3338"
+			}
+		]
+	}
 }
