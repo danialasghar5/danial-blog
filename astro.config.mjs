@@ -2,23 +2,28 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import cspHashes from './integrations/csp-hashes.mjs';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { defineConfig, fontProviders } from 'astro/config';
 import { readdirSync, readFileSync } from 'node:fs';
 
-// Post slug → last-modified date (updatedDate, else pubDate), read from the
-// MDX frontmatter so the sitemap can carry accurate <lastmod> values.
-const postDates = new Map(
-	readdirSync('./src/content/blog')
+// URL path (/blog/<slug>/, /tools/<slug>/) → last-modified date (updatedDate,
+// else pubDate), read from MDX frontmatter so the sitemap carries accurate
+// <lastmod> values for posts and tools.
+const datesFrom = (dir, route) =>
+	readdirSync(dir)
 		.filter((f) => /\.mdx?$/.test(f))
 		.map((f) => {
-			const fm = readFileSync(`./src/content/blog/${f}`, 'utf8').split('---')[1] ?? '';
+			const fm = readFileSync(`${dir}/${f}`, 'utf8').split('---')[1] ?? '';
 			const date = (key) => fm.match(new RegExp(`^${key}:\\s*["']?([0-9-]+)`, 'm'))?.[1];
-			return [f.replace(/\.mdx?$/, ''), date('updatedDate') ?? date('pubDate')];
+			return [`/${route}/${f.replace(/\.mdx?$/, '')}/`, date('updatedDate') ?? date('pubDate')];
 		})
-		.filter(([, d]) => d),
-);
+		.filter(([, d]) => d);
+const pageDates = new Map([...datesFrom('./src/content/blog', 'blog'), ...datesFrom('./src/content/tools', 'tools')]);
+// The hand-built calculator page predates the tools collection and is a protected
+// URL; leave its sitemap entry exactly as it was (TOOLS_ROADMAP.md rule 12).
+pageDates.delete('/tools/connection-pool-calculator/');
 
 // Append a subtle, hoverable "#" anchor to each article heading so readers can
 // deep-link a section. rehypeHeadingIds runs first to assign the same
@@ -65,11 +70,12 @@ export default defineConfig({
 		sitemap({
 			// Accurate <lastmod> for articles helps Google prioritise recrawls.
 			serialize(item) {
-				const slug = item.url.match(/\/blog\/([^/]+)\/$/)?.[1];
-				const date = slug && postDates.get(slug);
+				const date = pageDates.get(new URL(item.url).pathname);
 				return date ? { ...item, lastmod: new Date(date).toISOString() } : item;
 			},
 		}),
+		// Last: fills CSP script hashes into dist/_headers (TOOLS_ROADMAP.md §11.5).
+		cspHashes(),
 	],
 	// Hide the Astro dev toolbar (dev-only UI; never shipped to production anyway).
 	devToolbar: { enabled: false },

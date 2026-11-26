@@ -1,0 +1,85 @@
+---
+title: 'Job Queue Capacity Calculator'
+seoTitle: 'Job Queue Capacity Calculator: Waits, Concurrency, p95'
+description: 'Estimate queue wait, p95 latency and the concurrency you need from your arrival rate and average job duration.'
+seoDescription: 'Estimate queue wait, p95 latency and the Sidekiq or Solid Queue concurrency you need from arrival rate and job duration. Runs in your browser.'
+tier: signature
+group: jobs
+status: live
+order: 20
+featured: true
+pubDate: 2026-11-26
+keywords: ['queue capacity calculator', "little's law calculator", 'erlang c calculator', 'sidekiq concurrency', 'solid queue threads']
+versions: ['Sidekiq 7.x–8.x', 'Solid Queue 1.x']
+relatedPosts: ['why-background-jobs-are-slow', 'solid-queue-vs-sidekiq']
+relatedTopic: background-jobs
+nextTools: ['connection-pool-calculator', 'sidekiq-retry-calculator']
+serviceCta: scaling
+shareable: true
+worker: false
+faq:
+  - q: "What is Little's law and why does it matter for a job queue?"
+    a: 'In a stable system the average number of jobs in the system equals the arrival rate times the average time each job spends there. It holds whatever the queue order, so it is a reliable check: if you know how many jobs are in flight and how fast they arrive, you know how long each one stays.'
+  - q: 'Why does p95 wait explode near 100% utilization?'
+    a: 'Waiting depends on the spare capacity, not the average load. For a single worker the average wait is the service time times utilization divided by one minus utilization, so going from 80% to 95% multiplies the wait several times. Bursts make the tail worse than the average shows.'
+  - q: 'What does "unstable" mean here, and what number should I trust?'
+    a: 'Unstable means arrivals exceed the total concurrency: the rate of arrivals is above processes times threads divided by the average duration. The queue then grows without bound. The calculator shows the growth rate in jobs per second instead of a wait, because no finite wait exists.'
+  - q: 'Should I use processes times threads as the concurrency?'
+    a: 'Yes, as the number of workers that run jobs at once. That assumes each thread does real work in parallel. For CPU-bound jobs in Ruby the global interpreter lock limits the gain from threads, so the model overstates capacity there. Measure the real throughput of a single process first.'
+  - q: 'Why is the p95 wait zero at low load?'
+    a: 'The p95 is taken from the probability that a job waits at all. When that probability is 5% or less, fewer than one arrival in twenty waits, so the 95th percentile of the wait is zero. The tool shows zero rather than a meaningless negative or missing value.'
+  - q: 'Does the model handle bursts and long-running jobs?'
+    a: 'No. It assumes Poisson arrivals and exponentially distributed job times. Real traffic arrives in bursts and job durations are heavy-tailed, so real waits are longer than the model predicts at the same average load. Use the tail of your duration distribution and your peak rate, not the mean and the daily average.'
+  - q: 'How does this connect to the database connection pool?'
+    a: 'Every thread that runs a job needs a database connection while it works. Sidekiq needs a pool at least as large as its concurrency per process; Solid Queue uses threads plus two per process. Multiply by the number of processes for the total connections your database must allow.'
+---
+
+## Queue latency and execution time are different problems
+
+A job's total time in the system is its queue latency, the time it waits for a free worker, plus its execution time, the time it spends inside `perform`. This calculator models only the first. Adding a faster job does nothing if the job spends most of its life waiting. [Why background jobs are slow](/blog/why-background-jobs-are-slow/) explains how to tell the two apart in production. This tool answers the next question: given your load, how many workers do you need before waits stop mattering?
+
+## Little's law in plain English
+
+Little's law says that, in a stable system, the average number of jobs in the system equals the arrival rate times the average time each job spends there: L = λW. It makes no assumption about queue order or job size, so it is the most useful sanity check you have. At 25 jobs per second, with each job averaging 2 seconds from enqueue to finish, about 50 jobs are in flight at any moment. Count the jobs in flight and divide by the arrival rate, and you get the true time in the system.
+
+The calculator uses it for two numbers. The jobs waiting in the queue equal the arrival rate times the average wait. The jobs in the system equal the arrival rate times the wait plus the duration.
+
+## Why utilization decides everything
+
+Let λ be the arrival rate, S the average duration, and c the total concurrency, processes times threads. Each worker serves μ = 1/S jobs per second. The offered load a = λS is the number of workers the traffic needs on average. Utilization is ρ = a/c. At ρ = 0.5, half your workers are busy on average.
+
+Averages hide variation, but the wait does not. For a single worker the average wait is S × ρ / (1 − ρ). At 50% the wait is small. Near 90% it is several times larger, and at 100% there is no spare throughput. Once ρ reaches 1, arrivals exceed what the workers can drain. The backlog grows at λ − cμ jobs per second, and no finite wait describes that. A calculator that prints a number there is wrong, so this one reports the growth rate instead.
+
+## The model
+
+The calculator is an M/M/c queue: Poisson arrivals, exponentially distributed job times, one first-in-first-out queue, and c identical workers. The Erlang C formula gives the probability C that an arriving job has to wait. It is computed with the Erlang B recurrence, B₀ = 1 and Bₖ = a·Bₖ₋₁ / (k + a·Bₖ₋₁), then C = B_c / (1 − ρ(1 − B_c)). This form never builds the large factorials that overflow at a few hundred workers.
+
+The average wait is Wq = C / (cμ − λ). The 95th percentile wait is ln(C / 0.05) / (cμ − λ) when C is above 0.05. Below that the p95 is zero, because fewer than one arrival in twenty waits at all. For a target p95, the tool searches upward from ⌊a⌋ + 1 for the smallest c that meets it, up to 100,000. Peak load multiplies λ, and both scenarios are shown side by side.
+
+## Worked example
+
+Take 1,500 jobs a minute, which is 25 per second. Jobs average 800 ms. You run four processes with ten threads each, so c = 40. Your target is a p95 wait of 5 seconds, and your peak is 1.5 times normal.
+
+**Normal load.** a = 20 and ρ = 50%. The probability of waiting is under 0.01%, the average wait is about 2 microseconds, and the p95 is zero. Holding a 5-second p95 needs only 21 workers, so 40 is generous.
+
+**Peak load.** λ = 37.5 per second, a = 30, and ρ = 75%. The probability of waiting is 5.5%, the average wait 4.4 ms, and the p95 8.0 ms, with about 0.17 jobs waiting on average. The verdict is Tight. Utilization is still under 85%, but a 13% rise in arrivals crosses that line. The 5-second target at peak needs 31 workers.
+
+**Peak at 2 times.** Arrivals are now 50 per second, exactly what 40 workers at 0.8 s can drain. Utilization is 100%, there is no spare throughput, and the tool reports the queue as unstable with a growth rate of zero. Any variation in job times grows the backlog. Holding the 5-second p95 at this rate needs 41 workers.
+
+**A backlog.** Take 1,200 jobs a minute (20 per second), 800 ms jobs, and two processes with ten threads (c = 20). Utilization is 80%, the probability of waiting 26%, the average wait 51 ms, and the p95 327 ms. A 5-second p95 needs only 17 workers, so the tail is fine. If 3,000 jobs are queued, the spare throughput is cμ − λ = 5 jobs per second, and the backlog drains in 600 seconds, or ten minutes, if arrivals stay at the normal rate.
+
+## When the assumptions fail
+
+**Bursts.** Poisson arrivals assume a steady rate. Real traffic arrives in clumps: a nightly batch, a webhook storm, or a retry wave can deliver in seconds what the average delivers in minutes. Bursts push waits above the model even when the average load looks safe.
+
+**Heavy-tailed jobs.** Exponential service times assume a memoryless spread. Real Rails jobs are often skewed: most finish in 50 ms, while a few run for twenty minutes. Those long jobs hold workers, and the queue behind them waits even at moderate utilization. When your duration distribution is skewed, use its percentiles rather than its mean, or the tool will be optimistic.
+
+**Effective concurrency.** The model treats each of the c workers as a real server. With CPU-bound jobs in Ruby, threads share the interpreter lock, so c overstates capacity. Measure the throughput of one process under load and use that as the working concurrency.
+
+**Retries and separate queues.** Retries are arrivals too. Include them in λ, or the load is understated. Sidekiq's queue weights and strict-priority mode also mean a queue may not receive the share of capacity this single-queue model assumes. Model busy queues separately.
+
+## The Rails angle
+
+In Sidekiq, concurrency is the thread count per process. Multiply by the number of processes to get c. Each thread that runs a job holds a database connection while it works, so the Sidekiq pool should be at least the thread count per process. In the worked example that means 20 connections for two processes with ten threads each. Solid Queue follows the same arithmetic with a different rule: Solid Queue's guidance sizes the pool as threads plus two per process, which gives 24 connections for the same setup.
+
+The [Solid Queue vs Sidekiq](/blog/solid-queue-vs-sidekiq/) comparison covers the operational differences, and the [internals piece on how Solid Queue works](/blog/how-solid-queue-works/) explains the polling loop that sets a latency floor even when capacity is ample. For pool sizing across processes, use the [connection pool calculator](/tools/connection-pool-calculator/). Use this tool to decide the thread count, then check the pool.

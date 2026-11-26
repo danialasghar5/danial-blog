@@ -3,9 +3,9 @@
 > The master plan for turning `danialasghar.com/tools/` into a developer tools hub. It sits alongside the
 > technical blog and consulting services and does not replace them.
 >
-> **Status:** Approved strategy, pre-implementation. No phase started.
-> **Created:** 2026-11-26 · **Owner:** Danial Asghar
-> **Branch of record:** `docs/tools-roadmap`, branched from `feat/premium-redesign` at `ed84151`.
+> **Status:** Phase 1 complete and live (`c936cd0`, 2026-11-26). Phase 0 mostly done; Phase 2 started.
+> **Created:** 2026-11-26 · **Owner:** Danial Asghar · **Last updated:** 2026-11-26
+> **Branch of record:** `main`. This file is updated with each phase and pushed with it.
 >
 > Work proceeds one phase at a time. When a phase ends, it is reviewed and approved before the next one
 > starts. Update §0 (status) and §17 (decision log) whenever something changes.
@@ -43,9 +43,9 @@
 | Phase | Name | Status | Branch | Approved |
 |---|---|---|---|---|
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
-| 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 In progress: redesign merged (D1, D2 ✅), SEO baseline done (`607422d`), security plan added (§11, S0-1 to S0-8); waiting on D3, D4 and the S0 tasks | `chore/seo-baseline` | — |
-| 1 | Foundation and first five tools | 🔄 In progress: foundation done (`6b535c4`); Wave 1 tools being built in parallel (DEC-25) | `feat/tools-foundation`, then `feat/tool-<slug>` | — |
-| 2 | Signature depth and first utilities | ⏳ Not started | — | — |
+| 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 Mostly done: redesign merged (D1, D2), SEO baseline, security:check (S0-2), npm audit clean (S0-3), site-wide headers + enforced CSP live (S0-4), header overflow fix. Open: S0-1 and S0-8 (owner), S0-5 CI, S0-6 Dependabot, S0-7 JSON-LD helper migration, D3, D4 | `chore/seo-baseline` | — |
+| 1 | Foundation and first five tools | ✅ Done: foundation + 5 tools live, discovery hub, Tools dropdown, Postgres group page; all audited against §10.8 | `feat/tools-wave1` → `main` | Owner: "if all fixed and done, push" (2026-11-26) |
+| 2 | Signature depth and first utilities | 🔄 Started early (owner request): #11 and #17 built and audited against §10.8, both in draft, not on `main` yet. Remaining Wave 2: #3, #4, #10, #12, #24, #28, #34, #35 | `feat/tool-rails-safe-migration-checker`, `feat/tool-puma-workers-threads-calculator` | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
 | 4 | Long tail | ⏳ Not started | — | — |
 
@@ -439,23 +439,23 @@ never the core.
 
 | # | Tool | Slug (proposed) | Tier | Group | Browser | D | C | Effort | SEO | Money | Wave | Status |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Sidekiq retry schedule calculator | `sidekiq-retry-calculator` | signature | jobs | ✅ | M | L | S | H | Leads | **1** | planned |
-| 2 | Queue capacity calculator (Little's law) | `job-queue-capacity-calculator` | signature | jobs | ✅ | M | L | S | H | Leads | **1** | planned |
+| 1 | Sidekiq retry schedule calculator | `sidekiq-retry-calculator` | signature | jobs | ✅ | M | L | S | H | Leads | **1** | **live** |
+| 2 | Queue capacity calculator (Little's law) | `job-queue-capacity-calculator` | signature | jobs | ✅ | M | L | S | H | Leads | **1** | **live** |
 | 3 | Backoff & jitter visualizer | `retry-backoff-jitter-visualizer` | signature | jobs | ✅ | M | M | S | M | Both | 2 | planned |
 | 4 | Sidekiq memory & concurrency planner | `sidekiq-concurrency-memory-planner` | signature | jobs | ✅ | M | L | S | M | Leads | 2 | planned |
 | 5 | Redis queue memory estimator | `redis-queue-memory-estimator` | signature | jobs | ✅ | L | L | S | M | Leads | 3 | planned |
 | 6 | Job payload checker | `sidekiq-job-payload-checker` | signature | jobs | ✅ | L | L | S | M | Leads | 3 | planned |
 | 7 | Unique-job lock TTL calculator | `unique-job-lock-ttl-calculator` | signature | jobs | ✅ | L | L | S | M | Leads | 4 | planned |
-| 8 | Postgres deadlock log analyzer | `postgres-deadlock-analyzer` | signature | postgres | ✅ | M | L | M | H | Leads | **1** | planned |
-| 9 | Postgres lock mode lookup | `postgres-lock-modes` | signature | postgres | ✅ | M | M | S | H | Leads | **1** | planned |
+| 8 | Postgres deadlock log analyzer | `postgres-deadlock-analyzer` | signature | postgres | ✅ | M | L | M | H | Leads | **1** | **live** |
+| 9 | Postgres lock mode lookup | `postgres-lock-modes` | signature | postgres | ✅ | M | M | S | H | Leads | **1** | **live** |
 | 10 | Connection pool calculator v2 | `connection-pool-calculator` *(existing)* | signature | postgres | ✅ | M | L | S | H | Leads | 2 | live (v1) |
-| 11 | Safe migration checker | `rails-safe-migration-checker` | signature | postgres | ✅ | M | M | M | H | Leads | 2 | planned |
+| 11 | Safe migration checker | `rails-safe-migration-checker` | signature | postgres | ✅ | M | M | M | H | Leads | 2 | built (draft, Wave 2) |
 | 12 | Postgres timeout builder | `postgres-timeout-config-builder` | signature | postgres | ✅ | M | L | S | M | Leads | 2 | planned |
 | 13 | Blocking query finder | `postgres-blocking-query-finder` | signature | postgres | ✅ | M | M | S | M | Leads | 3 | planned |
 | 14 | EXPLAIN ANALYZE viewer | `postgres-explain-analyze-viewer` | signature | postgres | ✅ | M | H | L | M | Both | 3 | planned |
 | 15 | Isolation level explorer | `postgres-isolation-levels` | signature | postgres | ✅ | L | L | M | M | Leads | 4 | planned |
 | 16 | Postgres memory calculator | `postgres-memory-calculator` | signature | postgres | ✅ | M | H | S | L | Ads | 4 | planned |
-| 17 | Puma workers × threads calculator | `puma-workers-threads-calculator` | signature | rails | ✅ | M | L | S | H | Leads | 2 | planned |
+| 17 | Puma workers × threads calculator | `puma-workers-threads-calculator` | signature | rails | ✅ | M | L | S | H | Leads | 2 | built (draft, Wave 2) |
 | 18 | Rails log analyzer | `rails-log-analyzer` | signature | rails | ✅ | M | L | M | H | Leads | 3 | planned |
 | 19 | `database.yml` validator | `rails-database-yml-validator` | signature | rails | ✅ | L | L | S | M | Leads | 3 | planned |
 | 20 | Rails credentials decryptor | `rails-credentials-decryptor` | signature | rails | ✅ | M | L | M | M | Both | 4 | planned |
@@ -471,7 +471,7 @@ never the core.
 | 30 | Hash / HMAC generator | `hash-hmac-generator` | utility | encoding | ✅ | H | H | S | L | Ads | 4 | planned |
 | 31 | Base64 / URL encode-decode | `base64-url-encoder` | utility | encoding | ✅ | H | H | S | L | Ads | 4 | planned |
 | 32 | CSP header builder | `csp-header-builder` | utility | encoding | ✅ | M | M | M | M | Both | 4 | planned |
-| 33 | Cron explainer + `recurring.yml` | `cron-expression-explainer` | utility | time | ✅ | H | H | S | H | Both | **1** | planned |
+| 33 | Cron explainer + `recurring.yml` | `cron-expression-explainer` | utility | time | ✅ | H | H | S | H | Both | **1** | **live** |
 | 34 | Unix timestamp converter | `unix-timestamp-converter` | utility | time | ✅ | H | H | S | M | Ads | 2 | planned |
 | 35 | UUID v4/v7 & ULID generator | `uuid-ulid-generator` | utility | time | ✅ | H | H | S | M | Ads | 2 | planned |
 | 36 | ISO 8601 duration ↔ ActiveSupport::Duration | `iso8601-duration-converter` | utility | time | ✅ | L | L | S | M | Ads | 4 | planned |
@@ -2456,6 +2456,14 @@ starts.**
 | DEC-25 | 2026-11-26 | **Wave 1 built in parallel** (owner request): five Haiku sub-agents, one git worktree each (`feat/tool-<slug>` from `feat/tools-foundation`); Opus verifies specs and formulas, reviews security, and audits each branch against §10.8. No tool branch is merged or pushed without owner approval | Owner |
 | DEC-26 | 2026-11-26 | D3 versions taken as recommended, pending owner confirmation: Sidekiq 7.x + 8.x, Active Job on Rails 7.1–8.1, Postgres 13–17 | Provisional |
 | DEC-27 | 2026-11-26 | Foundation schema: dropped `icon` (no sprite yet; add with the hub redesign). `adsEligible` is `z.literal(false)` until the Phase 3 gate. Group pages need `intro` and `description` in `tool-groups.ts` or the build fails | Foundation |
+| DEC-28 | 2026-11-26 | **Rule 3 overridden by the owner:** two Wave 2 tools (#11, #17) were started before Phase 1 shipped. They stay in draft on their own branches until audited and approved | Owner |
+| DEC-29 | 2026-11-26 | CSP enforced site-wide (`4bf165b`) after report-only showed no violations on 11 live pages; HSTS stays at stage 1 (`max-age=300`) | S0-4 |
+| DEC-30 | 2026-11-26 | Cron tool follows **Fugit** day-field semantics (only a bare `*` is unrestricted; `*/2` is restricted → DOM/DOW OR), verified in `lib/fugit/cron.rb`. Solid Queue and sidekiq-cron (`fugit ~> 1.8`) both parse with Fugit | Phase 1 audit |
+| DEC-31 | 2026-11-26 | Custom `sidekiq_retry_in` modelled like Sidekiq: `to_i` truncation, values ≤ 0 fall back to `count**4 + 15` | Phase 1 audit |
+| DEC-32 | 2026-11-26 | Widget contract enforced at integration: root `data-tool-widget`, events dispatched on the root; widget grids use `minmax(0, 1fr)` (three widgets and the shared `.tool-fields` overflowed at phone widths before this) | Phase 1 audit |
+| DEC-33 | 2026-11-26 | The `/tools/` hub keeps its title, description and H1 (D7), and uses `aria-label` (no new heading ids) so its SEO snapshot is unchanged. The existing calculator's sitemap entry is left without `lastmod` (protected URL) | Phase 1 |
+| DEC-34 | 2026-11-26 | Tool share cards: no per-tool OG images yet. `ToolLayout` falls back to the branded `og-default.png`. Generating cards in the redesign style needs the Bricolage TTF (download needs owner OK, D14) | Phase 1 |
+| DEC-35 | 2026-11-26 | Header fix for 320–360px phones (`4634f00`): tighter spacing, GitHub icon hidden at ≤360px (it remains in the footer) | Phase 1 |
 
 *Add a row for each new decision: analytics method, the ads gate, library choices with their licences.*
 
@@ -2505,12 +2513,17 @@ starts.**
 | D11 | Analytics beacon SRI: (a) versioned URL + SRI, (b) documented exception, or (c) leave analytics off | Only if the beacon is turned on | Owner |
 | D12 | Branch protection vs direct push to `main`: admin bypass with required CI checks (recommended, keeps DEC-16), or PRs required | S0-8 | Owner |
 | D13 | Signed commits: set up an SSH signing key locally so agent commits can be signed, then require them | S0-8 | Owner |
+| D14 | Per-tool share cards: OK to download the Bricolage Grotesque TTF (OFL licence, from google/fonts on GitHub) to the scratchpad to render cards in the redesign style? Until then tools use `og-default.png` (DEC-34) | Tool OG cards | Owner |
+| D15 | Not built yet (waiting on D6): article callouts, topic-hub "Tools for this topic" block, homepage tools strip, services "tools I use" block, privacy "Developer tools" section | Phase 1 cross-promotion | Owner |
 
-**Repository state (do not disturb), updated 2026-11-26 in Phase 0:**
-- `main` = `origin/main` = `feat/premium-redesign` = `f9a3e87`. The redesign and this roadmap
-  (`3fcbe6b`) are merged.
-- `chore/seo-baseline` at `607422d` (+ the roadmap tracking commit), branched from `f9a3e87`. Not pushed.
-- Tools work happens in a separate worktree (DEC-15), not in the main checkout.
+**Repository state (do not disturb), updated 2026-11-26 after Phase 1:**
+- `main` = `origin/main` includes the redesign, Phase 0 security work and all of Phase 1.
+- Pushes to `main` so far: `7b14a60` (SEO baseline + roadmap), `5082160` (npm audit fix, Node 22.23.5),
+  `e2be6dc` (security:check), `79b88d8` (headers, CSP report-only), `4bf165b` (CSP enforced),
+  `4634f00` (header fix for narrow phones), `c936cd0` (Phase 1: 49 commits, one per concern).
+- Not pushed (Wave 2, draft, audited): `feat/tool-rails-safe-migration-checker`,
+  `feat/tool-puma-workers-threads-calculator`.
+- Tools work happens in separate worktrees (DEC-15), not in the main checkout.
 - Branch `backup/premium-redesign-before-split` at `0cc6ac8`.
 - `stash@{0}` ("experimental-uncoordinated-redesign-edits", made on `main`).
 - Untracked `docs/PROJECT_OVERVIEW.md` and `files/`.

@@ -1,0 +1,368 @@
+---
+// Postgres lock mode lookup (TOOLS_ROADMAP.md §8.4). Markup only; behaviour is
+// in the script below, which uses logic.ts and data.ts. DOM is built with
+// createElement/textContent/replaceChildren only.
+import { OPERATIONS } from './data.ts';
+import { PG_DOCS_LOCKING } from '../_shared/pg-locks.ts';
+---
+
+<div class="lm-widget" data-tool-widget data-default-op="select" data-default-a="select" data-default-b="alter-table-add-column">
+	<div class="tool-field stacked">
+		<label class="tool-label" for="lm-search">Search operations</label>
+		<p class="tool-hint" id="lm-search-hint">Try “index”, “add_column”, “VACUUM” or “foreign key”.</p>
+		<input class="tool-input wide" id="lm-search" type="search" autocomplete="off" spellcheck="false" aria-describedby="lm-search-hint lm-count" />
+		<p class="tool-hint" id="lm-count" aria-live="polite"></p>
+	</div>
+	<ul class="lm-results" id="lm-results" aria-label="Matching operations"></ul>
+
+	<section class="lm-detail" aria-labelledby="lm-detail-heading">
+		<h3 id="lm-detail-heading" class="lm-detail-title"></h3>
+		<dl class="tool-metrics" id="lm-detail-metrics"></dl>
+		<div id="lm-detail-body"></div>
+	</section>
+
+	<section class="lm-compare" aria-labelledby="lm-compare-heading">
+		<h3 id="lm-compare-heading">Compare A vs B</h3>
+		<p class="tool-hint">A is what is already running. B is the statement that asks for a lock. The verdict says whether B waits for A.</p>
+		<div class="tool-fields two-col">
+			<div class="tool-field stacked">
+				<label class="tool-label" for="lm-a">A: already running</label>
+				<select class="tool-select" id="lm-a"></select>
+			</div>
+			<div class="tool-field stacked">
+				<label class="tool-label" for="lm-b">B: waiting for a lock</label>
+				<select class="tool-select" id="lm-b"></select>
+			</div>
+		</div>
+		<p class="tool-verdict is-ok" id="lm-verdict" role="status"><span class="state"></span> <span id="lm-verdict-text"></span></p>
+	</section>
+
+	<section class="lm-matrix" aria-labelledby="lm-matrix-heading">
+		<h3 id="lm-matrix-heading">Table-level conflict matrix</h3>
+		<p class="tool-hint">Rows are the mode B requests; columns are the mode A holds. ✕ means B waits. The current comparison is outlined.</p>
+		<div class="tool-table-wrap">
+			<table class="tool-table lm-table" id="lm-matrix">
+				<caption class="sr-only">Table-level lock conflicts: requested mode in rows, held mode in columns</caption>
+				<thead><tr><th scope="col"><span class="sr-only">Requested \ held</span></th></tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</section>
+
+	<section class="lm-matrix" aria-labelledby="lm-row-heading">
+		<h3 id="lm-row-heading">Row-level locks</h3>
+		<p class="tool-hint">Row locks come from SELECT … FOR and UPDATE/DELETE. They do not conflict with plain reads.</p>
+		<div class="tool-table-wrap">
+			<table class="tool-table lm-table" id="lm-row-matrix">
+				<caption class="sr-only">Row-level lock conflicts: requested row lock in rows, held row lock in columns</caption>
+				<thead><tr><th scope="col"><span class="sr-only">Requested \ held</span></th></tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</section>
+
+	<p class="tool-hint lm-queue-note" id="lm-queue-note"></p>
+	<p class="tool-hint">Lock modes: <a href={PG_DOCS_LOCKING} rel="noopener">PostgreSQL 17 docs, Explicit Locking</a>. Names and matrix are checked against Table 13.2 and Table 13.3.</p>
+</div>
+
+<script>
+	import { OPERATIONS, OPERATION_BY_ID, type Operation } from './data.ts';
+	import { compareOperations, matrixRows, rowMatrixRows, searchOperations, LOCK_QUEUE_NOTE, operationById } from './logic.ts';
+	import { LOCK_MODES, LOCK_MODE_SUMMARY, ROW_LOCK_MODES, conflictingModes, type LockMode } from '../_shared/pg-locks.ts';
+	import { decodeHashState } from '../_shared/hash-state.ts';
+
+	const CROSS = '✕';
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
+
+	type Detail = { text: string; state: Record<string, string>; cta: boolean; tone: 'ok' | 'risk' };
+
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+	const make = <K extends keyof HTMLElementTagNameMap>(tag: K, text?: string, cls?: string): HTMLElementTagNameMap[K] => {
+		const node = document.createElement(tag);
+		if (text !== undefined) node.textContent = text;
+		if (cls) node.className = cls;
+		return node;
+	};
+
+	const search = $<HTMLInputElement>('lm-search');
+	const count = $<HTMLElement>('lm-count');
+	const results = $<HTMLUListElement>('lm-results');
+	const detailTitle = $<HTMLElement>('lm-detail-heading');
+	const detailMetrics = $<HTMLElement>('lm-detail-metrics');
+	const detailBody = $<HTMLElement>('lm-detail-body');
+	const selA = $<HTMLSelectElement>('lm-a');
+	const selB = $<HTMLSelectElement>('lm-b');
+	const verdict = $<HTMLElement>('lm-verdict');
+	const verdictState = verdict?.querySelector<HTMLElement>('.state') ?? null;
+	const verdictText = $<HTMLElement>('lm-verdict-text');
+	const matrixTable = $<HTMLTableElement>('lm-matrix');
+	const rowTable = $<HTMLTableElement>('lm-row-matrix');
+	const queueNote = $<HTMLElement>('lm-queue-note');
+
+	const known = new Set(OPERATIONS.map((o) => o.id));
+	let selected = 'select';
+	let a = 'select';
+	let b = 'alter-table-add-column';
+
+	const isAccessExclusive = (op: Operation) => op.locks.some((l) => l.mode === 'ACCESS EXCLUSIVE');
+
+	const announce = (detail: Detail) => {
+		root?.dispatchEvent(new CustomEvent('tool:result', { bubbles: true, detail }));
+	};
+
+	// --- Search and results -------------------------------------------------
+	function renderResults() {
+		const matches = searchOperations(search?.value ?? '');
+		results?.replaceChildren(
+			...matches.map((op) => {
+				const li = make('li');
+				const btn = make('button', op.label, 'btn btn-secondary btn-sm lm-result');
+				btn.type = 'button';
+				btn.dataset.op = op.id;
+				btn.setAttribute('aria-pressed', String(op.id === selected));
+				if (op.kind === 'rails') btn.append(' ', make('span', '(Rails)', 'lm-kind'));
+				li.append(btn);
+				return li;
+			}),
+		);
+		if (count) count.textContent = matches.length === 0 ? 'No operation matches that search.' : `${matches.length} of ${OPERATIONS.length} operations`;
+	}
+
+	// --- Detail card --------------------------------------------------------
+	function renderDetail(op: Operation) {
+		if (detailTitle) detailTitle.textContent = op.label;
+		const metrics: HTMLElement[] = [];
+		const locksDd = make('dd');
+		op.locks.forEach((l, i) => {
+			if (i > 0) locksDd.append(', ');
+			locksDd.append(`${l.mode} on the ${l.object}`);
+		});
+		metrics.push(make('div', undefined, 'tool-metric'));
+		metrics[0].append(make('dt', 'Lock taken'), locksDd);
+		const versions = make('div', undefined, 'tool-metric');
+		versions.append(make('dt', 'Versions'), make('dd', `Postgres ${op.pgVersions}`));
+		metrics.push(versions);
+		detailMetrics?.replaceChildren(...metrics);
+
+		const body: HTMLElement[] = [];
+		body.push(make('p', op.notes));
+
+		const tableLocks = op.locks.filter((l) => l.object !== 'index');
+		const blocks = new Set<LockMode>();
+		for (const l of tableLocks) for (const m of conflictingModes(l.mode)) blocks.add(m);
+		const blockP = make('p');
+		blockP.append('Waits behind (conflicts with): ');
+		blockP.append(blocks.size ? [...blocks].join(', ') : 'nothing on the table');
+		body.push(blockP);
+
+		if (op.sqlEquivalent) {
+			const target = operationById(op.sqlEquivalent);
+			const p = make('p');
+			p.append('Emits the SQL operation ');
+			p.append(make('strong', target?.label ?? op.sqlEquivalent));
+			p.append('.');
+			body.push(p);
+		}
+		if (op.saferAlternative) {
+			const p = make('p');
+			p.append(make('strong', 'Safer alternative: '), op.saferAlternative);
+			body.push(p);
+		}
+		const docs = make('p');
+		const link = make('a', 'PostgreSQL docs for this operation');
+		link.href = op.source;
+		link.rel = 'noopener';
+		docs.append(link);
+		body.push(docs);
+		detailBody?.replaceChildren(...body);
+	}
+
+	// --- Compare -------------------------------------------------------------
+	function fillSelect(sel: HTMLSelectElement | null, value: string) {
+		sel?.replaceChildren(
+			...OPERATIONS.map((op) => {
+				const o = make('option', op.label);
+				o.value = op.id;
+				o.selected = op.id === value;
+				return o;
+			}),
+		);
+	}
+
+	function renderCompare() {
+		const r = compareOperations(a, b);
+		if (!r || !verdict || !verdictState || !verdictText) return;
+		verdict.className = `tool-verdict ${r.verdict === 'conflict' ? 'is-risk' : 'is-ok'}`;
+		verdictState.textContent = r.verdict === 'conflict' ? `Conflict — B waits for A` : 'No conflict';
+		verdictText.textContent = r.sentence;
+		highlightMatrix(r.cells);
+		if (queueNote) queueNote.textContent = LOCK_QUEUE_NOTE;
+	}
+
+	function highlightMatrix(cells: { requested: LockMode; held: LockMode }[]) {
+		const hit = new Set(cells.map((c) => `${c.requested}|${c.held}`));
+		matrixTable?.querySelectorAll<HTMLTableCellElement>('td[data-req]').forEach((td) => {
+			td.classList.toggle('is-current', hit.has(`${td.dataset.req}|${td.dataset.held}`));
+		});
+	}
+
+	function buildMatrices() {
+		const header = (table: HTMLTableElement | null, names: readonly string[]) => {
+			const tr = table?.tHead?.rows[0];
+			names.forEach((name) => tr?.append(make('th', name)));
+			Array.from(tr?.cells ?? []).forEach((c) => c.setAttribute('scope', 'col'));
+		};
+		header(matrixTable, LOCK_MODES);
+		header(rowTable, ROW_LOCK_MODES);
+		// Requested-mode rows.
+		const tbodyA = matrixTable?.tBodies[0];
+		matrixRows().forEach(({ requested, cells }) => {
+			const tr = make('tr');
+			const rowHead = make('th', requested);
+			rowHead.setAttribute('scope', 'row');
+			rowHead.title = LOCK_MODE_SUMMARY[requested];
+			tr.append(rowHead);
+			cells.forEach((conflict, j) => {
+				const held = LOCK_MODES[j];
+				const td = make('td', conflict ? CROSS : '', conflict ? 'lm-cell is-conflict' : 'lm-cell');
+				td.dataset.req = requested;
+				td.dataset.held = held;
+				td.setAttribute('aria-label', `${requested} requested while ${held} is held: ${conflict ? 'conflict, requester waits' : 'no conflict'}`);
+				tr.append(td);
+			});
+			tbodyA?.append(tr);
+		});
+		const tbodyR = rowTable?.tBodies[0];
+		rowMatrixRows().forEach(({ requested, cells }) => {
+			const tr = make('tr');
+			const rowHead = make('th', requested);
+			rowHead.setAttribute('scope', 'row');
+			tr.append(rowHead);
+			cells.forEach((conflict, j) => {
+				const held = ROW_LOCK_MODES[j];
+				const td = make('td', conflict ? CROSS : '', conflict ? 'lm-cell is-conflict' : 'lm-cell');
+				td.setAttribute('aria-label', `${requested} requested while ${held} is held: ${conflict ? 'conflict' : 'no conflict'}`);
+				tr.append(td);
+			});
+			tbodyR?.append(tr);
+		});
+	}
+
+	// --- Selection ------------------------------------------------------------
+	function select(id: string) {
+		if (!known.has(id)) return;
+		selected = id;
+		const op = OPERATION_BY_ID.get(id)!;
+		renderResults();
+		renderDetail(op);
+		announce({
+			text: `${op.label}: takes ${op.locks.map((l) => `${l.mode} on the ${l.object}`).join(' and ')}. ${op.notes}`,
+			state: { op: id, a, b },
+			cta: false,
+			tone: isAccessExclusive(op) ? 'risk' : 'ok',
+		});
+	}
+
+	function compareNow() {
+		const r = compareOperations(a, b);
+		if (!r) return;
+		renderCompare();
+		const risky = r.verdict === 'conflict' && (isAccessExclusive(r.a) || isAccessExclusive(r.b));
+		announce({
+			text: `${r.verdict === 'conflict' ? 'Conflict' : 'No conflict'}. ${r.sentence}`,
+			state: { op: selected, a, b },
+			cta: risky,
+			tone: r.verdict === 'conflict' ? 'risk' : 'ok',
+		});
+	}
+
+	// --- Wiring ---------------------------------------------------------------
+	function applyHash(): boolean {
+		const parsed = decodeHashState(location.hash, ['op', 'a', 'b']);
+		if (!parsed) return false;
+		if (parsed.op && known.has(parsed.op)) selected = parsed.op;
+		if (parsed.a && known.has(parsed.a)) a = parsed.a;
+		if (parsed.b && known.has(parsed.b)) b = parsed.b;
+		return true;
+	}
+
+	const widget = root;
+	if (widget) {
+		applyHash();
+		buildMatrices();
+		fillSelect(selA, a);
+		fillSelect(selB, b);
+		renderResults();
+		renderDetail(OPERATION_BY_ID.get(selected)!);
+		renderCompare();
+		if (queueNote) queueNote.textContent = LOCK_QUEUE_NOTE;
+
+		search?.addEventListener('input', renderResults);
+		results?.addEventListener('click', (e) => {
+			const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-op]');
+			if (btn?.dataset.op) select(btn.dataset.op);
+		});
+		selA?.addEventListener('change', () => {
+			a = selA.value;
+			compareNow();
+		});
+		selB?.addEventListener('change', () => {
+			b = selB.value;
+			compareNow();
+		});
+	}
+</script>
+
+<style>
+	.lm-widget {
+		display: grid;
+		/* minmax(0,1fr): let wide tables scroll inside .tool-table-wrap instead of stretching the widget */
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.25rem;
+	}
+	.lm-results {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.lm-result[aria-pressed='true'] {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
+	}
+	.lm-kind {
+		opacity: 0.8;
+		font-size: 0.85em;
+	}
+	.lm-detail-title,
+	.lm-compare h3,
+	.lm-matrix h3 {
+		margin-bottom: 0.25rem;
+	}
+	.lm-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.8rem;
+	}
+	.lm-table th,
+	.lm-table td {
+		padding: 0.35rem 0.4rem;
+		text-align: center;
+		white-space: nowrap;
+	}
+	.lm-table tbody th {
+		text-align: left;
+	}
+	.lm-cell.is-conflict {
+		font-weight: 600;
+	}
+	.lm-cell.is-current {
+		outline: 2px solid currentColor;
+		outline-offset: -2px;
+	}
+	.lm-queue-note {
+		max-width: 65ch;
+	}
+</style>

@@ -1,0 +1,90 @@
+---
+title: 'Postgres Lock Mode Lookup'
+seoTitle: 'Postgres Lock Mode Lookup: Which Locks Block Reads'
+description: 'Look up the table lock a Postgres statement or Rails migration takes, and check whether one statement waits behind another.'
+seoDescription: 'Look up the table lock behind any Postgres statement or Rails migration and check whether it waits for another query. Runs in your browser, nothing sent.'
+tier: signature
+group: postgres
+status: live
+order: 10
+featured: true
+pubDate: 2026-11-26
+keywords: ['postgres lock modes', 'access exclusive lock', 'rails migration lock', 'add_index concurrently', 'lock_timeout', 'alter table lock']
+versions: ['Postgres 13–17']
+relatedPosts: ['rails-deadlock-activerecord', 'postgres-race-conditions-row-locks-rails']
+relatedTopic: database-reliability
+nextTools: ['postgres-deadlock-analyzer', 'connection-pool-calculator']
+serviceCta: postgres-review
+shareable: true
+worker: false
+faq:
+  - q: 'Does CREATE INDEX block reads?'
+    a: 'No. Plain CREATE INDEX takes SHARE, which allows reads but blocks INSERT, UPDATE and DELETE on the table until the build finishes. CREATE INDEX CONCURRENTLY takes SHARE UPDATE EXCLUSIVE, so writes continue, at the cost of a slower build that cannot run inside a transaction.'
+  - q: 'Why does a plain SELECT wait during a migration?'
+    a: 'Because the migration is queued for ACCESS EXCLUSIVE behind a long-running query. Postgres grants locks in queue order, so the waiting ACCESS EXCLUSIVE request blocks every later ACCESS SHARE request, including new SELECTs, until the long query finishes.'
+  - q: 'Is ADD COLUMN with a default safe?'
+    a: 'It depends on the default. A non-volatile default such as a constant is stored in the catalog and does not rewrite the table. A volatile default, such as one that calls a function per row, rewrites the table and its indexes while ACCESS EXCLUSIVE is held. In both cases the statement itself needs ACCESS EXCLUSIVE, so set a lock_timeout.'
+  - q: 'What does NOT VALID change?'
+    a: 'It tells Postgres to record a CHECK or FOREIGN KEY constraint without scanning existing rows, so the ALTER TABLE commits quickly. New rows are checked from then on. VALIDATE CONSTRAINT checks the existing rows later, under SHARE UPDATE EXCLUSIVE, which lets reads and writes continue.'
+  - q: 'Does this match what Rails runs for add_index algorithm: :concurrently?'
+    a: 'The concurrent option emits CREATE INDEX CONCURRENTLY. Postgres refuses that inside a transaction block, so the migration needs disable_ddl_transaction! and must handle a failed build, which leaves an INVALID index behind that has to be dropped before retrying.'
+  - q: 'Which Postgres versions does the table cover?'
+    a: 'The lock modes and the conflict matrix are taken from the PostgreSQL 17 documentation and are the same for Postgres 13 through 17 in those docs. Lock levels for individual ALTER TABLE forms are the part to re-check when you move major versions, against the release notes for your version.'
+---
+
+Every Postgres statement takes a table-level lock before it touches a table. The mode of that lock decides what else can run on the same table at the same time. Most production outages from migrations are not about how long the work takes. They come from a lock that was granted too late, or was never granted, while other queries piled up behind it.
+
+This page explains the lock modes, the conflict matrix behind the lookup, and the queue that turns one slow query into a stalled table. The widget above looks up any statement or Rails migration method, and compares two of them.
+
+## How it works
+
+PostgreSQL has eight table-level lock modes. They are ordered by how much they block, from ACCESS SHARE, taken by every SELECT, to ACCESS EXCLUSIVE, which blocks everything including a plain SELECT. Two requests conflict when the requested mode is listed as conflicting with the held mode in the table of conflicts in the PostgreSQL documentation (Table 13.2, Explicit Locking). The matrix is symmetric, and the tool encodes that table directly, so the answer does not depend on which statement you ask about first.
+
+A few rows matter most in practice:
+
+- ACCESS SHARE conflicts only with ACCESS EXCLUSIVE. Ordinary reads are almost never blocked by anything except DDL.
+- ROW EXCLUSIVE, taken by INSERT, UPDATE, DELETE and MERGE, conflicts with SHARE. A plain CREATE INDEX takes SHARE, which is why writes stop while it runs.
+- SHARE UPDATE EXCLUSIVE, taken by VACUUM, ANALYZE and CREATE INDEX CONCURRENTLY, does not conflict with reads or writes. It does conflict with itself, so two concurrent index builds on one table cannot overlap.
+- SHARE does not conflict with itself. Two plain CREATE INDEX statements on the same table can be held together, though each still blocks writes.
+
+Row-level locks sit on a separate layer. SELECT … FOR UPDATE takes ROW SHARE on the table, then locks the individual rows it returns. The row modes conflict with each other (FOR UPDATE with everything, FOR SHARE with the update modes), and plain reads never wait for them. Deadlocks come from this layer, which is covered in the deadlock post linked below.
+
+### The lock queue
+
+Lock requests are granted in order. When a request has to wait, later requests for conflicting modes wait behind it, even when they would not have conflicted with the holder. This is the rule that causes the outages. An ACCESS EXCLUSIVE request waiting behind a long SELECT blocks every later ACCESS SHARE request on that table, which means every new SELECT. The migration is not running and not making progress, yet the whole table stops answering.
+
+## Worked example: why your migration took the site down
+
+A typical sequence, on a table called orders:
+
+1. A reporting query starts a long SELECT on orders. It holds ACCESS SHARE.
+2. A deploy runs a migration with ALTER TABLE orders ADD COLUMN. It asks for ACCESS EXCLUSIVE. That conflicts with the held ACCESS SHARE, so the migration waits.
+3. A web request runs SELECT on orders. It asks for ACCESS SHARE, which does not conflict with the reporting query, but it queues behind the waiting migration. It waits too.
+4. Every later request on orders joins the queue. Connection pools fill with waiting sessions, and the application starts failing.
+
+The migration did no work. ADD COLUMN with a constant default is a catalog change. The outage came from the wait, not from the work. Put the two statements into the widget as A = the reporting SELECT and B = ADD COLUMN, and the verdict reads "Conflict: B waits for A."
+
+The fix has three parts.
+
+First, bound the wait. Set lock_timeout at the start of the migration session, to a value short enough that a blocked migration gives up before your request timeout matters. Then retry the migration with a delay, and log each attempt. A migration that fails fast and retries is far less harmful than one that holds a queue open.
+
+Second, avoid the heavy modes where a weaker one exists. Build indexes with CREATE INDEX CONCURRENTLY, which takes SHARE UPDATE EXCLUSIVE, so writes continue. It scans the table twice and waits for older transactions, so it is slower. If it fails, it leaves an INVALID index to drop before retrying.
+
+Third, split constraints into two steps. ADD CONSTRAINT with NOT VALID, or ADD FOREIGN KEY with NOT VALID, records the constraint without scanning existing rows, so the ALTER TABLE commits quickly. Then VALIDATE CONSTRAINT checks the existing rows under SHARE UPDATE EXCLUSIVE, while reads and writes continue. A foreign key also takes ROW SHARE on the referenced table during validation. Check the lock on the referenced table before you run it on a busy parent.
+
+## Limitations and versions
+
+- The table-level modes and the conflict matrix are taken from the PostgreSQL 17 documentation and apply across Postgres 13 to 17 as documented. Re-check the lock level of a specific ALTER TABLE form when you change major versions.
+- The PostgreSQL docs do not name a lock for every ALTER TABLE form. For those, the docs say ACCESS EXCLUSIVE is acquired unless explicitly noted, and the tool follows that rule.
+- The docs describe REINDEX as taking ACCESS EXCLUSIVE on the index and blocking writes to the table, while the explicit-locking summary lists REINDEX under ACCESS EXCLUSIVE. The tool shows the index lock and a SHARE lock on the table, matching the REINDEX page.
+- The tool covers table, index and row-level locks. It does not cover advisory locks or transaction-ID waits.
+- It answers one question: does B's requested lock conflict with A's held lock on the same object right now. It does not model queue position, statement duration, or how many connections are waiting.
+- Rails mappings describe the SQL each method emits. Adapter details and generated SQL vary by Rails version, so confirm against the SQL log of the migration you run.
+
+## The Rails angle
+
+ActiveRecord runs each migration inside a transaction by default. That matters for locks, because a transaction holds every lock it takes until it commits. A migration that adds a column, then an index, then a foreign key holds the strongest of those locks for the whole run, not just for each step.
+
+CREATE INDEX CONCURRENTLY cannot run in a transaction block, so add_index with algorithm: :concurrently needs disable_ddl_transaction! in the migration class. Without it the migration fails on the first run. With it, a failed build leaves an INVALID index, so the migration needs a cleanup step before a retry.
+
+Set lock_timeout in the migration as well. A migration that waits for a lock while holding a connection can cause the same queue as any other session, and in a deploy it is the wait that takes the site down. The ways that waiting turns into deadlocks and row-level contention are covered in [Fixing Rails Deadlocks: ActiveRecord::Deadlocked (40P01)](/blog/rails-deadlock-activerecord/) and [Row lock race conditions in Rails](/blog/postgres-race-conditions-row-locks-rails/).

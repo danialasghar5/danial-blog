@@ -1,0 +1,389 @@
+<div class="dl-widget" data-tool-widget>
+	<div class="tool-field stacked">
+		<label class="tool-label" for="dl-input">Paste a deadlock report</label>
+		<span class="tool-hint" id="dl-privacy">Redact values before you paste: statements can contain customer data. Analysis runs in a Web Worker in this tab. Nothing is sent anywhere.</span>
+		<textarea
+			class="tool-textarea"
+			id="dl-input"
+			name="report"
+			rows="10"
+			spellcheck="false"
+			autocomplete="off"
+			autocapitalize="off"
+			aria-describedby="dl-privacy dl-error"
+			placeholder="ERROR:  deadlock detected&#10;DETAIL:  Process 18321 waits for ShareLock on transaction 4412; blocked by process 18344."></textarea>
+		<p class="tool-error" id="dl-error"></p>
+	</div>
+
+	<div class="tool-actions-row">
+		<button type="button" class="btn btn-primary btn-sm" data-action="analyze">Analyze</button>
+		<button type="button" class="btn btn-secondary btn-sm" data-action="example">Load example</button>
+		<button type="button" class="btn btn-secondary btn-sm" data-action="reset">Reset</button>
+		<span class="status" data-status role="status"></span>
+	</div>
+
+	<div class="tool-result" data-result hidden>
+		<div class="tool-verdict is-warn" data-verdict>
+			<span class="state" data-verdict-state></span>
+			<p data-verdict-text></p>
+		</div>
+
+		<p class="tool-hint" data-shared-note hidden>The statements and the log are not in a share link. Paste the log again to see the full analysis.</p>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">The wait cycle</h3>
+			<svg class="dl-diagram" data-diagram viewBox="0 0 440 300" role="img" aria-labelledby="dl-diagram-title dl-diagram-desc" focusable="false">
+				<title id="dl-diagram-title">Lock wait diagram</title>
+				<desc id="dl-diagram-desc"></desc>
+			</svg>
+			<p class="tool-hint" data-diagram-text></p>
+		</section>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">What happened</h3>
+			<ol class="dl-list" data-narrative></ol>
+		</section>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">Processes</h3>
+			<div class="tool-table-wrap">
+				<table class="tool-table" aria-label="Processes in the wait cycle">
+					<thead>
+						<tr>
+							<th scope="col">PID</th>
+							<th scope="col">Statement</th>
+							<th scope="col">Waits for</th>
+							<th scope="col">Blocked by</th>
+							<th scope="col">Table</th>
+						</tr>
+					</thead>
+					<tbody data-rows></tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">What the lock names mean</h3>
+			<ul class="dl-list" data-notes></ul>
+		</section>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">Why this pattern</h3>
+			<ul class="dl-list" data-evidence></ul>
+			<div data-warnings hidden>
+				<h3 class="dl-h">Warnings</h3>
+				<ul class="dl-list" data-warning-list></ul>
+			</div>
+		</section>
+
+		<section class="dl-section" data-full>
+			<h3 class="dl-h">Fixes</h3>
+			<div data-fixes></div>
+		</section>
+	</div>
+</div>
+
+<style is:global>
+	/* Global, not scoped: the widget builds its DOM at runtime, and Astro's scoping attributes are not added to it. */
+	.dl-widget [hidden] { display: none !important; }
+	.dl-widget .tool-textarea { min-height: 14rem; }
+	.dl-widget .tool-verdict p { margin: .35rem 0 0; }
+	.dl-h { font-size: var(--fs-base); font-weight: 600; margin: var(--space-6) 0 var(--space-2); }
+	.dl-list { margin: 0; padding-left: 1.25rem; font-size: var(--fs-sm); line-height: var(--lh-normal); }
+	.dl-list li + li { margin-top: .35rem; }
+	.dl-diagram { display: block; width: 100%; max-width: 440px; height: auto; margin: var(--space-3) 0 0; }
+	.dl-edge { fill: none; stroke: var(--text-muted); stroke-width: 1.5; }
+	.dl-arrowhead { fill: var(--text-muted); }
+	.dl-node circle { fill: var(--card-bg); stroke: var(--border-strong); stroke-width: 1.5; }
+	.dl-node.is-victim circle { stroke: var(--dg-hazard); stroke-width: 2.5; }
+	.dl-node text { font-family: var(--font-mono); font-size: 13px; fill: var(--text); text-anchor: middle; }
+	.dl-node .dl-sub { font-size: 11px; fill: var(--text-muted); }
+	.dl-edge-label { font-family: var(--font-mono); font-size: 11px; fill: var(--text-muted); text-anchor: middle; }
+	.dl-stmt { font-family: var(--font-mono); font-size: var(--fs-xs); white-space: normal !important; min-width: 12rem; max-width: 26rem; }
+	.dl-fix { margin-top: var(--space-6); }
+	.dl-fix-title { font-size: var(--fs-sm); font-weight: 600; margin: 0 0 var(--space-2); }
+	.dl-fix .tool-output { margin-top: var(--space-3); }
+	.dl-fix .tool-output pre { padding: var(--space-3); background: var(--bg-subtle); border-radius: var(--radius); white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+
+<script>
+	import { createWorkerClient, SupersededError, WorkerTimeoutError } from '../_shared/worker-client';
+	import { copyText } from '../_shared/copy';
+	import { analyzeReport } from './analyze';
+	import type { AnalysisResult, AnalysisSuccess } from './analyze';
+	import { checkReportSize } from './limits';
+	import { EXAMPLE_REPORT } from './example';
+	import { readShareHash, summaryState, summaryText } from './state';
+	import type { SharedSummary } from './state';
+	import type { Fix } from './fixes';
+	import type { ProcessView } from './classify';
+
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
+
+	if (root) {
+		const NS = 'http://www.w3.org/2000/svg';
+		const q = <T extends Element>(sel: string): T => {
+			const node = root.querySelector<T>(sel);
+			if (!node) throw new Error(`Missing ${sel}`);
+			return node;
+		};
+
+		const input = q<HTMLTextAreaElement>('#dl-input');
+		const errorEl = q<HTMLElement>('#dl-error');
+		const status = q<HTMLElement>('[data-status]');
+		const result = q<HTMLElement>('[data-result]');
+		const verdict = q<HTMLElement>('[data-verdict]');
+		const verdictState = q<HTMLElement>('[data-verdict-state]');
+		const verdictText = q<HTMLElement>('[data-verdict-text]');
+		const sharedNote = q<HTMLElement>('[data-shared-note]');
+		const svg = q<SVGSVGElement>('[data-diagram]');
+		const diagramText = q<HTMLElement>('[data-diagram-text]');
+		const narrative = q<HTMLElement>('[data-narrative]');
+		const rows = q<HTMLElement>('[data-rows]');
+		const notes = q<HTMLElement>('[data-notes]');
+		const evidence = q<HTMLElement>('[data-evidence]');
+		const warnings = q<HTMLElement>('[data-warnings]');
+		const warningList = q<HTMLElement>('[data-warning-list]');
+		const fixes = q<HTMLElement>('[data-fixes]');
+		const fullSections = Array.from(root.querySelectorAll<HTMLElement>('[data-full]'));
+
+		type Child = Node | string | false | null | undefined;
+		const append = (node: Element, kids: Child[]) => {
+			for (const k of kids) if (k !== false && k !== null && k !== undefined) node.append(k);
+			return node;
+		};
+		const el = <K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, ...kids: Child[]) => {
+			const node = document.createElement(tag);
+			for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+			return append(node, kids);
+		};
+		const svgEl = (tag: string, attrs: Record<string, string | number> = {}, ...kids: Child[]) => {
+			const node = document.createElementNS(NS, tag);
+			for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+			return append(node as unknown as Element, kids) as unknown as SVGElement;
+		};
+
+		const say = (msg: string) => {
+			status.textContent = msg;
+		};
+
+		const setVerdict = (cls: 'is-risk' | 'is-warn' | 'is-ok', state: string, text: string) => {
+			verdict.className = `tool-verdict ${cls}`;
+			verdictState.textContent = state;
+			verdictText.textContent = text;
+		};
+
+		const setFull = (show: boolean) => {
+			for (const s of fullSections) s.hidden = !show;
+		};
+
+		const clearOutput = () => {
+			result.hidden = true;
+			errorEl.textContent = '';
+			sharedNote.hidden = true;
+			status.textContent = '';
+			root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true, detail: {} }));
+		};
+
+		const fail = (message: string) => {
+			errorEl.textContent = message;
+			result.hidden = true;
+			root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true, detail: {} }));
+			root.dispatchEvent(new CustomEvent('tool:error', { bubbles: true, detail: { message } }));
+			say('');
+		};
+
+		// --- Diagram: processes are nodes, each wait is a curved arrow labelled with mode and target.
+		const drawDiagram = (procs: ProcessView[], cycle: number[] | null) => {
+			const waits = procs.filter((p): p is ProcessView & { blockedBy: number } => p.blockedBy !== null);
+			const desc = waits.map((p) => `Process ${p.pid} waits for ${p.waitsFor} held by process ${p.blockedBy}.`).join(' ');
+			diagramText.textContent = desc;
+			svg.toggleAttribute('hidden', waits.length === 0);
+			svg.replaceChildren(svgEl('title', { id: 'dl-diagram-title' }, 'Lock wait diagram'), svgEl('desc', { id: 'dl-diagram-desc' }, desc));
+			if (waits.length === 0) return;
+
+			const order = cycle ?? [...new Set(procs.map((p) => p.pid))];
+			const n = order.length;
+			const cx = 220;
+			const cy = 150;
+			const R = n === 2 ? 100 : 92;
+			const NODE = 24;
+			const pos = new Map<number, { x: number; y: number }>();
+			order.forEach((pid, i) => {
+				const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
+				pos.set(pid, { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) });
+			});
+			const toward = (from: { x: number; y: number }, to: { x: number; y: number }, dist: number) => {
+				const dx = to.x - from.x;
+				const dy = to.y - from.y;
+				const len = Math.hypot(dx, dy) || 1;
+				return { x: from.x + (dx / len) * dist, y: from.y + (dy / len) * dist };
+			};
+
+			svg.append(svgEl('defs', {}, svgEl('marker', { id: 'dl-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto' }, svgEl('path', { d: 'M0,0 L10,5 L0,10 z', class: 'dl-arrowhead' }))));
+
+			for (const w of waits) {
+				const a = pos.get(w.pid);
+				const b = pos.get(w.blockedBy);
+				if (!a || !b) continue;
+				const dx = b.x - a.x;
+				const dy = b.y - a.y;
+				const len = Math.hypot(dx, dy) || 1;
+				const off = n === 2 ? 90 : 46;
+				const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+				const c = { x: mid.x + (-dy / len) * off, y: mid.y + (dx / len) * off };
+				const start = toward(a, c, NODE);
+				const end = toward(b, c, NODE + 2);
+				const d = `M${start.x.toFixed(1)},${start.y.toFixed(1)} Q${c.x.toFixed(1)},${c.y.toFixed(1)} ${end.x.toFixed(1)},${end.y.toFixed(1)}`;
+				svg.append(svgEl('path', { class: 'dl-edge', d, 'marker-end': 'url(#dl-arrow)' }));
+				const [mode, ...target] = w.waitsFor.split(' on ');
+				svg.append(
+					svgEl(
+						'text',
+						{ class: 'dl-edge-label', x: c.x.toFixed(1), y: (c.y - 4).toFixed(1) },
+						svgEl('tspan', { x: c.x.toFixed(1), dy: 0 }, mode),
+						svgEl('tspan', { x: c.x.toFixed(1), dy: 14 }, target.join(' on ')),
+					),
+				);
+			}
+
+			for (const pid of order) {
+				const pt = pos.get(pid);
+				if (!pt) continue;
+				const view = procs.find((p) => p.pid === pid);
+				const table = view?.table ?? '';
+				svg.append(
+					svgEl(
+						'g',
+						{ class: view?.victim ? 'dl-node is-victim' : 'dl-node' },
+						svgEl('circle', { cx: pt.x.toFixed(1), cy: pt.y.toFixed(1), r: NODE }),
+						svgEl('text', { x: pt.x.toFixed(1), y: (pt.y + 4).toFixed(1) }, String(pid)),
+						table ? svgEl('text', { class: 'dl-sub', x: pt.x.toFixed(1), y: (pt.y + NODE + 15).toFixed(1) }, table) : false,
+					),
+				);
+			}
+		};
+
+		const renderFix = (f: Fix): HTMLElement => {
+			const label = { ruby: 'Rails', sql: 'SQL', yaml: 'YAML', text: 'Note' }[f.language];
+			const copy = el('button', { type: 'button', class: 'btn btn-secondary btn-sm' }, 'Copy snippet');
+			copy.addEventListener('click', async () => {
+				say((await copyText(f.code)) ? 'Snippet copied.' : 'Copy failed. Select the text manually.');
+			});
+			const block = el('div', { class: 'tool-output' }, el('div', { class: 'tool-output-head' }, el('span', {}, label), copy), el('pre', {}, el('code', {}, f.code)));
+			return el(
+				'article',
+				{ class: 'dl-fix' },
+				el('h4', { class: 'dl-fix-title' }, f.title),
+				el('p', {}, f.why),
+				block,
+				f.link ? el('p', {}, el('a', { href: f.link.href }, `${f.link.label} →`)) : false,
+			);
+		};
+
+		const render = (r: AnalysisSuccess) => {
+			setFull(true);
+			sharedNote.hidden = true;
+			setVerdict(r.tone === 'risk' ? 'is-risk' : 'is-warn', r.tone === 'risk' ? 'Cycle found' : 'Partial report', `${r.headline}.`);
+			drawDiagram(r.processes, r.cycle);
+			narrative.replaceChildren(...r.narrative.map((s) => el('li', {}, s)));
+			rows.replaceChildren(
+				...r.processes.map((p) =>
+					el(
+						'tr',
+						{},
+						el('td', {}, `${p.pid}${p.victim ? ' (aborted)' : ''}`),
+						el('td', { class: 'dl-stmt' }, p.query ?? 'not in report'),
+						el('td', {}, p.waitsFor),
+						el('td', {}, p.blockedBy !== null ? String(p.blockedBy) : '—'),
+						el('td', {}, p.table ?? '—'),
+					),
+				),
+			);
+			notes.replaceChildren(...r.lockNotes.map((n) => el('li', {}, n)));
+			evidence.replaceChildren(...r.evidence.map((e) => el('li', {}, e)));
+			warnings.hidden = r.warnings.length === 0;
+			warningList.replaceChildren(...r.warnings.map((w) => el('li', {}, w)));
+			fixes.replaceChildren(...r.fixes.map(renderFix));
+			result.hidden = false;
+			say(`${r.headline}.`);
+			root.dispatchEvent(new CustomEvent('tool:result', { bubbles: true, detail: { text: r.text, state: r.state, cta: r.cta, tone: r.tone } }));
+		};
+
+		const showShared = (s: SharedSummary) => {
+			setFull(false);
+			sharedNote.hidden = false;
+			setVerdict('is-warn', 'Shared summary', summaryText(s));
+			result.hidden = false;
+			root.dispatchEvent(
+				new CustomEvent('tool:result', {
+					bubbles: true,
+					detail: { text: summaryText(s), state: summaryState(s), cta: s.procs >= 3 || s.tables.length >= 2 },
+				}),
+			);
+		};
+
+		// --- Worker with inline fallback (worker-client.ts). A newer run supersedes an older one.
+		const client = createWorkerClient<string, AnalysisResult>({
+			create:
+				typeof Worker === 'undefined'
+					? null
+					: () => new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' }),
+			fallback: analyzeReport,
+			timeoutMs: 10_000,
+		});
+
+		const run = async (text: string) => {
+			const size = checkReportSize(text);
+			if (!size.ok) return fail(size.error.message);
+			try {
+				const out = await client.run(text);
+				if (!out.ok) return fail(out.message);
+				errorEl.textContent = '';
+				render(out);
+			} catch (err) {
+				if (err instanceof SupersededError) return;
+				fail(err instanceof WorkerTimeoutError ? err.message : 'The analysis failed. Check that the text is a Postgres deadlock report.');
+			}
+		};
+
+		const runFromInput = () => {
+			const text = input.value;
+			if (text.trim() === '') return clearOutput();
+			void run(text);
+		};
+
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		input.addEventListener('input', () => {
+			clearTimeout(timer);
+			timer = setTimeout(runFromInput, 250);
+		});
+		input.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+				clearTimeout(timer);
+				runFromInput();
+			}
+		});
+
+		root.addEventListener('click', (e) => {
+			const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+			if (!button) return;
+			clearTimeout(timer);
+			if (button.dataset.action === 'analyze') runFromInput();
+			if (button.dataset.action === 'example') {
+				input.value = EXAMPLE_REPORT;
+				runFromInput();
+			}
+			if (button.dataset.action === 'reset') {
+				input.value = '';
+				clearOutput();
+				input.focus();
+				say('Cleared.');
+			}
+		});
+
+		// A shared link carries the summary only. Show it, and say the log must be pasted again.
+		const shared = readShareHash(location.hash);
+		if (shared) showShared(shared);
+	}
+</script>

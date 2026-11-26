@@ -1,13 +1,25 @@
 ---
+// Tools hub (TOOLS_ROADMAP.md §12.2). Every live tool is rendered server-side as
+// a real link, so the page works and is fully crawlable without JavaScript.
+// The script only adds search, group filters (kept in #group=… so filtered
+// views never become indexable URLs) and "Recently used" (slugs from
+// localStorage; hidden when empty). Title, description and H1 are unchanged
+// from the original page (D7).
 import Page from '../../layouts/Page.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { NAME } from '../../consts';
-import { liveTools, toolHref } from '../../utils/tools';
+import { TOOL_GROUPS } from '../../data/tool-groups';
+import { groupsWithPages, liveTools, toolHref } from '../../utils/tools';
 
-// Every live entry in src/content/tools/ (drafts never appear). The discovery
-// hub (search, filters, signature row) replaces this list once Wave 1 is live.
-const tools = (await liveTools()).map((t) => ({ href: toolHref(t.id), title: t.data.title, blurb: t.data.description }));
+const tools = await liveTools();
+const groupPages = new Set(groupsWithPages(tools).map((g) => g.id));
+const groups = TOOL_GROUPS.map((g) => ({ ...g, count: tools.filter((t) => t.data.group === g.id).length })).filter((g) => g.count > 0);
+const signature = tools.filter((t) => t.data.tier === 'signature');
+const utilities = tools.filter((t) => t.data.tier === 'utility');
+const searchText = (t: (typeof tools)[number]) =>
+	[t.data.title, t.data.description, ...t.data.keywords, t.data.group].join(' ').toLowerCase();
+const meta = (t: (typeof tools)[number]) => (t.data.versions.length ? t.data.versions.join(' · ') : null) ?? groups.find((g) => g.id === t.data.group)?.label ?? '';
 ---
 
 <Page title={`Developer Tools — Rails & Background Jobs | ${NAME}`}
@@ -17,36 +29,212 @@ const tools = (await liveTools()).map((t) => ({ href: toolHref(t.id), title: t.d
 		<p class="page-lede lede">Small, free calculators for the production problems I write about. Everything runs in your browser — nothing you enter leaves the page.</p>
 	</PageHeader>
 
-	<ul class="tools">
-		{tools.map((t) => (
-			<li>
-				<a class="tool" href={t.href}>
-					<h2>{t.title}</h2>
-					<p>{t.blurb}</p>
-					<span class="go">Open tool &rarr;</span>
-				</a>
-			</li>
-		))}
-	</ul>
+	<div class="finder" data-finder>
+		<div class="search">
+			<label class="sr-only" for="tool-search">Search tools</label>
+			<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+			<input id="tool-search" type="search" placeholder="Search tools — deadlock, cron, retry…" autocomplete="off" spellcheck="false" data-search />
+			<kbd aria-hidden="true">/</kbd>
+		</div>
+		<div class="chips" role="group" aria-label="Filter by group">
+			<button type="button" class="chip" aria-pressed="true" data-group="all">All <span>{tools.length}</span></button>
+			{groups.map((g) => (
+				<button type="button" class="chip" aria-pressed="false" data-group={g.id}>{g.label} <span>{g.count}</span></button>
+			))}
+		</div>
+		<p class="recent" data-recent hidden>
+			<span>Recently used:</span>
+		</p>
+	</div>
+
+	{signature.length > 0 && (
+		<section class="block" aria-label="Built for Rails and Postgres reliability" data-section>
+			<h2 class="block-title">Built for Rails &amp; Postgres reliability</h2>
+			<ul class="cards">
+				{signature.map((t) => (
+					<li data-tool data-slug={t.id} data-group={t.data.group} data-search={searchText(t)}>
+						<a class="card" href={toolHref(t.id)}>
+							<span class="card-meta">{meta(t)}</span>
+							<span class="card-title">{t.data.title}</span>
+							<span class="card-desc">{t.data.description}</span>
+							<span class="card-go" aria-hidden="true">Open tool &rarr;</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</section>
+	)}
+
+	{utilities.length > 0 && (
+		<section class="block" aria-label="Developer utilities" data-section>
+			<h2 class="block-title">Developer utilities</h2>
+			<ul class="rows">
+				{utilities.map((t) => (
+					<li data-tool data-slug={t.id} data-group={t.data.group} data-search={searchText(t)}>
+						<a class="row" href={toolHref(t.id)}>
+							<span class="row-title">{t.data.title}</span>
+							<span class="row-desc">{t.data.description}</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</section>
+	)}
+
+	<p class="empty" data-empty hidden>
+		No tool matches that yet. <a href="mailto:hello@danialasghar.com?subject=Tool%20suggestion">Suggest one</a> — I build the ones readers ask for.
+	</p>
+
+	{groupPages.size > 0 && (
+		<nav class="group-links" aria-label="Tool groups">
+			{groups.filter((g) => groupPages.has(g.id)).map((g) => <a href={`/tools/${g.id}/`}>All {g.label} tools &rarr;</a>)}
+		</nav>
+	)}
 </Page>
+
+<script>
+	import { getRecent } from '../../tools/_shared/recent';
+
+	const root = document.querySelector<HTMLElement>('[data-finder]');
+	const search = document.querySelector<HTMLInputElement>('[data-search]');
+	const chips = [...document.querySelectorAll<HTMLButtonElement>('.chip[data-group]')];
+	const items = [...document.querySelectorAll<HTMLElement>('[data-tool]')];
+	const sections = [...document.querySelectorAll<HTMLElement>('[data-section]')];
+	const empty = document.querySelector<HTMLElement>('[data-empty]');
+	const recent = document.querySelector<HTMLElement>('[data-recent]');
+
+	const groupFromHash = () => new URLSearchParams(location.hash.slice(1)).get('group') ?? 'all';
+	let group = chips.some((c) => c.dataset.group === groupFromHash()) ? groupFromHash() : 'all';
+
+	function apply() {
+		const words = (search?.value ?? '').toLowerCase().trim().split(/\s+/).filter(Boolean);
+		let shown = 0;
+		for (const li of items) {
+			const text = li.dataset.search ?? '';
+			const ok = (group === 'all' || li.dataset.group === group) && words.every((w) => text.includes(w));
+			li.hidden = !ok;
+			if (ok) shown++;
+		}
+		for (const s of sections) s.hidden = ![...s.querySelectorAll<HTMLElement>('[data-tool]')].some((li) => !li.hidden);
+		if (empty) empty.hidden = shown > 0;
+		for (const c of chips) c.setAttribute('aria-pressed', String(c.dataset.group === group));
+	}
+
+	if (root && search) {
+		chips.forEach((c) =>
+			c.addEventListener('click', () => {
+				group = c.dataset.group ?? 'all';
+				history.replaceState(null, '', group === 'all' ? location.pathname : `#group=${group}`);
+				apply();
+			}),
+		);
+		search.addEventListener('input', apply);
+		search.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				search.value = '';
+				apply();
+			}
+		});
+		document.addEventListener('keydown', (e) => {
+			const t = e.target as HTMLElement;
+			if (e.key === '/' && !e.metaKey && !e.ctrlKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !t.isContentEditable) {
+				e.preventDefault();
+				search.focus();
+			}
+		});
+		apply();
+
+		// Recently used: only tools that are live on this page, in recency order.
+		const bySlug = new Map(items.map((li) => [li.dataset.slug, li.querySelector<HTMLAnchorElement>('a')]));
+		const links = getRecent()
+			.map((slug) => ({ slug, a: bySlug.get(slug) }))
+			.filter((x): x is { slug: string; a: HTMLAnchorElement } => !!x.a);
+		if (recent && links.length > 0) {
+			for (const { a } of links) {
+				const link = document.createElement('a');
+				link.href = a.href;
+				link.textContent = a.querySelector('.card-title, .row-title')?.textContent ?? '';
+				recent.append(link);
+			}
+			recent.hidden = false;
+		}
+	}
+</script>
 
 <style>
 	main { padding-block: var(--space-16) var(--space-8); }
 	.lede { margin: 0 0 var(--space-10); max-width: 62ch; }
-	/* Tool rows: name and summary on the left, the action on the right. */
-	.tools { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--border); }
-	.tools li { border-top: 1px solid var(--border); }
-	.tool {
-		display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-8);
-		align-items: baseline; padding: var(--space-6) 0;
-		color: var(--text); text-decoration: none;
+
+	/* Finder: search bar + group chips. */
+	.finder { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); margin-bottom: var(--space-12); }
+	.search {
+		display: flex; align-items: center; gap: var(--space-3);
+		max-width: 36rem; padding: 0 var(--space-4);
+		border: 1px solid var(--border-strong); border-radius: var(--radius);
+		background: var(--bg);
+		transition: border-color .15s ease, box-shadow .15s ease;
 	}
-	.tool h2 { grid-column: 1; font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-snug); margin: 0; transition: color .15s ease; }
-	.tool p { grid-column: 1; margin: 0; max-width: 68ch; font-size: var(--fs-base); color: var(--text-muted); line-height: var(--lh-normal); }
-	.go { grid-column: 2; grid-row: 1; white-space: nowrap; font-size: var(--fs-sm); font-weight: 600; color: var(--brand); }
-	.tool:hover h2 { color: var(--brand); }
-	@media (max-width: 560px) {
-		.tool { grid-template-columns: 1fr; }
-		.go { grid-column: 1; grid-row: auto; }
+	.search:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+	.search svg { width: 16px; height: 16px; flex: none; color: var(--text-faint); }
+	.search input {
+		flex: 1; min-width: 0; padding: 12px 0; border: 0; outline: 0; background: transparent;
+		font: inherit; font-size: var(--fs-base); color: var(--text);
 	}
+	.search kbd {
+		font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-faint);
+		border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 1px 7px;
+	}
+	.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+	.chip {
+		display: inline-flex; align-items: center; gap: .45em; min-height: 36px;
+		padding: 4px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-full);
+		background: var(--bg); color: var(--text-muted); font: inherit; font-size: var(--fs-sm); cursor: pointer;
+	}
+	.chip span { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-faint); }
+	.chip:hover { border-color: var(--text-faint); color: var(--text); }
+	.chip[aria-pressed='true'] { border-color: var(--brand); color: var(--brand); }
+	.chip:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-ring); }
+	.recent { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; font-size: var(--fs-sm); color: var(--text-faint); }
+	.recent a { font-weight: 600; text-decoration: none; }
+	.recent[hidden] { display: none; }
+
+	/* Sections */
+	.block { margin-bottom: var(--space-12); }
+	.block[hidden] { display: none; }
+	.block-title {
+		margin: 0 0 var(--space-4); font-size: var(--fs-xs); font-weight: 600;
+		text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint);
+	}
+
+	/* Signature cards: instrument-panel cards with a mono meta line. */
+	.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--space-4); }
+	.cards li[hidden], .rows li[hidden] { display: none; }
+	.card {
+		display: flex; flex-direction: column; gap: var(--space-2); height: 100%;
+		padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg);
+		background: var(--card-bg); color: var(--text); text-decoration: none;
+		transition: border-color .15s ease;
+	}
+	.card:hover { border-color: var(--text-faint); }
+	.card:focus-visible { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
+	.card-meta { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-faint); letter-spacing: -.01em; }
+	.card-title { font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-snug); }
+	.card:hover .card-title { color: var(--brand); }
+	.card-desc { font-size: var(--fs-sm); color: var(--text-muted); line-height: var(--lh-normal); flex: 1; }
+	.card-go { font-size: var(--fs-sm); font-weight: 600; color: var(--brand); }
+
+	/* Utilities: compact rows. */
+	.rows { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--border); }
+	.rows li { border-top: 1px solid var(--border); }
+	.row { display: grid; gap: 2px; padding: var(--space-4) 0; color: var(--text); text-decoration: none; }
+	.row-title { font-weight: 600; }
+	.row:hover .row-title { color: var(--brand); }
+	.row-desc { font-size: var(--fs-sm); color: var(--text-muted); max-width: 68ch; }
+
+	.empty { color: var(--text-muted); }
+	.empty[hidden] { display: none; }
+	.group-links { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-8); font-size: var(--fs-sm); font-weight: 600; }
+	.group-links a { text-decoration: none; }
+
+	@media (prefers-reduced-motion: reduce) { .card, .search { transition: none; } }
 </style>

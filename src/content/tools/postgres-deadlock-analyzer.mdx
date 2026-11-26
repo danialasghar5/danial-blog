@@ -1,0 +1,113 @@
+---
+title: 'Postgres Deadlock Analyzer'
+seoTitle: 'Postgres Deadlock Analyzer: Read 40P01 Reports'
+description: 'Paste a Postgres deadlock report and see the wait cycle, the lock pattern behind it and the fix. Runs in your browser.'
+seoDescription: 'Paste a Postgres deadlock log or Rails 40P01 error to see the wait cycle, the lock pattern behind it and Rails fixes. Runs in your browser, nothing uploaded.'
+tier: signature
+group: postgres
+status: live
+order: 20
+featured: true
+pubDate: 2026-11-26
+keywords: ['postgres deadlock', 'deadlock detected', '40P01', 'ActiveRecord::Deadlocked', 'deadlock log analyzer', 'log_lock_waits']
+versions: ['Postgres 13–17', 'ActiveRecord 7.1–8.1']
+relatedPosts: ['rails-deadlock-activerecord', 'postgres-race-conditions-row-locks-rails']
+relatedTopic: database-reliability
+nextTools: ['postgres-lock-modes', 'connection-pool-calculator']
+serviceCta: postgres-review
+shareable: true
+worker: true
+faq:
+  - q: 'Why does the Rails error not name the table?'
+    a: 'Postgres prints lock targets as object identifiers (OIDs) in the DETAIL lines. Only the CONTEXT line names a table, and it describes the process that gave up. The server log adds each process statement, and the statements name the tables. If you only have the Rails error, use the CONTEXT line and the SQL after the colon at the end.'
+  - q: 'What does ShareLock on transaction mean in a deadlock report?'
+    a: 'The process is waiting for another transaction to finish, usually because that transaction holds a row it wants. It is a row-level wait shown through the transaction id. It is not a table-level SHARE lock.'
+  - q: 'Which process does Postgres abort?'
+    a: 'The process whose wait reached deadlock_timeout and found the cycle. That process raises the error. The server log names it in the LOG line that says it detected the deadlock, and in the [pid] prefix when log_line_prefix includes the process id.'
+  - q: 'Should I turn on log_lock_waits in production?'
+    a: 'It logs only waits longer than deadlock_timeout, so the cost is small on most systems. Keep it on while you chase contention, and turn it off again if the log volume becomes a problem.'
+  - q: 'Does retrying a deadlocked transaction fix it?'
+    a: 'Retrying is the right safety net. It does not fix the cause. Retry the whole transaction with a small cap, and fix the lock order so that retries stop being the normal path.'
+  - q: 'Is my log uploaded when I use the analyzer?'
+    a: 'No. The text is parsed in a Web Worker in your browser tab. The share link holds only a summary: the pattern, the process count, the table names and the confidence. Redact values before you paste anyway, because statements can contain customer data.'
+  - q: 'Why does a truncated report get low confidence?'
+    a: 'Without a closed cycle the tool cannot be sure which waits belong together. It shows what it found and caps the confidence at low. Paste the full server log entry, including every DETAIL line.'
+---
+Postgres writes a deadlock report in two places, and they differ. The error your application raises carries only the wait lines. The server log carries those lines too, plus the statement each process was running. This tool reads either form, or both. It finds the cycle, names the lock pattern most likely behind it, and gives Rails fixes for that pattern.
+
+## How the analyzer reads a report
+
+The parser accepts a server log with any `log_line_prefix`, the Rails message ActiveRecord raises (including the JSON-escaped text that error trackers store), and a bare DETAIL block. It keeps the wait lines, the statement lines and the CONTEXT line, builds a graph of which process waits for which, and checks that the graph closes into a cycle. A cycle that does not close is reported as partial.
+
+### Client error versus server log
+
+The client error contains the wait lines and the hint `See server log for query details`. The server log repeats the wait lines and adds one `Process N: <statement>` line per process. Without the statements the cycle is still found, but the tool has less evidence, and the confidence label says so.
+
+### OIDs, not names
+
+Postgres prints lock targets as numbers: `relation 16420 of database 16384`, or `tuple (0,4) of relation 16402`. Those are object identifiers. Table names appear only in the CONTEXT line, such as `while updating tuple (0,7) in relation "accounts"`, and inside the statements. To name an OID, run `SELECT relname FROM pg_class WHERE oid = 16420;` in the database the report names.
+
+### "ShareLock on transaction" is a row wait
+
+Most row conflicts show up as `ShareLock on transaction 4412`. This is not a table lock. The waiting process needs a row that transaction 4412 holds, so it waits for that transaction to finish. `ExclusiveLock on tuple (0,4)` is a short queue lock taken while a process lines up for a row. The real wait is on the transaction that holds the row. Table-level modes appear as CamelCase names, such as `AccessExclusiveLock on relation`, and the tool checks them against the lock conflict table in the Postgres documentation.
+
+## The patterns it recognises
+
+Checks run in a fixed order: advisory locks, table locks and DDL, foreign keys, same-table row order, cross-table order, then unknown. The first match wins. Every result shows a confidence label and the evidence behind it.
+
+### Same table, rows in opposite order
+
+Both waits are row-level, and the statements touch one table. Each process holds a row the other needs. This is the classic transfer: one job locks account 3 and then account 9, while another locks 9 and then 3. The fix is to sort the ids and lock them in that order everywhere.
+
+### Tables in opposite order
+
+Each process holds a lock on one table and waits on the other. Usually one code path updates `accounts` then `ledger_entries`, and another does the reverse. Only current statements are logged, so the earlier order is inferred and the confidence is medium.
+
+### Foreign keys and parent rows
+
+An INSERT into a child table takes a row lock on the parent for its foreign-key check. If another transaction holds that parent row for update, the insert waits. An update that leaves the key columns alone takes a weaker lock that does not block the check. A DELETE, a key change or a `SELECT ... FOR UPDATE` does. The tool flags this case when an `_id` column in the insert points at a table another process is writing. Postgres does not index foreign-key columns for you, which makes the parent checks slower and keeps locks open longer.
+
+### Table locks and DDL
+
+`ALTER TABLE`, a plain `CREATE INDEX` and similar statements wait for table locks that conflict with open transactions on the table, and those transactions then wait behind them. The tool compares the waiting mode with the modes the other processes hold.
+
+### Advisory locks
+
+`pg_advisory_lock` and its relatives are application locks. Postgres sees only their key numbers, shown as `advisory lock [16384,0,4002,1]`, so the statement text is the only clue to what the keys mean. The fix is in the application: take the keys in one order.
+
+## Worked example
+
+Here is a deadlock from a transfer job, logged with `log_line_prefix = '%m [%p] %q%u@%d '`:
+
+```text
+2026-11-20 14:10:02.901 UTC [5521] app_rw@accounts_prod LOG:  process 5521 detected deadlock while waiting for ShareLock on transaction 3340 after 1000.087 ms
+2026-11-20 14:10:02.902 UTC [5521] app_rw@accounts_prod ERROR:  deadlock detected
+2026-11-20 14:10:02.902 UTC [5521] app_rw@accounts_prod DETAIL:  Process 5521 waits for ShareLock on transaction 3340; blocked by process 5530.
+	Process 5530 waits for ShareLock on transaction 3338; blocked by process 5521.
+	Process 5521: UPDATE accounts SET balance = balance - 100 WHERE id = 9
+	Process 5530: UPDATE accounts SET balance = balance + 100 WHERE id = 3
+2026-11-20 14:10:02.902 UTC [5521] app_rw@accounts_prod CONTEXT:  while updating tuple (0,9) in relation "accounts"
+```
+
+Process 5521 detected the cycle, so it is the victim. It waits for transaction 3340, which belongs to 5530, and 5530 waits for transaction 3338, which belongs to 5521. Process 5521 is updating account 9, and 5530 is updating account 3. Each already holds the row the other wants. The CONTEXT line confirms the victim was updating a row in `accounts`.
+
+The tool reports *same table, rows locked in opposite order* with high confidence. Both statements touch `accounts`, both waits are on row holders, and the two processes sit at opposite ends of the same pair of rows. The earlier locks, on account 3 for 5521 and on account 9 for 5530, are inferred, because the log shows only current statements.
+
+## Getting the full report
+
+- **Find the server log entry.** The client error has only the wait lines. Search the Postgres log, not the application log, for `deadlock detected`, and copy the entry with its DETAIL, CONTEXT and STATEMENT lines.
+- **Turn on `log_lock_waits`.** It is off by default. When on, Postgres logs any wait longer than `deadlock_timeout`, with the processes holding the lock. Run `ALTER SYSTEM SET log_lock_waits = on;` and then `SELECT pg_reload_conf();`. It needs superuser rights.
+- **Know `deadlock_timeout`.** The default is one second, and it is the wait before Postgres checks for a cycle. Lowering it makes the check, and its log line, come sooner, at the cost of more checks under contention.
+
+## Limitations and assumptions
+
+- The tool reads text only. It never connects to a database, so it cannot look up OIDs or read `pg_locks`.
+- Lock targets follow the `DescribeLockTag` forms in the Postgres 13 to 17 sources. Any other form is kept as written and flagged. Message formats were checked against the REL_17_STABLE source.
+- Tables come from a light scan of each statement. Common-table expressions, dynamic SQL and multi-statement strings are approximate.
+- Foreign keys are inferred from column names, so `order_id` is read as a reference to `orders`. A schema with other naming will not match.
+- The victim is named only when the report has the LOG line or a `[pid]` prefix. A pasted client error does not say which process raised it.
+- The Rails message shape is the one ActiveRecord raises through the PostgreSQL adapter. If a paste from another version does not parse, use the server log.
+
+## Rails angle
+
+Rails sees only the `40P01` error, and it retries only if you ask it to. Three changes usually matter. Lock the rows you need in one order, with `Account.where(id: ids).order(:id).lock.to_a`, so every path agrees. Keep transactions short, and do slow work outside them. Retry the whole transaction from its outermost block, with a small cap. The [deadlock post for Rails](/blog/rails-deadlock-activerecord/) walks through the 40P01 report and the retry pattern. The [post on row locks in Rails](/blog/postgres-race-conditions-row-locks-rails/) covers `FOR UPDATE`, optimistic locking and deterministic ordering.
