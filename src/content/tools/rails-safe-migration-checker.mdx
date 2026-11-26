@@ -1,0 +1,99 @@
+---
+title: 'Rails Safe Migration Checker'
+seoTitle: 'Rails Safe Migration Checker: Locks and Safer Rewrites'
+description: 'Paste a Rails migration and see the Postgres lock each line takes, how risky it is, and a safer version to deploy in steps.'
+seoDescription: 'Paste a Rails migration to see the Postgres lock each line takes, its risk and a safer rewrite. Runs in your browser; nothing is sent to a server.'
+tier: signature
+group: postgres
+status: draft
+order: 25
+featured: false
+pubDate: 2026-11-26
+keywords: ['rails safe migration', 'add_index concurrently', 'rails migration lock', 'postgres migration downtime', 'disable_ddl_transaction', 'strong migrations']
+versions: ['Postgres 13–17', 'Rails 7.1–8.1']
+relatedPosts: ['rails-deadlock-activerecord', 'postgres-race-conditions-row-locks-rails']
+relatedTopic: database-reliability
+serviceCta: postgres-review
+nextTools: []
+shareable: true
+worker: false
+faq:
+  - q: 'Why does a migration that runs in seconds take the site down?'
+    a: 'A DDL statement needs a lock on the table, and it waits if another transaction holds a conflicting one. While it waits, every later request for that table queues behind it in Postgres, so the wait reaches the app within seconds. The migration itself may be fast; the queue is what fails.'
+  - q: 'Do I always need disable_ddl_transaction! for a concurrent index?'
+    a: 'Yes. CREATE INDEX CONCURRENTLY cannot run inside a transaction block, and Rails wraps each migration in one unless the class calls disable_ddl_transaction!. Keep the concurrent index in a migration of its own, so a failed build does not leave other statements half applied.'
+  - q: 'Is adding a column with a default safe on Postgres 13 to 17?'
+    a: 'It depends on the default. A constant default is stored in the catalog, and existing rows are not rewritten. A volatile default such as gen_random_uuid() is computed per row, which rewrites the table while ACCESS EXCLUSIVE is held. A stable expression such as now() does not rewrite, but every existing row receives the same value.'
+  - q: 'What does validate: false do on a foreign key or check constraint?'
+    a: 'It adds the constraint without scanning existing rows, so new rows are checked from that point on. The existing rows are checked later by validate_foreign_key or validate_check_constraint, which take a weaker lock that lets reads and writes continue.'
+  - q: 'Why does the checker not analyze execute statements?'
+    a: 'The SQL inside execute is an arbitrary string, and the scanner does not parse SQL. The checker shows the statement and points you to the lock mode lookup, where you can look up each operation by name. Raw SQL is where the least obvious locks tend to sit, so read it yourself.'
+  - q: 'Which lock_timeout should a migration use?'
+    a: 'Choose a value the migration can wait for before it gives up, often a few seconds. The goal is a migration that fails quickly and can be retried, not one that queues behind traffic. The right number depends on your request load, so test it on a copy with production-sized tables.'
+  - q: 'Does the checker see my migration?'
+    a: 'The page reads the text in your browser and does not send it anywhere. The share link stores only the number of findings, so opening a shared link shows the counts and asks you to paste the migration again.'
+---
+
+Most migration outages are not caused by slow work. They are caused by a lock. Postgres takes a table-level lock for every DDL statement, and some locks conflict with ordinary reads and writes. When a statement asks for a conflicting lock and has to wait, everything that arrives after it waits too. This checker reads a migration, finds each call that takes a lock, and reports which lock it is, how much it blocks, and a safer way to write it.
+
+## How it works
+
+The checker is a pattern scanner. It is not a Ruby parser. It tokenizes the text and recognizes strings, symbols, hash keys, comments, heredocs, multi-line calls, `do` blocks and `def up`, `def down` and `def change` scopes. It then finds the Rails migration methods it knows and reads their arguments: the table, the column, and options such as `algorithm:`, `validate:`, `default:` and `null:`.
+
+Each call is mapped to the lock it takes, using the same data as the lock mode lookup on this site, so the two tools agree. The result is one finding per line, with a risk:
+
+- **High**: blocks writes or reads for the length of a scan or rewrite, or fails outright. Change it before it runs on a table with traffic.
+- **Medium**: takes a lock that needs a look, or is only safe if a follow-up step runs.
+- **Low**: takes a brief lock, or is safe in the way it is written.
+- **Info**: creates a new table, which locks nothing that already exists.
+
+Heredoc bodies and comments are skipped.
+
+## Why a brief statement still takes the site down
+
+Postgres grants lock requests in order. If a long `SELECT` holds a read lock on `orders`, an `ALTER TABLE` that needs `ACCESS EXCLUSIVE` waits for it. The `ALTER TABLE` is now queued. Every later query on `orders`, including plain reads, queues behind the `ALTER TABLE`. The `ALTER TABLE` itself may take milliseconds once it runs, but the queue can last as long as the longest transaction on the table.
+
+So the checker judges the lock, not the amount of work. For the same lock queue seen from the application side, read [Fixing Rails Deadlocks: ActiveRecord::Deadlocked](/blog/rails-deadlock-activerecord/) and [Fixing Postgres Race Conditions and Row-Level Deadlocks in Rails](/blog/postgres-race-conditions-row-locks-rails/).
+
+## The patterns, and their safer forms
+
+**Adding an index.** A plain `add_index` takes `SHARE`, which blocks inserts, updates and deletes until the build ends. Use `algorithm: :concurrently` in a migration with `disable_ddl_transaction!`. The build still waits for transactions that started earlier, and a failed build leaves an `INVALID` index to drop before you retry.
+
+**Adding a column.** Since Postgres 11, a constant default does not rewrite the table. A volatile default does, because the value is computed for every row. Add the column without a default, set the default for new rows, and backfill existing rows in batches from a script. The checker reports `now()` and `CURRENT_TIMESTAMP` as low rather than as a rewrite. They do not rewrite, but every existing row gets the one value computed when the statement runs.
+
+**Adding a NOT NULL column.** Postgres rejects `add_column ... null: false` without a default when the table has rows. Add the column nullable, backfill it, then enforce the rule. Enforcing it with `change_column_null` scans the table under `ACCESS EXCLUSIVE`. On Postgres 12 and later, a validated `CHECK (col IS NOT NULL)` lets Postgres skip that scan, so add the check first with `validate: false`, validate it in a later deploy, then drop the check.
+
+**Changing a column type.** A type change usually rewrites the table. Add a new column, write to both from the app, backfill, switch reads, and drop the old column in a later deploy. A few widening changes avoid the rewrite, so confirm for your exact change.
+
+**Foreign keys and `add_reference`.** `add_foreign_key` takes `SHARE ROW EXCLUSIVE` on both tables and scans existing rows. Add it with `validate: false`, then run `validate_foreign_key` later. `add_reference` with its defaults does both at once, since the default index is a plain build and `foreign_key: true` adds the constraint. Split it into a column with `index: false` and `foreign_key: false`, a concurrent index, and the two foreign key steps.
+
+**Removing and renaming.** `remove_column` is quick, but code that still reads the column fails during a deploy. Mark the column with `self.ignored_columns += ["legacy"]` in the model, deploy, then drop it. `rename_column` and `rename_table` break running code the moment the migration commits. Add the new name, write to both, switch reads, then drop the old one.
+
+**`execute`.** The SQL is shown and marked as not analyzed. Look up each statement in the lock mode lookup. `CONCURRENTLY` in raw SQL needs `disable_ddl_transaction!` on the class too.
+
+**Creating a table.** A new table locks nothing that exists. A foreign key inside it takes a brief `SHARE ROW EXCLUSIVE` on the referenced table.
+
+## Set a lock_timeout
+
+Every migration on a live table should start with a `lock_timeout`, for example `execute "SET lock_timeout = '3s'"`. Without it, a statement waits for its lock for as long as it takes, and the queue grows behind it. With it, the statement fails with an error instead, and the migration can be retried at a quieter time. 
+
+## Worked example
+
+Load the example in the widget. It has four lines, and the checker reports each one this way:
+
+- `add_index :orders, :customer_id` is high. The concurrent form goes in its own migration with `disable_ddl_transaction!`.
+- `add_column :orders, :public_id, :uuid, default: -> { "gen_random_uuid()" }` is high. The default is volatile, so the table would be rewritten.
+- `add_reference :shipments, :order, index: true, foreign_key: true` is high. It is split into a column, a concurrent index, and a foreign key that is validated in a later deploy.
+- `remove_column :orders, :legacy_status` is medium. Ignore the column in the model first.
+
+The suggested split groups these into migrations in deploy order. Backfill steps are comments, because they belong in a script.
+
+## Versions and limits
+
+The lock modes and the conflict rules are the same across Postgres 13 to 17 in the PostgreSQL documentation. The version-dependent behaviour the checker models is the default rewrite rule, which changed in Postgres 11 and is the same in 13 to 17. The generated Ruby targets `ActiveRecord::Migration[7.1]` and uses options available from Rails 7.1 onward.
+
+The scanner does not parse Ruby, so calls built dynamically or hidden in helper methods are not seen. The checker has no table size input, so it cannot estimate scan time. A default that calls an unknown function is medium, because its volatility depends on that function. Treat a clean result as a prompt to read the migration again, not as approval.
+
+## Credit
+
+The idea of checking Rails migrations for lock and rewrite risks comes from the strong_migrations gem by Andrew Kane, which is the reference for this kind of check: https://github.com/ankane/strong_migrations. This checker is written from the PostgreSQL documentation, with its own rules and wording.
