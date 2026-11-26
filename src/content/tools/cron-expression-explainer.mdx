@@ -26,7 +26,7 @@ faq:
     a: 'No. The parser, the next-run calculation and the YAML generator all run in your browser, and the page makes no network requests.'
 ---
 
-The grammar is five fields separated by spaces: minute, hour, day of month, month and day of week. Most scheduling mistakes come from one of two places: the day rule, which is not what most people expect, and the time zone, which decides when "5 AM" actually happens. This guide covers both, then shows how the same schedule is written for Solid Queue and sidekiq-cron.
+A cron expression has five fields separated by spaces: minute, hour, day of month, month and day of week. Most mistakes come from two places: the day rule, which surprises most people, and the time zone, which decides when "5 AM" actually happens.
 
 ## How the grammar works
 
@@ -48,17 +48,17 @@ Each field accepts the same building blocks:
 
 Macros replace the whole expression: `@hourly`, `@daily` (also `@midnight`), `@weekly` (Sunday at midnight), `@monthly` and `@yearly` (also `@annually`). Macros have no seconds field.
 
-Sidekiq-cron and Fugit also accept a six-field form with seconds first, so `*/15 * * * * *` runs every 15 seconds. Standard system cron does not, and the tool treats a six-field expression as seconds-first only.
+Fugit and sidekiq-cron also accept a six-field form with seconds first, such as `*/15 * * * * *`. Standard system cron does not.
 
 ## The day-of-month and day-of-week rule
 
 This is the rule that surprises people. If you restrict both the day-of-month and the day-of-week fields, a run happens when either one matches. The expression `30 4 1,15 * 5` runs at 04:30 on the 1st, on the 15th and on every Friday. It does not run only on Fridays that fall on the 1st or the 15th.
 
-A day field that starts with `*` counts as unrestricted, so `0 0 */2 * 1` runs only when both conditions hold: a Monday that is also on an odd-numbered day. The tool follows this convention, which matches Vixie cron, and its description names the rule it applied.
+A day field that starts with `*`, even `*/2`, counts as unrestricted, so `0 0 */2 * 1` needs both conditions: a Monday on an odd-numbered day. The tool follows Vixie cron here and names the rule in its description.
 
 ## Time zones and daylight saving
 
-The tool evaluates an expression in one zone. That is the selected zone, unless the expression ends with a zone name, as in `0 5 * * * America/New_York`. The zone name wins. Wall-clock times are converted to UTC with the browser's own time zone data, so the answer depends on the rules in force for that year.
+An expression runs in the selected zone, unless it ends with a zone name, as in `0 5 * * * America/New_York`, which wins. Wall-clock times are converted to UTC with the browser's time zone data, so the answer depends on that year's rules.
 
 Two cases in each year break simple arithmetic:
 
@@ -80,7 +80,7 @@ production:
     schedule: "0 3 * * *"
 ```
 
-The `schedule` string goes to Fugit. Fugit accepts cron, and it also accepts a small English vocabulary. The tool converts the documented forms, including `every day at 5 pm`, `every tuesday and monday at 5pm`, `every weekday at five`, `every 15s` and `every 4 months`. Phrases outside that subset are reported as unsupported rather than guessed. Paste an English phrase in the expression box and the cron equivalent appears; the YAML then carries the cron text, which Fugit reads the same way.
+Solid Queue passes the `schedule` string to Fugit, which accepts cron and a small English vocabulary. The tool converts the documented forms, such as `every day at 5 pm`, `every tuesday and monday at 5pm`, `every weekday at five`, `every 15s` and `every 4 months`, and reports anything else as unsupported. Paste a phrase into the expression box and the generated YAML carries the cron equivalent, which Fugit reads the same way.
 
 For how jobs are claimed and run once a schedule fires, read [how Solid Queue works](/blog/how-solid-queue-works/). For the choice between the two backends, read [Solid Queue vs Sidekiq](/blog/solid-queue-vs-sidekiq/).
 
@@ -90,12 +90,12 @@ sidekiq-cron stores its schedule as a hash keyed by job name, with `cron`, `clas
 
 ## A worked example
 
-Take `0 5 * * 1-5 America/New_York`. It means 05:00 Eastern on weekdays. Starting from 10:17 UTC on Thursday 26 November 2026, the next run is Friday 27 November at 10:00 UTC, which is 05:00 Eastern Standard Time. The tool shows the list of the next ten runs in the zone you select, and writes the UTC instant beside each one so you can compare it with your logs.
+Take `0 5 * * 1-5 America/New_York`: 05:00 Eastern on weekdays. Starting from 10:17 UTC on Thursday 26 November 2026, the next run is Friday 27 November at 10:00 UTC, which is 05:00 Eastern Standard Time. The next-runs table lists the UTC instant beside each run, so you can check it against your logs.
 
 ## Limitations
 
-- Fugit extensions are not evaluated. The `&` (AND of the day fields), `#` (nth weekday, such as `mon#2`), `%`, `~` and `L` are detected and rejected with a clear message. The tool does not guess what they would mean.
+- Fugit extensions are not evaluated. `&` (AND of the day fields), `#` (such as `mon#2`), `%`, `~` and `L` are detected and rejected, not guessed at.
 - The English subset is the documented one. Anything else shows "Not supported here", with a link to Fugit's natural-language notes.
 - Next runs look five years ahead. A schedule that never fires in that window, such as `0 0 30 2 *`, shows no run.
-- The tool does not support Quartz-style `?` or a year field.
-- The results are a calculation. Confirm a new schedule against a real job run before you rely on it for billing or compliance.
+- Quartz-style `?` and year fields are not supported.
+- The results are a calculation. Confirm a new schedule against a real run before you rely on it for billing or compliance.
