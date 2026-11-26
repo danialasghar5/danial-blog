@@ -8,7 +8,8 @@ import { isValidTimeZone } from '../_shared/format.ts';
 export type FieldKey = 'second' | 'minute' | 'hour' | 'dayOfMonth' | 'month' | 'dayOfWeek';
 
 export interface FieldInfo {
-	/** true when the field text starts with `*` (unrestricted, Vixie rule). */
+	/** true only for a bare `*`. Fugit (Solid Queue, sidekiq-cron) treats `*\/2` as restricted:
+	 *  lib/fugit/cron.rb expand() returns nil (unrestricted) only with no start, end or step. */
 	star: boolean;
 	/** The n of a single `*\/n` or `a-b/n` item; null otherwise. */
 	step: number | null;
@@ -167,7 +168,7 @@ function parseField(
 	return {
 		ok: true,
 		values: [...values].sort((x, y) => x - y),
-		info: { star: text.startsWith('*'), step: single ? step : null },
+		info: { star: text === '*', step: single ? step : null },
 	};
 }
 

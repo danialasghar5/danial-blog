@@ -38,8 +38,8 @@ test('day of month and the OR rule when both are restricted', () => {
 	assert.equal(say('0 0 11,12,13 * *'), 'Runs at 12:00 AM on the 11th, 12th and 13th of the month.');
 });
 
-test('step day-of-month counts as unrestricted and is described as AND', () => {
-	assert.equal(say('0 0 */2 * 1'), 'Runs at 12:00 AM every 2 days of the month, from the 1st and on Monday (both must match).');
+test('step day-of-month counts as restricted (Fugit), so DOM and DOW use OR', () => {
+	assert.equal(say('0 0 */2 * 1'), 'Runs at 12:00 AM every 2 days of the month, from the 1st or on Monday.');
 });
 
 test('month phrasing', () => {

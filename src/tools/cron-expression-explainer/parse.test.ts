@@ -62,13 +62,13 @@ test('day of month and day of week stars are recorded for the OR rule', () => {
 	assert.ok(both.ok && dom.ok && stepped.ok);
 	if (both.ok) assert.deepEqual([both.cron.fields.dayOfMonth.star, both.cron.fields.dayOfWeek.star], [false, false]);
 	if (dom.ok) assert.equal(dom.cron.fields.dayOfMonth.star, true);
-	if (stepped.ok) assert.equal(stepped.cron.fields.dayOfMonth.star, true, '*/2 counts as unrestricted (Vixie)');
+	if (stepped.ok) assert.equal(stepped.cron.fields.dayOfMonth.star, false, '*/2 counts as restricted (Fugit)');
 });
 
 test('step info is kept for single stepped items only', () => {
 	const r = parseCron('*/15 9-17 * * 1-5');
 	assert.ok(r.ok);
-	if (r.ok) assert.deepEqual(r.cron.fields.minute, { star: true, step: 15 });
+	if (r.ok) assert.deepEqual(r.cron.fields.minute, { star: false, step: 15 });
 	const list = parseCron('0,30 * * * *');
 	assert.ok(list.ok);
 	if (list.ok) assert.equal(list.cron.fields.minute.step, null);

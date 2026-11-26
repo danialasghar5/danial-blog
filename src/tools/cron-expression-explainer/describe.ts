@@ -56,7 +56,7 @@ function dayText(spec: CronSpec): string | null {
 	if (domAll && dowAll) return 'every day';
 	if (domAll) return dowPhrase();
 	if (dowAll) return domPhrase();
-	// A field that starts with `*` (even `*/2`) is unrestricted, so both must match (AND).
+	// Only a bare `*` is unrestricted (Fugit; `*/2` counts as restricted), so then both must match.
 	if (spec.fields.dayOfMonth.star || spec.fields.dayOfWeek.star) {
 		return `${domPhrase()} and ${dowPhrase()} (both must match)`;
 	}

@@ -251,3 +251,13 @@ test('results are strictly increasing and never at or before now', () => {
 test('an expression that never matches in five years returns no runs', () => {
 	assert.deepEqual(nextRuns(specOf('0 0 30 2 *'), START, 'UTC', 5), []);
 });
+
+test('Fugit semantics: a stepped day field (*/2) is restricted, so DOM/DOW use OR', () => {
+	// Fugit README: Fugit.parse_cron('0 0 */2 * 1-5').next_time('2022-08-09') ==> "2022-08-10 00:00:00 +0900".
+	// 2022-08-10 is a Wednesday (matches 1-5) but an even day (no */2 match): only OR semantics allow it.
+	const parsed = parseCron('0 0 */2 * 1-5');
+	assert.equal(parsed.ok, true);
+	if (!parsed.ok) return;
+	const next = nextRuns(parsed.cron, new Date('2022-08-08T15:00:00Z'), 'Asia/Tokyo', 1);
+	assert.equal(next[0].toISOString(), '2022-08-09T15:00:00.000Z'); // 2022-08-10 00:00 +09:00
+});
