@@ -1,0 +1,1 @@
+{"verdict":"is-ok","findings":[{"line":5,"method":"add_index","risk":"low","lock":"SHARE UPDATE EXCLUSIVE (table)"}]}

@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"rename_table","risk":"high","lock":"ACCESS EXCLUSIVE (table)"}]}

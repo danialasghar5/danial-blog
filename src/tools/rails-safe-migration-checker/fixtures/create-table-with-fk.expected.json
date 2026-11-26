@@ -1,0 +1,1 @@
+{"verdict":"is-ok","findings":[{"line":3,"method":"create_table","risk":"info","lock":"none on existing tables"},{"line":4,"method":"t.references","risk":"low","lock":"SHARE ROW EXCLUSIVE (referenced table)"}]}

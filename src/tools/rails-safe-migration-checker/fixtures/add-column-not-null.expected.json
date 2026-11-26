@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"add_column","risk":"high","lock":"ACCESS EXCLUSIVE (table)"}]}

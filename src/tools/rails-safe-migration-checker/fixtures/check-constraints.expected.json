@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"add_check_constraint","risk":"high","lock":"ACCESS EXCLUSIVE (table)"},{"line":4,"method":"add_check_constraint","risk":"medium","lock":"ACCESS EXCLUSIVE (table)"},{"line":5,"method":"validate_check_constraint","risk":"low","lock":"SHARE UPDATE EXCLUSIVE (table)"}]}

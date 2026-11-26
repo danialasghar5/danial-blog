@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"add_index","risk":"high","lock":"SHARE (table)"}]}

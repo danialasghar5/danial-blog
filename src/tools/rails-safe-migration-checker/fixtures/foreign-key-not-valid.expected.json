@@ -1,0 +1,1 @@
+{"verdict":"is-warn","findings":[{"line":3,"method":"add_foreign_key","risk":"medium","lock":"SHARE ROW EXCLUSIVE (table), SHARE ROW EXCLUSIVE (referenced table)"}]}

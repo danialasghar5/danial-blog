@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"change_table","risk":"medium","lock":"see the lines inside"},{"line":4,"method":"t.column","risk":"low","lock":"ACCESS EXCLUSIVE (table)"},{"line":5,"method":"t.references","risk":"high","lock":"ACCESS EXCLUSIVE (table), SHARE (table)"}]}

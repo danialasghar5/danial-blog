@@ -1,0 +1,1 @@
+{"verdict":"is-risk","findings":[{"line":3,"method":"add_reference","risk":"high","lock":"ACCESS EXCLUSIVE (table), SHARE (table), SHARE ROW EXCLUSIVE (table), SHARE ROW EXCLUSIVE (referenced table)"}]}

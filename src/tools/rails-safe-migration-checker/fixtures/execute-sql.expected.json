@@ -1,0 +1,1 @@
+{"verdict":"is-warn","findings":[{"line":3,"method":"execute","risk":"medium","lock":"not analyzed"},{"line":4,"method":"execute","risk":"medium","lock":"not analyzed"},{"line":8,"method":"execute","risk":"medium","lock":"not analyzed"}]}

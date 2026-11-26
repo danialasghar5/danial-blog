@@ -1,0 +1,1 @@
+{"verdict":"is-ok","findings":[{"line":3,"method":"add_column","risk":"low","lock":"ACCESS EXCLUSIVE (table)"},{"line":4,"method":"add_column","risk":"low","lock":"ACCESS EXCLUSIVE (table)"},{"line":5,"method":"add_column","risk":"low","lock":"ACCESS EXCLUSIVE (table)"}]}

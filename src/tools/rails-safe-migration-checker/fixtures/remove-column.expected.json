@@ -1,0 +1,1 @@
+{"verdict":"is-warn","findings":[{"line":3,"method":"remove_column","risk":"medium","lock":"ACCESS EXCLUSIVE (table)"}]}
