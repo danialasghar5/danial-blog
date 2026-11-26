@@ -6,7 +6,7 @@ import { DEFAULTS, POLY, VERSIONS } from './logic';
 const d = DEFAULTS;
 ---
 
-<div class="sr-calc" data-sr-calc>
+<div class="sr-calc" data-tool-widget>
 	<form class="sr-form" id="sr-form" novalidate aria-label="Retry inputs">
 		<div class="tool-fields two-col">
 			<div class="tool-field" data-field="engine">
@@ -186,7 +186,7 @@ const d = DEFAULTS;
 	const FIELDS: Field[] = ['engine', 'version', 'retry', 'attempts', 'wait', 'jitter', 'a', 'p', 'b', 'start', 'timeZone'];
 	const SVG_NS = 'http://www.w3.org/2000/svg';
 
-	const root = document.querySelector<HTMLElement>('[data-sr-calc]');
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
 	if (root) setup(root);
 
 	function setup(root: HTMLElement): void {
@@ -450,7 +450,7 @@ const d = DEFAULTS;
 			if (!r.ok) {
 				showErrors(r.errors);
 				resultEl.hidden = true;
-				root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true }));
+				root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true, detail: {} }));
 				root.dispatchEvent(new CustomEvent('tool:error', { bubbles: true, detail: { message: r.errors[0]?.message ?? 'Check the inputs.' } }));
 				return;
 			}
