@@ -1,0 +1,79 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		3310,
+		3316
+	],
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": "UPDATE ledger_entries SET posted = true WHERE batch_id = 12 AND id = 9001",
+	"context": {
+		"op": "update",
+		"relation": "ledger_entries",
+		"block": 0,
+		"offset": 31
+	},
+	"edges": [
+		{
+			"pid": 3310,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 5520"
+			},
+			"blockedBy": 3316
+		},
+		{
+			"pid": 3316,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 5518"
+			},
+			"blockedBy": 3310
+		}
+	],
+	"processes": [
+		{
+			"pid": 3310,
+			"query": "UPDATE ledger_entries SET posted = true WHERE batch_id = 12 AND id = 9001"
+		},
+		{
+			"pid": 3316,
+			"query": "UPDATE accounts SET balance = balance - 25 WHERE id = 4"
+		}
+	],
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "cross-table-order",
+		"confidence": "medium",
+		"tables": [
+			"ledger_entries",
+			"accounts"
+		],
+		"focusTable": "ledger_entries",
+		"parentTable": null,
+		"evidence": [
+			"Process 3310 works on ledger_entries.",
+			"Process 3316 works on accounts.",
+			"Each process holds a row or lock on one table and waits for the other. Only the current statement of each process is in the report, so the earlier lock order is inferred."
+		],
+		"processes": [
+			{
+				"pid": 3310,
+				"table": "ledger_entries",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 5520"
+			},
+			{
+				"pid": 3316,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 5518"
+			}
+		]
+	}
+}

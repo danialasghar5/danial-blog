@@ -1,0 +1,78 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		3001,
+		3002
+	],
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": "UPDATE accounts SET balance = balance - 10 WHERE id = 5",
+	"context": {
+		"op": "update",
+		"relation": "accounts",
+		"block": 0,
+		"offset": 5
+	},
+	"edges": [
+		{
+			"pid": 3001,
+			"modeName": "AccessExclusiveLock",
+			"mode": "ACCESS EXCLUSIVE",
+			"target": {
+				"kind": "relation",
+				"raw": "relation 16420 of database 16384"
+			},
+			"blockedBy": 3002
+		},
+		{
+			"pid": 3002,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 9120"
+			},
+			"blockedBy": 3001
+		}
+	],
+	"processes": [
+		{
+			"pid": 3001,
+			"query": "ALTER TABLE accounts ADD COLUMN flagged boolean NOT NULL DEFAULT false"
+		},
+		{
+			"pid": 3002,
+			"query": "UPDATE accounts SET balance = balance - 10 WHERE id = 5"
+		}
+	],
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "explicit-lock",
+		"confidence": "high",
+		"tables": [
+			"accounts"
+		],
+		"focusTable": "accounts",
+		"parentTable": null,
+		"evidence": [
+			"Process 3001 waits for AccessExclusiveLock on relation OID 16420 (database 16384).",
+			"Process 3001 runs ALTER TABLE on accounts.",
+			"ACCESS EXCLUSIVE conflicts with ROW EXCLUSIVE, which process 3002 holds on accounts (table-lock conflict matrix)."
+		],
+		"processes": [
+			{
+				"pid": 3001,
+				"table": "accounts",
+				"kind": "ddl",
+				"waitsFor": "AccessExclusiveLock on relation OID 16420 (database 16384)"
+			},
+			{
+				"pid": 3002,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 9120"
+			}
+		]
+	}
+}

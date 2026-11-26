@@ -1,0 +1,10 @@
+2026-11-20 14:02:11.480 UTC [18321] LOG:  process 18321 detected deadlock while waiting for ShareLock on transaction 4412 after 1000.114 ms
+2026-11-20 14:02:11.480 UTC [18321] DETAIL:  Process holding the lock: 18344. Wait queue: 18321.
+2026-11-20 14:02:11.482 UTC [18321] ERROR:  deadlock detected
+2026-11-20 14:02:11.482 UTC [18321] DETAIL:  Process 18321 waits for ShareLock on transaction 4412; blocked by process 18344.
+	Process 18344 waits for ShareLock on transaction 4410; blocked by process 18321.
+	Process 18321: UPDATE accounts SET balance = balance + 50 WHERE id = 7
+	Process 18344: UPDATE accounts SET balance = balance - 50 WHERE id = 9
+2026-11-20 14:02:11.482 UTC [18321] HINT:  See server log for query details.
+2026-11-20 14:02:11.482 UTC [18321] CONTEXT:  while updating tuple (0,7) in relation "accounts"
+2026-11-20 14:02:11.482 UTC [18321] STATEMENT:  UPDATE accounts SET balance = balance + 50 WHERE id = 7

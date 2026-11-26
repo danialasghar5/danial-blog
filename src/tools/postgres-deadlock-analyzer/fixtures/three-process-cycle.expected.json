@@ -1,0 +1,101 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		2001,
+		2002,
+		2003
+	],
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": "SELECT id, status FROM orders WHERE id = 881 FOR UPDATE",
+	"context": {
+		"op": "lock",
+		"relation": "orders",
+		"block": 0,
+		"offset": 4
+	},
+	"edges": [
+		{
+			"pid": 2001,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 7301"
+			},
+			"blockedBy": 2002
+		},
+		{
+			"pid": 2002,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 7305"
+			},
+			"blockedBy": 2003
+		},
+		{
+			"pid": 2003,
+			"modeName": "ExclusiveLock",
+			"mode": "EXCLUSIVE",
+			"target": {
+				"kind": "tuple",
+				"raw": "tuple (0,4) of relation 16402 of database 16384"
+			},
+			"blockedBy": 2001
+		}
+	],
+	"processes": [
+		{
+			"pid": 2001,
+			"query": "UPDATE orders SET status = 'packed' WHERE id = 881"
+		},
+		{
+			"pid": 2002,
+			"query": "UPDATE inventory SET reserved = reserved + 1 WHERE sku = 'SKU-77'"
+		},
+		{
+			"pid": 2003,
+			"query": "SELECT id, status FROM orders WHERE id = 881 FOR UPDATE"
+		}
+	],
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "cross-table-order",
+		"confidence": "medium",
+		"tables": [
+			"orders",
+			"inventory"
+		],
+		"focusTable": "orders",
+		"parentTable": null,
+		"evidence": [
+			"Process 2001 works on orders.",
+			"Process 2002 works on inventory.",
+			"Process 2003 works on orders.",
+			"Each process holds a row or lock on one table and waits for the other. Only the current statement of each process is in the report, so the earlier lock order is inferred."
+		],
+		"processes": [
+			{
+				"pid": 2001,
+				"table": "orders",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 7301"
+			},
+			{
+				"pid": 2002,
+				"table": "inventory",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 7305"
+			},
+			{
+				"pid": 2003,
+				"table": "orders",
+				"kind": "select-lock",
+				"waitsFor": "ExclusiveLock on tuple (0,4) of relation OID 16402"
+			}
+		]
+	}
+}

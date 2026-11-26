@@ -1,0 +1,81 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		18321,
+		18344
+	],
+	"hasQueries": true,
+	"victim": {
+		"pid": 18321,
+		"waitingFor": "ShareLock on transaction 4412"
+	},
+	"victimQuery": "UPDATE accounts SET balance = balance + 50 WHERE id = 7",
+	"context": {
+		"op": "update",
+		"relation": "accounts",
+		"block": 0,
+		"offset": 7
+	},
+	"edges": [
+		{
+			"pid": 18321,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 4412"
+			},
+			"blockedBy": 18344
+		},
+		{
+			"pid": 18344,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 4410"
+			},
+			"blockedBy": 18321
+		}
+	],
+	"processes": [
+		{
+			"pid": 18321,
+			"query": "UPDATE accounts SET balance = balance + 50 WHERE id = 7"
+		},
+		{
+			"pid": 18344,
+			"query": "UPDATE accounts SET balance = balance - 50 WHERE id = 9"
+		}
+	],
+	"warnings": [],
+	"diagnosis": {
+		"pattern": "same-table-row-order",
+		"confidence": "high",
+		"tables": [
+			"accounts"
+		],
+		"focusTable": "accounts",
+		"parentTable": null,
+		"evidence": [
+			"Process 18321 writes rows in accounts.",
+			"Process 18344 writes rows in accounts.",
+			"18321 waits on a row that 18344 holds; 18344 waits on a row that 18321 holds."
+		],
+		"processes": [
+			{
+				"pid": 18321,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 4412"
+			},
+			{
+				"pid": 18344,
+				"table": "accounts",
+				"kind": "update",
+				"waitsFor": "ShareLock on transaction 4410"
+			}
+		]
+	}
+}
