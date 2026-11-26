@@ -211,6 +211,13 @@ const topicLinks = [
   .m-link.active { color: var(--brand); }
   .m-cta { justify-content: center; padding-block: .9rem; font-size: var(--fs-base); }
 
+  /* Narrow phones (≤360px): brand + three 44px buttons overflow 320px. Tighten
+     spacing and drop the GitHub icon here; it stays in the footer. */
+  @media (max-width: 360px) {
+    .header-inner { padding-inline: var(--space-4); gap: var(--space-3); }
+    .brand-name { font-size: 1.125rem; }
+    .actions a.icon-btn { display: none; }
+  }
   @media (max-width: 780px) {
     .nav-desktop, .header-cta { display: none; }
     .menu-btn { display: inline-flex; }
