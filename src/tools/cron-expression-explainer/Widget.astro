@@ -1,0 +1,364 @@
+---
+// Widget for the cron explainer. Markup only; the logic is in the <script> below and in
+// the pure modules next to this file. Defaults are rendered so the page works before JS.
+const ZONES = [
+	'UTC',
+	'America/New_York',
+	'America/Chicago',
+	'America/Denver',
+	'America/Los_Angeles',
+	'America/Sao_Paulo',
+	'Europe/London',
+	'Europe/Berlin',
+	'Europe/Paris',
+	'Africa/Johannesburg',
+	'Asia/Kolkata',
+	'Asia/Singapore',
+	'Asia/Tokyo',
+	'Australia/Sydney',
+	'Pacific/Auckland',
+];
+const EXAMPLES = [
+	'0 3 * * *',
+	'*/15 9-17 * * 1-5',
+	'30 4 1,15 * 5',
+	'0 0 29 2 *',
+	'@daily',
+	'0 5 * * * America/New_York',
+	'every tuesday at 5 pm',
+	'every 5 minutes',
+];
+---
+
+<div data-tool-widget class="cron-widget">
+	<div class="tool-fields">
+		<div class="tool-field stacked">
+			<label class="tool-label" for="cron-expr">Cron expression or Fugit phrase</label>
+			<input
+				class="tool-input wide cron-wide"
+				id="cron-expr"
+				name="expr"
+				type="text"
+				value="0 3 * * *"
+				autocomplete="off"
+				autocapitalize="off"
+				spellcheck="false"
+				aria-describedby="cron-expr-hint cron-expr-error"
+				aria-invalid="false"
+			/>
+			<span class="tool-hint" id="cron-expr-hint">Five fields, six with seconds first, a macro such as @daily, or a Solid Queue phrase such as "every day at 5 pm".</span>
+			<p class="tool-error" id="cron-expr-error" data-error-for="expr"></p>
+		</div>
+		<div class="cron-examples" role="group" aria-label="Examples">
+			{EXAMPLES.map((ex) => (
+				<button type="button" class="btn btn-secondary btn-sm" data-example={ex}>{ex}</button>
+			))}
+		</div>
+		<div class="tool-field stacked">
+			<label class="tool-label" for="cron-tz">Time zone</label>
+			<select class="tool-select cron-wide" id="cron-tz" name="tz">
+				{ZONES.map((z) => (
+					<option value={z} selected={z === 'UTC'}>{z}</option>
+				))}
+			</select>
+			<span class="tool-hint" data-tz-note>Defaults to your browser's zone. A zone written in the expression takes precedence.</span>
+		</div>
+	</div>
+
+	<fieldset class="cron-gen">
+		<legend class="tool-label">Generate a recurring task</legend>
+		<div class="tool-fields two-col">
+			<div class="tool-field stacked">
+				<label class="tool-label" for="cron-key">Task key</label>
+				<input class="tool-input wide cron-wide" id="cron-key" name="key" type="text" value="nightly_cleanup" autocomplete="off" spellcheck="false" aria-describedby="cron-key-hint cron-key-error" aria-invalid="false" />
+				<span class="tool-hint" id="cron-key-hint">Lowercase, digits and underscores.</span>
+				<p class="tool-error" id="cron-key-error" data-error-for="key"></p>
+			</div>
+			<div class="tool-field stacked">
+				<label class="tool-label" for="cron-cls">Job class</label>
+				<input class="tool-input wide cron-wide" id="cron-cls" name="cls" type="text" value="CleanupJob" autocomplete="off" spellcheck="false" aria-describedby="cron-cls-error" aria-invalid="false" />
+				<p class="tool-error" id="cron-cls-error" data-error-for="cls"></p>
+			</div>
+			<div class="tool-field stacked">
+				<label class="tool-label" for="cron-queue">Queue <span class="tool-hint">optional</span></label>
+				<input class="tool-input wide cron-wide" id="cron-queue" name="queue" type="text" value="" autocomplete="off" spellcheck="false" aria-describedby="cron-queue-error" aria-invalid="false" />
+				<p class="tool-error" id="cron-queue-error" data-error-for="queue"></p>
+			</div>
+			<div class="tool-field stacked">
+				<label class="tool-label" for="cron-args">Arguments <span class="tool-hint">optional JSON array or object</span></label>
+				<input class="tool-input wide cron-wide" id="cron-args" name="args" type="text" value="" placeholder="[1000]" autocomplete="off" spellcheck="false" aria-describedby="cron-args-error" aria-invalid="false" />
+				<p class="tool-error" id="cron-args-error" data-error-for="args"></p>
+			</div>
+		</div>
+	</fieldset>
+
+	<div class="tool-result" data-result hidden>
+		<div class="tool-verdict" data-verdict role="status" aria-live="polite"></div>
+		<div class="tool-table-wrap">
+			<table class="tool-table" data-table aria-label="Next runs"></table>
+		</div>
+		<div class="tool-output" data-output hidden>
+			<div class="tool-output-head">
+				<span>config/recurring.yml <span class="tool-hint">Solid Queue</span></span>
+				<button type="button" class="btn btn-secondary btn-sm" data-copy="recurring">Copy</button>
+			</div>
+			<pre tabindex="0" aria-label="recurring.yml output" data-out="recurring"></pre>
+			<div class="tool-output-head">
+				<span>sidekiq-cron YAML</span>
+				<button type="button" class="btn btn-secondary btn-sm" data-copy="sidekiq">Copy</button>
+			</div>
+			<pre tabindex="0" aria-label="sidekiq-cron output" data-out="sidekiq"></pre>
+		</div>
+	</div>
+</div>
+
+<style>
+	.cron-widget { display: grid; gap: var(--space-5); }
+	.cron-wide { width: 100%; max-width: 100%; }
+	.cron-examples { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+	.cron-examples .btn { font-family: var(--font-mono); font-size: var(--fs-xs); max-width: 100%; white-space: normal; text-align: left; }
+	.cron-gen { margin: 0; padding: 0; border: 0; min-width: 0; }
+	.cron-gen legend { padding: 0; margin-bottom: var(--space-3); }
+	.cron-gen .tool-fields { row-gap: var(--space-4); }
+	.cron-widget pre { padding: var(--space-4); overflow-x: auto; }
+	.cron-widget .tool-output-head .btn { flex: none; }
+	.cron-widget .tool-table-wrap { max-width: 100%; }
+	.cron-widget .tool-table th, .cron-widget .tool-table td { white-space: normal; }
+</style>
+
+<script>
+	import { copyText } from '../_shared/copy';
+	import { decodeHashState } from '../_shared/hash-state';
+	import { formatDateTime, isValidTimeZone } from '../_shared/format';
+	import type { FieldError } from '../_shared/validate';
+	import { parseCron, type CronSpec } from './parse';
+	import { natToCron, FUGIT_NAT_LINK, NAT_UNSUPPORTED } from './nat';
+	import { describe as describeCron } from './describe';
+	import { nextRuns, DEFAULT_RUNS } from './schedule';
+	import { validateGenerator, generateYaml } from './generate';
+
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
+
+	if (root) {
+		const q = <T extends Element>(sel: string): T => root.querySelector<T>(sel) as T;
+		const expr = q<HTMLInputElement>('#cron-expr');
+		const tz = q<HTMLSelectElement>('#cron-tz');
+		const tzNote = q<HTMLElement>('[data-tz-note]');
+		const key = q<HTMLInputElement>('#cron-key');
+		const cls = q<HTMLInputElement>('#cron-cls');
+		const queue = q<HTMLInputElement>('#cron-queue');
+		const args = q<HTMLInputElement>('#cron-args');
+		const result = q<HTMLElement>('[data-result]');
+		const verdict = q<HTMLElement>('[data-verdict]');
+		const table = q<HTMLTableElement>('[data-table]');
+		const output = q<HTMLElement>('[data-output]');
+		const outRecurring = q<HTMLElement>('[data-out="recurring"]');
+		const outSidekiq = q<HTMLElement>('[data-out="sidekiq"]');
+
+		const el = <K extends keyof HTMLElementTagNameMap>(tag: K, text?: string): HTMLElementTagNameMap[K] => {
+			const node = document.createElement(tag);
+			if (text !== undefined) node.textContent = text;
+			return node;
+		};
+
+		const emit = (name: string, detail: Record<string, unknown>) => {
+			root.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+		};
+
+		const selectedZone = (): string => (isValidTimeZone(tz.value) ? tz.value : 'UTC');
+
+		/** Show or hide the inline error for one field, and mark the input. */
+		const setFieldError = (input: HTMLInputElement | HTMLSelectElement, id: string, message: string | null, link?: boolean) => {
+			const target = document.getElementById(id);
+			input.setAttribute('aria-invalid', message ? 'true' : 'false');
+			if (!target) return;
+			target.replaceChildren();
+			if (!message) return;
+			target.append(message.replace(/\.$/, '') + '.');
+			if (link) {
+				target.append(' ', el('a', 'Fugit natural-language docs'));
+				(target.lastElementChild as HTMLAnchorElement).href = FUGIT_NAT_LINK;
+			}
+		};
+
+		type Evaluated =
+			| { ok: true; cron: CronSpec; cronText: string; note: string | null }
+			| { ok: false; message: string; link: boolean };
+
+		/** Expression text (cron or Fugit phrase) → parsed spec, or the error to show. */
+		const evaluate = (raw: string): Evaluated => {
+			const text = raw.trim();
+			if (/^every\b/i.test(text)) {
+				const nat = natToCron(text);
+				if (!nat.ok) return { ok: false, message: nat.message, link: nat.message === NAT_UNSUPPORTED };
+				const parsed = parseCron(nat.cron);
+				if (!parsed.ok) return { ok: false, message: parsed.error.message, link: false };
+				return { ok: true, cron: parsed.cron, cronText: nat.cron, note: `Converted from the Fugit phrase to ${nat.cron}.` };
+			}
+			const parsed = parseCron(text);
+			if (!parsed.ok) {
+				const where = parsed.error.column > 0 ? ` (character ${parsed.error.column})` : '';
+				return { ok: false, message: `${parsed.error.message.replace(/\.$/, '')}${where}`, link: false };
+			}
+			return { ok: true, cron: parsed.cron, cronText: parsed.cron.source, note: null };
+		};
+
+		const ERROR_IDS: Record<string, string> = { key: 'cron-key-error', cls: 'cron-cls-error', queue: 'cron-queue-error', args: 'cron-args-error' };
+		const FIELD_INPUTS: Record<string, HTMLInputElement> = { key, cls, queue, args };
+
+		const clearResult = () => {
+			result.hidden = true;
+			verdict.replaceChildren();
+			output.hidden = true;
+			outRecurring.textContent = '';
+			outSidekiq.textContent = '';
+			table.replaceChildren();
+			emit('tool:clear', {});
+		};
+
+		const renderTable = (zone: string, runs: Date[]) => {
+			const head = el('thead');
+			const headRow = el('tr');
+			for (const [label, num] of [['#', true], [`Local time (${zone})`, false], ['UTC', false]] as const) {
+				const th = el('th', label);
+				th.setAttribute('scope', 'col');
+				if (num) th.className = 'num';
+				headRow.append(th);
+			}
+			head.append(headRow);
+			const body = el('tbody');
+			runs.forEach((run, i) => {
+				const row = el('tr');
+				row.append(el('td', String(i + 1)), el('td', formatDateTime(run, zone)), el('td', run.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'));
+				row.firstElementChild!.className = 'num';
+				body.append(row);
+			});
+			table.replaceChildren(head, body);
+		};
+
+		const update = () => {
+			const raw = expr.value;
+			const ev = evaluate(raw);
+
+			// Generator fields are independent of the schedule, so they are always checked.
+			const gen = validateGenerator({ taskKey: key.value, className: cls.value, queue: queue.value, args: args.value });
+			const genErrors = gen.ok ? [] : gen.errors;
+			for (const field of Object.keys(ERROR_IDS)) {
+				const hit = genErrors.find((e: FieldError) => e.field === field);
+				setFieldError(FIELD_INPUTS[field], ERROR_IDS[field], hit ? hit.message : null);
+			}
+
+			if (raw.trim() === '') {
+				setFieldError(expr, 'cron-expr-error', null);
+				clearResult();
+				return;
+			}
+			if (!ev.ok) {
+				setFieldError(expr, 'cron-expr-error', ev.message, ev.link);
+				clearResult();
+				emit('tool:error', { message: ev.message });
+				return;
+			}
+			setFieldError(expr, 'cron-expr-error', null);
+
+			tz.disabled = ev.cron.timeZone !== null;
+			tzNote.textContent = ev.cron.timeZone
+				? `This expression sets its own zone (${ev.cron.timeZone}), so the selector is ignored.`
+				: "Defaults to your browser's zone. A zone written in the expression takes precedence.";
+
+			const zone = ev.cron.timeZone ?? selectedZone();
+			const runs = nextRuns(ev.cron, new Date(), zone, DEFAULT_RUNS);
+			const sentence = describeCron(ev.cron);
+
+			result.hidden = false;
+			verdict.className = runs.length ? 'tool-verdict is-ok' : 'tool-verdict is-risk';
+			const state = el('span', runs.length ? 'Valid' : 'No run soon');
+			state.className = 'state';
+			const body = el('p', runs.length ? sentence : 'No run in the next five years. Check the day and month fields.');
+			verdict.replaceChildren(state, body);
+			if (ev.note) verdict.append(el('p', ev.note));
+			renderTable(zone, runs);
+
+			// Schedule text as written to YAML: the expression, plus the selected zone when it is not UTC.
+			const scheduleText = ev.cron.timeZone || zone === 'UTC' ? ev.cronText : `${ev.cronText} ${zone}`;
+			const yaml = gen.ok ? generateYaml(gen.value, scheduleText) : null;
+			const shareState = { expr: raw.trim(), tz: selectedZone(), key: key.value.trim(), cls: cls.value.trim(), queue: queue.value.trim() };
+
+			if (yaml && yaml.ok) {
+				output.hidden = false;
+				outRecurring.textContent = yaml.value.recurringYml;
+				outSidekiq.textContent = yaml.value.sidekiqCron;
+				emit('tool:result', { text: yaml.value.recurringYml, filename: 'recurring.yml', state: shareState, tone: 'ok' });
+			} else {
+				output.hidden = true;
+				outRecurring.textContent = '';
+				outSidekiq.textContent = '';
+				const lines = [sentence, '', `Next runs (${zone}):`, ...runs.map((r, i) => `${i + 1}. ${formatDateTime(r, zone)} (${r.toISOString()})`)];
+				emit('tool:result', { text: lines.join('\n'), state: shareState, tone: 'ok' });
+			}
+		};
+
+		let timer: number | undefined;
+		const debounce = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(update, 150);
+		};
+
+		// Keyboard and screen-reader users reach the examples as ordinary buttons.
+		root.querySelectorAll<HTMLButtonElement>('[data-example]').forEach((button) => {
+			button.addEventListener('click', () => {
+				expr.value = button.dataset.example ?? '';
+				update();
+				expr.focus();
+			});
+		});
+
+		root.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((button) => {
+			button.addEventListener('click', async () => {
+				const target = root.querySelector<HTMLElement>(`[data-out="${button.dataset.copy}"]`);
+				const ok = await copyText(target?.textContent ?? '');
+				button.textContent = ok ? 'Copied' : 'Copy failed';
+				window.setTimeout(() => (button.textContent = 'Copy'), 1500);
+			});
+		});
+
+		expr.addEventListener('input', debounce);
+		key.addEventListener('input', debounce);
+		cls.addEventListener('input', debounce);
+		queue.addEventListener('input', debounce);
+		args.addEventListener('input', debounce);
+		tz.addEventListener('change', update);
+
+		// Shared link: read the hash, re-validate every value, ignore what is invalid.
+		const applyHash = () => {
+			const shared = decodeHashState(window.location.hash, ['expr', 'tz', 'key', 'cls', 'queue']);
+			if (!shared) return;
+			if (shared.expr !== undefined && evaluate(shared.expr).ok) expr.value = shared.expr;
+			if (shared.tz !== undefined && isValidTimeZone(shared.tz)) {
+				if (!Array.from(tz.options).some((o) => o.value === shared.tz)) tz.append(new Option(shared.tz, shared.tz));
+				tz.value = shared.tz;
+			}
+			const fieldAllowed = (field: string, value: string): boolean => {
+				const probe = validateGenerator({ taskKey: field === 'key' ? value : 'nightly_cleanup', className: field === 'cls' ? value : 'CleanupJob', queue: field === 'queue' ? value : '', args: field === 'args' ? value : '' });
+				return probe.ok || !probe.errors.some((e) => e.field === field);
+			};
+			if (shared.key !== undefined && fieldAllowed('key', shared.key)) key.value = shared.key;
+			if (shared.cls !== undefined && fieldAllowed('cls', shared.cls)) cls.value = shared.cls;
+			if (shared.queue !== undefined && fieldAllowed('queue', shared.queue)) queue.value = shared.queue;
+		};
+
+		// Default to the browser's zone when the list does not already include it.
+		try {
+			const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			if (browserZone && isValidTimeZone(browserZone) && !Array.from(tz.options).some((o) => o.value === browserZone)) {
+				tz.append(new Option(browserZone, browserZone));
+			}
+			if (browserZone && isValidTimeZone(browserZone)) tz.value = browserZone;
+		} catch {
+			/* keep UTC */
+		}
+
+		applyHash();
+		update();
+	}
+</script>
