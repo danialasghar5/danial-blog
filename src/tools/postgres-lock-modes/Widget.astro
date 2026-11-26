@@ -6,7 +6,7 @@ import { OPERATIONS } from './data.ts';
 import { PG_DOCS_LOCKING } from '../_shared/pg-locks.ts';
 ---
 
-<div class="lm-widget" data-lock-widget data-default-op="select" data-default-a="select" data-default-b="alter-table-add-column">
+<div class="lm-widget" data-tool-widget data-default-op="select" data-default-a="select" data-default-b="alter-table-add-column">
 	<div class="tool-field stacked">
 		<label class="tool-label" for="lm-search">Search operations</label>
 		<p class="tool-hint" id="lm-search-hint">Try “index”, “add_column”, “VACUUM” or “foreign key”.</p>
@@ -72,7 +72,7 @@ import { PG_DOCS_LOCKING } from '../_shared/pg-locks.ts';
 	import { decodeHashState } from '../_shared/hash-state.ts';
 
 	const CROSS = '✕';
-	const root = document.querySelector<HTMLElement>('[data-lock-widget]');
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
 
 	type Detail = { text: string; state: Record<string, string>; cta: boolean; tone: 'ok' | 'risk' };
 
@@ -107,7 +107,7 @@ import { PG_DOCS_LOCKING } from '../_shared/pg-locks.ts';
 	const isAccessExclusive = (op: Operation) => op.locks.some((l) => l.mode === 'ACCESS EXCLUSIVE');
 
 	const announce = (detail: Detail) => {
-		root?.closest('[data-tool-surface]')?.dispatchEvent(new CustomEvent('tool:result', { bubbles: true, detail }));
+		root?.dispatchEvent(new CustomEvent('tool:result', { bubbles: true, detail }));
 	};
 
 	// --- Search and results -------------------------------------------------
@@ -316,6 +316,8 @@ import { PG_DOCS_LOCKING } from '../_shared/pg-locks.ts';
 <style>
 	.lm-widget {
 		display: grid;
+		/* minmax(0,1fr): let wide tables scroll inside .tool-table-wrap instead of stretching the widget */
+		grid-template-columns: minmax(0, 1fr);
 		gap: 1.25rem;
 	}
 	.lm-results {
