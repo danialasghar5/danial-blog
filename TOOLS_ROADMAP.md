@@ -3,9 +3,9 @@
 > The master plan for turning `danialasghar.com/tools/` into a developer tools hub. It sits alongside the
 > technical blog and consulting services and does not replace them.
 >
-> **Status:** Approved strategy, pre-implementation. No phase started.
-> **Created:** 2026-11-26 · **Owner:** Danial Asghar
-> **Branch of record:** `docs/tools-roadmap`, branched from `feat/premium-redesign` at `ed84151`.
+> **Status:** Phase 1 complete and live (`c936cd0`, 2026-11-26). Phase 0 mostly done; Phase 2 started.
+> **Created:** 2026-11-26 · **Owner:** Danial Asghar · **Last updated:** 2026-11-26
+> **Branch of record:** `main`. This file is updated with each phase and pushed with it.
 >
 > Work proceeds one phase at a time. When a phase ends, it is reviewed and approved before the next one
 > starts. Update §0 (status) and §17 (decision log) whenever something changes.
@@ -45,7 +45,7 @@
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
 | 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 Mostly done: redesign merged (D1, D2), SEO baseline, security:check (S0-2), npm audit clean (S0-3), site-wide headers + enforced CSP live (S0-4), header overflow fix. Open: S0-1 and S0-8 (owner), S0-5 CI, S0-6 Dependabot, S0-7 JSON-LD helper migration, D3, D4 | `chore/seo-baseline` | — |
 | 1 | Foundation and first five tools | ✅ Done: foundation + 5 tools live, discovery hub, Tools dropdown, Postgres group page; all audited against §10.8 | `feat/tools-wave1` → `main` | Owner: "if all fixed and done, push" (2026-11-26) |
-| 2 | Signature depth and first utilities | 🔄 Started early (owner request): #17 built and audited; #11 built, audit pending; both draft | `feat/tool-rails-safe-migration-checker`, `feat/tool-puma-workers-threads-calculator` | — |
+| 2 | Signature depth and first utilities | 🔄 Started early (owner request): #11 and #17 built and audited against §10.8, both in draft, not on `main` yet. Remaining Wave 2: #3, #4, #10, #12, #24, #28, #34, #35 | `feat/tool-rails-safe-migration-checker`, `feat/tool-puma-workers-threads-calculator` | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
 | 4 | Long tail | ⏳ Not started | — | — |
 
@@ -2516,11 +2516,14 @@ starts.**
 | D14 | Per-tool share cards: OK to download the Bricolage Grotesque TTF (OFL licence, from google/fonts on GitHub) to the scratchpad to render cards in the redesign style? Until then tools use `og-default.png` (DEC-34) | Tool OG cards | Owner |
 | D15 | Not built yet (waiting on D6): article callouts, topic-hub "Tools for this topic" block, homepage tools strip, services "tools I use" block, privacy "Developer tools" section | Phase 1 cross-promotion | Owner |
 
-**Repository state (do not disturb), updated 2026-11-26 in Phase 0:**
-- `main` = `origin/main` = `feat/premium-redesign` = `f9a3e87`. The redesign and this roadmap
-  (`3fcbe6b`) are merged.
-- `chore/seo-baseline` at `607422d` (+ the roadmap tracking commit), branched from `f9a3e87`. Not pushed.
-- Tools work happens in a separate worktree (DEC-15), not in the main checkout.
+**Repository state (do not disturb), updated 2026-11-26 after Phase 1:**
+- `main` = `origin/main` includes the redesign, Phase 0 security work and all of Phase 1.
+- Pushes to `main` so far: `7b14a60` (SEO baseline + roadmap), `5082160` (npm audit fix, Node 22.23.5),
+  `e2be6dc` (security:check), `79b88d8` (headers, CSP report-only), `4bf165b` (CSP enforced),
+  `4634f00` (header fix for narrow phones), `c936cd0` (Phase 1: 49 commits, one per concern).
+- Not pushed (Wave 2, draft, audited): `feat/tool-rails-safe-migration-checker`,
+  `feat/tool-puma-workers-threads-calculator`.
+- Tools work happens in separate worktrees (DEC-15), not in the main checkout.
 - Branch `backup/premium-redesign-before-split` at `0cc6ac8`.
 - `stash@{0}` ("experimental-uncoordinated-redesign-edits", made on `main`).
 - Untracked `docs/PROJECT_OVERVIEW.md` and `files/`.
