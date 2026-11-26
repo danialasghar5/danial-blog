@@ -1,0 +1,16 @@
+[
+  { "input": "0 5 * * * America/New_York", "minutes": [0], "hours": [5], "timeZone": "America/New_York", "withSeconds": false },
+  { "input": "*/15 9-17 * * 1-5", "minutes": [0, 15, 30, 45], "hours": [9, 10, 11, 12, 13, 14, 15, 16, 17], "daysOfWeek": [1, 2, 3, 4, 5] },
+  { "input": "0 0 * * 7", "daysOfWeek": [0] },
+  { "input": "0 0 * * SUN-SAT", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6] },
+  { "input": "0 12 * JAN,jul *", "months": [1, 7] },
+  { "input": "10-20/5 * * * *", "minutes": [10, 15, 20] },
+  { "input": "5/20 * * * *", "minutes": [5, 25, 45] },
+  { "input": "0 0 29 2 *", "daysOfMonth": [29], "months": [2] },
+  { "input": "@weekly", "macro": "@weekly", "minutes": [0], "hours": [0], "daysOfWeek": [0] },
+  { "input": "@hourly", "macro": "@hourly", "minutes": [0], "hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23] },
+  { "input": "*/15 * * * * *", "withSeconds": true, "seconds": [0, 15, 30, 45] },
+  { "input": "30 0 9 * * 1-5 UTC", "withSeconds": true, "seconds": [30], "minutes": [0], "hours": [9], "timeZone": "UTC" },
+  { "input": "  0 3 * * *  ", "minutes": [0], "hours": [3] },
+  { "input": "0 0 1,15 * 5", "daysOfMonth": [1, 15], "daysOfWeek": [5] }
+]
