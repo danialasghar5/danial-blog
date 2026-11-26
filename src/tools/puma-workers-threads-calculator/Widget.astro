@@ -1,0 +1,238 @@
+---
+// Server-rendered markup only. Defaults are rendered into value="" so the page works before JS.
+import { DEFAULTS } from './logic';
+
+const d = DEFAULTS;
+---
+
+<div data-tool-widget data-puma-widget>
+	<div class="tool-fields two-col">
+		<div class="tool-field">
+			<label class="tool-label" for="pw-cores">CPU cores<span class="tool-hint">Cores the box gives this app</span></label>
+			<input class="tool-input" id="pw-cores" name="cores" inputmode="numeric" value={d.cores} aria-describedby="pw-cores-error" />
+			<p class="tool-error" id="pw-cores-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-mem">Memory for the app (MB)<span class="tool-hint">Free RAM after the OS and other services</span></label>
+			<input class="tool-input" id="pw-mem" name="mem" inputmode="decimal" value={d.mem} aria-describedby="pw-mem-error" />
+			<p class="tool-error" id="pw-mem-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-perWorker">Memory per worker (MB, RSS)<span class="tool-hint">Measured in production, not a guess</span></label>
+			<input class="tool-input" id="pw-perWorker" name="perWorker" inputmode="decimal" value={d.perWorker} aria-describedby="pw-perWorker-error" />
+			<p class="tool-error" id="pw-perWorker-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-perThread">Extra memory per thread (MB)<span class="tool-hint">Stacks and per-thread allocations</span></label>
+			<input class="tool-input" id="pw-perThread" name="perThread" inputmode="decimal" value={d.perThread} aria-describedby="pw-perThread-error" />
+			<p class="tool-error" id="pw-perThread-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-headroom">Headroom (%)<span class="tool-hint">Kept free for spikes and the OS</span></label>
+			<input class="tool-input" id="pw-headroom" name="headroom" inputmode="decimal" value={d.headroom} aria-describedby="pw-headroom-error" />
+			<p class="tool-error" id="pw-headroom-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-rt">Average request time (ms)<span class="tool-hint">Mean, from your APM or logs</span></label>
+			<input class="tool-input" id="pw-rt" name="rt" inputmode="decimal" value={d.rt} aria-describedby="pw-rt-error" />
+			<p class="tool-error" id="pw-rt-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-io">Time waiting on I/O (%)<span class="tool-hint">Database, HTTP and cache waits, not CPU</span></label>
+			<input class="tool-input" id="pw-io" name="io" inputmode="decimal" value={d.io} aria-describedby="pw-io-error" />
+			<p class="tool-error" id="pw-io-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-mode">Process mode</label>
+			<select class="tool-select" id="pw-mode" name="mode" aria-describedby="pw-mode-error">
+				<option value="cluster" selected={d.mode === 'cluster'}>Cluster (workers)</option>
+				<option value="single" selected={d.mode === 'single'}>Single process</option>
+			</select>
+			<p class="tool-error" id="pw-mode-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-sq">Solid Queue runs inside Puma<span class="tool-hint">Adds its pool to each process</span></label>
+			<input type="checkbox" id="pw-sq" name="sq" checked={d.sq} />
+		</div>
+		<div class="tool-field" data-sq-field hidden>
+			<label class="tool-label" for="pw-sqThreads">Solid Queue threads<span class="tool-hint">Its worker threads, per process</span></label>
+			<input class="tool-input" id="pw-sqThreads" name="sqThreads" inputmode="numeric" value={d.sqThreads} aria-describedby="pw-sqThreads-error" />
+			<p class="tool-error" id="pw-sqThreads-error"></p>
+		</div>
+		<div class="tool-field">
+			<label class="tool-label" for="pw-target">Target requests/s<span class="tool-hint">Optional. Leave empty to skip</span></label>
+			<input class="tool-input" id="pw-target" name="target" inputmode="decimal" value={d.target} placeholder="none" aria-describedby="pw-target-error" />
+			<p class="tool-error" id="pw-target-error"></p>
+		</div>
+	</div>
+
+	<div class="tool-result" data-result hidden>
+		<div class="tool-verdict" data-verdict role="status" aria-live="polite"><p></p></div>
+		<dl class="tool-metrics" data-metrics></dl>
+		<div class="tool-output">
+			<div class="tool-output-head"><span>config/puma.rb and config/database.yml</span></div>
+			<pre data-config tabindex="0"></pre>
+			<p class="tool-hint">Pool sizing per process and the Postgres total: <a href="/tools/connection-pool-calculator/">connection pool calculator</a>.</p>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* .tool-field sets display:flex, which would otherwise beat the hidden attribute. */
+	[data-sq-field][hidden] { display: none; }
+</style>
+
+<script>
+	import { RAILS_DEFAULT_THREADS, SHARE_KEYS, calculate, explain, parseInputs, renderConfig, sanitizeShared, shareState, type PumaCalc, type PumaInputs, type PumaRaw } from './logic';
+	import { decodeHashState } from '../_shared/hash-state';
+	import { formatNumber } from '../_shared/format';
+
+	const root = document.querySelector<HTMLElement>('[data-puma-widget]');
+
+	if (root) {
+		const field = (key: string) => root.querySelector<HTMLInputElement | HTMLSelectElement>(`#pw-${key}`);
+		const errorEl = (key: string) => root.querySelector<HTMLElement>(`#pw-${key}-error`);
+		const sqField = root.querySelector<HTMLElement>('[data-sq-field]');
+		const sqBox = root.querySelector<HTMLInputElement>('#pw-sq');
+		const result = root.querySelector<HTMLElement>('[data-result]');
+		const verdict = root.querySelector<HTMLElement>('[data-verdict]');
+		const verdictText = verdict?.querySelector<HTMLElement>('p');
+		const metrics = root.querySelector<HTMLElement>('[data-metrics]');
+		const config = root.querySelector<HTMLElement>('[data-config]');
+
+		const readRaw = (): PumaRaw => ({
+			cores: field('cores')?.value ?? '',
+			mem: field('mem')?.value ?? '',
+			perWorker: field('perWorker')?.value ?? '',
+			perThread: field('perThread')?.value ?? '',
+			headroom: field('headroom')?.value ?? '',
+			rt: field('rt')?.value ?? '',
+			io: field('io')?.value ?? '',
+			mode: field('mode')?.value ?? '',
+			sq: sqBox?.checked ?? false,
+			sqThreads: field('sqThreads')?.value ?? '',
+			target: field('target')?.value ?? '',
+		});
+
+		const applyRaw = (p: Partial<PumaRaw>) => {
+			for (const [key, value] of Object.entries(p)) {
+				if (typeof value === 'boolean') {
+					if (sqBox) sqBox.checked = value;
+				} else if (typeof value === 'string') {
+					const el = field(key);
+					if (el) el.value = value;
+				}
+			}
+		};
+
+		const paintErrors = (errors: { field: string; message: string }[]) => {
+			for (const key of ['cores', 'mem', 'perWorker', 'perThread', 'headroom', 'rt', 'io', 'mode', 'sqThreads', 'target']) {
+				const msg = errors.find((e) => e.field === key)?.message ?? '';
+				const el = field(key);
+				const err = errorEl(key);
+				if (err) err.textContent = msg;
+				el?.setAttribute('aria-invalid', msg ? 'true' : 'false');
+			}
+		};
+
+		const cell = (label: string, value: string, hint?: string) => {
+			const div = document.createElement('div');
+			div.className = 'tool-metric';
+			const dt = document.createElement('dt');
+			dt.textContent = label;
+			const dd = document.createElement('dd');
+			dd.textContent = value;
+			div.append(dt, dd);
+			if (hint) {
+				const small = document.createElement('span');
+				small.className = 'tool-hint';
+				small.textContent = hint;
+				dd.append(small);
+			}
+			return div;
+		};
+
+		const verdictHead = (i: PumaInputs, c: PumaCalc): [string, string] => {
+			if (c.memVerdict === 'Risk') return ['Risk', 'one worker does not fit in the memory you gave.'];
+			if (c.targetCovered === false) return ['Risk', 'capacity is below your target.'];
+			if (c.memVerdict === 'Tight') return ['Tight', 'memory use is above 85% of usable.'];
+			return ['OK', i.target !== undefined ? 'fits memory and covers your target.' : 'fits in memory.'];
+		};
+
+		const paintResult = (i: PumaInputs, c: PumaCalc): { text: string; tone: 'ok' | 'risk' } => {
+			const cfg = renderConfig(i, c);
+			const tone: 'ok' | 'risk' = c.state === 'Risk' ? 'risk' : 'ok';
+			const cls = c.state === 'Risk' ? 'is-risk' : c.state === 'Tight' ? 'is-warn' : 'is-ok';
+			const [stateWord, headText] = verdictHead(i, c);
+			const why = explain(i, c).join(' ');
+
+			if (verdict && verdictText) {
+				verdict.className = `tool-verdict ${cls}`;
+				const state = document.createElement('span');
+				state.className = 'state';
+				state.textContent = stateWord;
+				verdictText.replaceChildren(state, `: ${headText} `, document.createTextNode(why));
+			}
+
+			const processLabel = i.mode === 'cluster' ? 'Puma workers (processes)' : 'Puma processes';
+			const memText = `${formatNumber(c.memUsedMB, 0)} of ${formatNumber(c.usableMB, 0)} MB`;
+			metrics?.replaceChildren(
+				cell(processLabel, formatNumber(c.processes, 0)),
+				cell('Threads per process', formatNumber(c.threads, 0), `Rails default: ${RAILS_DEFAULT_THREADS}`),
+				cell('Capacity', `${formatNumber(c.capacityRps, 1)} req/s`, `limited by ${c.binding === 'both' ? 'threads and CPU' : c.binding}`),
+				cell('Memory used / usable', memText, `${formatNumber(c.memRatio * 100, 0)}% · ${c.memVerdict}`),
+				cell('DB connections', formatNumber(c.dbTotal, 0), `${formatNumber(c.processes, 0)} × pool ${formatNumber(c.poolPerProcess, 0)}`),
+			);
+
+			const snippet = [cfg.puma, '', cfg.database, '', `# Environment: ${cfg.env.join(' ')}`].join('\n');
+			if (config) config.textContent = snippet;
+
+			const text = [
+				`Puma: ${c.processes} ${i.mode === 'cluster' ? 'workers' : 'process'} × ${c.threads} threads`,
+				`Capacity: ${formatNumber(c.capacityRps, 1)} req/s (limited by ${c.binding === 'both' ? 'threads and CPU' : c.binding})`,
+				`Memory: ${memText} (${c.memVerdict})`,
+				`DB connections: ${c.dbTotal} (${c.processes} × pool ${c.poolPerProcess})`,
+				'',
+				snippet,
+			].join('\n');
+			return { text, tone };
+		};
+
+		const run = () => {
+			const raw = readRaw();
+			if (sqField) sqField.hidden = !raw.sq;
+			const parsed = parseInputs(raw);
+			if (!parsed.ok) {
+				paintErrors(parsed.errors);
+				if (result) result.hidden = true;
+				root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true, detail: {} }));
+				return;
+			}
+			paintErrors([]);
+			const i = parsed.value;
+			const c = calculate(i);
+			const { text, tone } = paintResult(i, c);
+			if (result) result.hidden = false;
+			root.dispatchEvent(
+				new CustomEvent('tool:result', {
+					bubbles: true,
+					detail: { text, state: shareState(i), cta: c.cta, tone },
+				}),
+			);
+		};
+
+		// Share link first (values re-validated; invalid ones fall back to defaults), then the first render.
+		const shared = decodeHashState(location.hash, SHARE_KEYS);
+		if (shared) applyRaw(sanitizeShared(shared));
+		if (sqField) sqField.hidden = !(sqBox?.checked ?? false);
+
+		let timer: number | undefined;
+		const schedule = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(run, 150);
+		};
+		root.addEventListener('input', schedule);
+		root.addEventListener('change', schedule);
+		run();
+	}
+</script>

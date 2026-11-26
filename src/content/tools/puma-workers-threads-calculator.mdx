@@ -1,0 +1,100 @@
+---
+title: 'Puma Workers & Threads Calculator'
+seoTitle: 'Puma Workers & Threads Calculator — Sizing Guide'
+description: 'Size Puma workers and threads from your CPU cores, memory and I/O wait, then get the puma.rb, database.yml and pool settings to match.'
+seoDescription: 'Size Puma workers and threads from CPU cores, memory and I/O wait, then copy the puma.rb and database.yml settings. Runs in your browser; nothing is sent.'
+tier: signature
+group: rails
+status: draft
+order: 10
+featured: true
+pubDate: 2026-11-26
+keywords: ['puma workers', 'puma threads', 'WEB_CONCURRENCY', 'RAILS_MAX_THREADS', 'puma.rb', 'GVL']
+versions: ['Puma 6–7', 'Rails 7.1–8.1', 'CRuby (GVL)']
+relatedPosts: ['rails-connection-pool-exhaustion', 'why-background-jobs-are-slow']
+relatedTopic: database-reliability
+nextTools: []
+serviceCta: scaling
+shareable: true
+worker: false
+faq:
+  - q: 'Should Puma workers equal my CPU core count?'
+    a: 'That is the usual starting point, and it is the upper limit this calculator uses for cluster mode. Use fewer workers when memory runs out first. Each worker is a separate process with its own copy of the application, so workers multiply memory, not just CPU.'
+  - q: 'Is the Rails default of 3 threads right for my app?'
+    a: 'It is a sensible default, not a measured answer. Three threads suit an app where roughly half of each request is waiting on the database or other I/O. Apps with very little I/O wait need fewer threads, and apps that wait on slow external calls can use more, though latency usually starts to suffer from GVL contention well before the 16-thread cap in this calculator.'
+  - q: 'Why does adding threads sometimes make latency worse?'
+    a: 'Threads in one process take turns running Ruby under the GVL. Past the point where the process has enough threads to keep one core busy during I/O waits, extra threads mostly queue for the GVL, so each request waits longer while throughput barely moves. Measure p95 latency when you change the thread count, not just throughput.'
+  - q: 'Does preload_app! reduce memory?'
+    a: 'It can. Puma loads the application once in the master process before forking workers, so pages that are not written to can be shared with copy-on-write. Puma documents copy-on-write as the reason cluster mode uses less memory per process. The calculator counts each worker at its full RSS, so it overstates memory when sharing is high. Measure real usage before you trust either number.'
+  - q: 'How do I measure memory per worker?'
+    a: 'Under production load, after warm-up, read the resident set size of each worker process (ps -o rss= -p PID, or your APM host metrics) and take the typical value, not the peak of a single boot. Repeat after a few deploys, because gems and caches change the footprint.'
+  - q: 'How many database connections does this setup use?'
+    a: 'Each Puma process holds its own pool, sized to at least its thread count. The total is processes times pool size. If Solid Queue runs inside Puma, add its worker threads plus two to each process pool. The connection pool calculator checks that total against Postgres max_connections.'
+---
+
+## How it works
+
+A Puma process is one Ruby VM. Puma runs each request on a thread inside a process, and Ruby's GVL (global VM lock) lets only one thread run Ruby code in a process at any moment. Puma's README states it directly: on MRI, "only one thread can run Ruby code at a time", but Puma "still improves MRI's throughput by allowing IO waiting to be done in parallel."
+
+That splits the two settings into different jobs:
+
+- **Workers (processes)** are how you use more cores. Each worker is a separate process with its own GVL, so four workers can run Ruby on four cores at once. Puma's DSL defaults `workers` to the `WEB_CONCURRENCY` variable, or 0 when it is unset, and its docs describe the value as "typically" the number of available cores.
+- **Threads** are how you keep a process busy while it waits. A request that spends most of its time waiting on PostgreSQL, Redis or an HTTP API leaves the GVL free, so another thread can use the CPU. A request that is pure Ruby gains nothing from a second thread in the same process.
+
+## Sizing threads by I/O wait
+
+If a fraction `f` of each request is I/O wait, then on average a request uses `(1 − f)` of a thread's time on the CPU. To keep one core saturated, you need about `1 / (1 − f)` threads in the process. At 50% I/O that is 2. At 80% it is 5. At 95% it is 20, which the calculator caps at 16.
+
+This is an average. It tells you the thread count where one core stays busy, not where latency is best. Past a handful of threads, latency tends to rise from GVL contention even when throughput still climbs a little, so treat the formula as a starting point and not a target.
+
+The Rails default is `RAILS_MAX_THREADS` falling back to 3, since Rails 7.2. Earlier apps used 5. Puma's own default, when no thread variables are set, is 5 under MRI. Three is a reasonable middle for typical web apps with a moderate database share. Deviate when the measured I/O share is clearly lower (use 2) or higher with slow external calls (use 4 or 5), and measure latency at each step.
+
+## Sizing workers by CPU and memory
+
+In cluster mode the process count is the smaller of two limits:
+
+- **CPU:** one worker per core.
+- **Memory:** `floor(usable / (perWorker + threads × perThread))`, where `usable` is the memory you give the app times `(1 − headroom)`.
+
+Each process costs its resident memory plus its threads' stacks and allocations. Headroom is kept free for spikes and the operating system. If memory is the smaller limit, extra cores sit idle, and the calculator says so.
+
+`preload_app!` lets workers share copy-on-write pages, which lowers real memory. Summing per-process RSS still counts shared pages more than once, so the model is conservative. Solid Queue, when it runs inside Puma, lives in those processes, so its memory belongs in the per-worker figure.
+
+## Capacity, and which limit binds
+
+With `R` as the average request time in seconds, the calculator estimates two ceilings:
+
+- **Thread-bound:** `processes × threads / R`. Every thread is busy for the whole request.
+- **CPU-bound:** `min(processes, cores) / (R × (1 − f))`. Each process can only burn one core, and each request costs `R × (1 − f)` of CPU.
+
+Capacity is the smaller of the two. Note what this means at the recommended settings. The thread count is `ceil(1 / (1 − f))`, so `threads ≥ 1 / (1 − f)` always, and the thread-bound figure can only be the smaller one when the 16-thread cap applies. In practice the CPU ceiling binds, which is why the page says "CPU" most of the time. The thread-bound figure matters when you deliberately run fewer threads than recommended, such as the Rails default of 3 on a low-I/O app. Single mode always ends up CPU-bound for the same reason: one process gets one core.
+
+## Worked example
+
+A 4-core host with 2,048 MB for the app, 450 MB RSS per worker, 10 MB per thread, 20% headroom, 200 ms average requests and 70% I/O wait:
+
+- Threads: `ceil(1 / 0.3)` = 4.
+- Usable memory: 2,048 × 0.8 = 1,638 MB. Per process: 450 + 4 × 10 = 490 MB.
+- Memory fits 3 processes (1,638 / 490 = 3.3). CPU allows 4, so the process count is 3.
+- Memory used: 1,470 MB, about 90% of usable. That is above the 85% line, so the verdict is Tight.
+- Capacity: thread-bound 3 × 4 / 0.2 = 60 req/s; CPU-bound 3 / (0.2 × 0.3) = 50 req/s. CPU binds at 50.
+- Pools: 4 per process, 12 connections total.
+
+Now set a target of 55 req/s. Three processes cannot reach it. Four are needed (the CPU-bound limit requires `55 × 0.2 × 0.3 = 3.3`, rounded up to 4). Four processes at 490 MB need 1,960 MB, more than the 1,638 MB usable, so the verdict becomes Risk. The fix is more memory, a smaller per-worker footprint, or a lower target, not another thread.
+
+## What it means for the database pool
+
+Every Puma process holds its own Active Record pool, so the process count multiplies the pool size. The pool must be at least the process's thread count, or threads wait on `checkout_timeout`. The sizing rule is in the [rails connection pool exhaustion](/blog/rails-connection-pool-exhaustion/) article, and the pool and Postgres totals are in the [connection pool calculator](/tools/connection-pool-calculator/).
+
+The generated `database.yml` line reads `RAILS_MAX_THREADS`, the same variable that sets Puma's threads, so the pool follows Puma. If Sidekiq or another process reads the same file, it inherits that size too. Give those processes their own variable, as the [pool article](/blog/rails-connection-pool-exhaustion/) recommends.
+
+If Solid Queue runs inside Puma, it shares the process's pool. The calculator adds its worker threads plus two to each process pool, following the same rule as that article. This is an assumption: the model treats Solid Queue as running in every Puma process, which can overcount if it runs in only one.
+
+## Limitations and assumptions
+
+- **Averages, not tails.** Request time and I/O share are means. A p95 request with a slow database call behaves very differently. Use the thread count for throughput, and check p95 latency before and after.
+- **Memory is per process, not per request.** YJIT and jemalloc change RSS, and so does a large heap after a deploy. Measure RSS under production load after warm-up. The model is only as accurate as that number.
+- **I/O share is an estimate.** Take it from your APM's time breakdown: database, external HTTP and cache time as a share of request time.
+- **No queueing model.** Capacity is a steady-state ceiling. It says nothing about behaviour near saturation or during bursts.
+- **Versions.** The Puma defaults quoted here come from the `dsl.rb` source on Puma's master branch, not a specific release, and I did not test each version in the list. The Rails default of 3 applies from Rails 7.2; earlier apps may set their own value.
+- **Not a load test.** Use the output as a starting configuration, then confirm it with a load test that uses your real request mix.
