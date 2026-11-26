@@ -54,7 +54,7 @@ Fugit and sidekiq-cron also accept a six-field form with seconds first, such as 
 
 This is the rule that surprises people. If you restrict both the day-of-month and the day-of-week fields, a run happens when either one matches. The expression `30 4 1,15 * 5` runs at 04:30 on the 1st, on the 15th and on every Friday. It does not run only on Fridays that fall on the 1st or the 15th.
 
-A day field that starts with `*`, even `*/2`, counts as unrestricted, so `0 0 */2 * 1` needs both conditions: a Monday on an odd-numbered day. The tool follows Vixie cron here and names the rule in its description.
+Only a bare `*` counts as unrestricted. A stepped field such as `*/2` is restricted, so `0 0 */2 * 1-5` runs on odd-numbered days **or** on weekdays. That is how Fugit evaluates it, and Fugit is the parser behind both Solid Queue and sidekiq-cron: Fugit's own example shows this expression firing on Wednesday 10 August 2022, an even-numbered day. Classic Vixie cron treats any field that starts with `*` as unrestricted and would require both conditions, so the same line can behave differently in a system crontab. The tool follows Fugit and names the rule in its description.
 
 ## Time zones and daylight saving
 
