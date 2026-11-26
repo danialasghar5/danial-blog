@@ -150,6 +150,8 @@ a.tool-badge:hover { border-color: var(--text-faint); color: var(--text); }
 @media (max-width: 560px) {
 	.tool-body { padding: var(--space-4); }
 	.tool-faceplate { padding-inline: var(--space-4); }
+	.tool-faceplate > span:last-child { display: none; }
+	.tool-badge { border-radius: var(--radius); }
 	.tool-result-actions { padding-inline: var(--space-4); }
 	.tool-field { align-items: flex-start; }
 	.tool-input { width: 100%; text-align: left; }
