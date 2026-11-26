@@ -1,0 +1,9 @@
+2026-11-21 09:15:40.118 UTC [4102] LOG:  process 4102 detected deadlock while waiting for ExclusiveLock on advisory lock [16384,0,4001,1] after 1000.203 ms
+2026-11-21 09:15:40.118 UTC [4102] DETAIL:  Process holding the lock: 4101. Wait queue: 4102.
+2026-11-21 09:15:40.119 UTC [4102] ERROR:  deadlock detected
+2026-11-21 09:15:40.119 UTC [4102] DETAIL:  Process 4101 waits for ExclusiveLock on advisory lock [16384,0,4002,1]; blocked by process 4102.
+	Process 4102 waits for ExclusiveLock on advisory lock [16384,0,4001,1]; blocked by process 4101.
+	Process 4101: SELECT pg_advisory_xact_lock(4002)
+	Process 4102: SELECT pg_advisory_xact_lock(4001)
+2026-11-21 09:15:40.119 UTC [4102] HINT:  See server log for query details.
+2026-11-21 09:15:40.119 UTC [4102] STATEMENT:  SELECT pg_advisory_xact_lock(4001)

@@ -1,0 +1,49 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": null,
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": null,
+	"context": null,
+	"edges": [
+		{
+			"pid": 6001,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 8001"
+			},
+			"blockedBy": 6002
+		},
+		{
+			"pid": 6002,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 8004"
+			},
+			"blockedBy": 6003
+		}
+	],
+	"processes": [
+		{
+			"pid": 6001,
+			"query": "UPDATE invoices SET paid_at = now() WHERE id = 120"
+		},
+		{
+			"pid": 6002,
+			"query": "UPDATE invoices SET paid_at = now() WHERE id = 121"
+		},
+		{
+			"pid": 6003,
+			"query": null
+		}
+	],
+	"warnings": [
+		"The wait lines do not close into a cycle. The report is probably truncated or incomplete. The processes found are shown, but the diagnosis is partial.",
+		"A wait line could not be read and was skipped: \"Process 6003 waits for ShareLock on transa\"."
+	]
+}

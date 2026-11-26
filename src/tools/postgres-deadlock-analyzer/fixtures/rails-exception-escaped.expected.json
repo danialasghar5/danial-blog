@@ -1,0 +1,50 @@
+{
+	"ok": true,
+	"form": "rails",
+	"cycle": [
+		5010,
+		5012
+	],
+	"hasQueries": false,
+	"victim": null,
+	"victimQuery": "UPDATE \"accounts\" SET \"balance\" = $1 WHERE \"accounts\".\"id\" = $2",
+	"context": {
+		"op": "update",
+		"relation": "accounts",
+		"block": 0,
+		"offset": 7
+	},
+	"edges": [
+		{
+			"pid": 5010,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 6602"
+			},
+			"blockedBy": 5012
+		},
+		{
+			"pid": 5012,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 6600"
+			},
+			"blockedBy": 5010
+		}
+	],
+	"processes": [
+		{
+			"pid": 5010,
+			"query": null
+		},
+		{
+			"pid": 5012,
+			"query": null
+		}
+	],
+	"warnings": []
+}

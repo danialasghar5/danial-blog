@@ -1,0 +1,50 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		3310,
+		3316
+	],
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": "UPDATE ledger_entries SET posted = true WHERE batch_id = 12 AND id = 9001",
+	"context": {
+		"op": "update",
+		"relation": "ledger_entries",
+		"block": 0,
+		"offset": 31
+	},
+	"edges": [
+		{
+			"pid": 3310,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 5520"
+			},
+			"blockedBy": 3316
+		},
+		{
+			"pid": 3316,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 5518"
+			},
+			"blockedBy": 3310
+		}
+	],
+	"processes": [
+		{
+			"pid": 3310,
+			"query": "UPDATE ledger_entries SET posted = true WHERE batch_id = 12 AND id = 9001"
+		},
+		{
+			"pid": 3316,
+			"query": "UPDATE accounts SET balance = balance - 25 WHERE id = 4"
+		}
+	],
+	"warnings": []
+}

@@ -1,0 +1,50 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		4410,
+		4417
+	],
+	"hasQueries": true,
+	"victim": null,
+	"victimQuery": "UPDATE inventory SET reserved = reserved + 1 WHERE sku = 'SKU-1'",
+	"context": {
+		"op": "update",
+		"relation": "inventory",
+		"block": 0,
+		"offset": 12
+	},
+	"edges": [
+		{
+			"pid": 4410,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 8810"
+			},
+			"blockedBy": 4417
+		},
+		{
+			"pid": 4417,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 8804"
+			},
+			"blockedBy": 4410
+		}
+	],
+	"processes": [
+		{
+			"pid": 4410,
+			"query": "INSERT INTO order_items (order_id, sku, qty) VALUES (42, 'SKU-1', 2)"
+		},
+		{
+			"pid": 4417,
+			"query": "UPDATE inventory SET reserved = reserved + 1 WHERE sku = 'SKU-1'"
+		}
+	],
+	"warnings": []
+}

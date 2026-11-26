@@ -1,0 +1,53 @@
+{
+	"ok": true,
+	"form": "server-log",
+	"cycle": [
+		5521,
+		5530
+	],
+	"hasQueries": true,
+	"victim": {
+		"pid": 5521,
+		"waitingFor": "ShareLock on transaction 3340"
+	},
+	"victimQuery": "UPDATE accounts SET balance = balance - 100 WHERE id = 9",
+	"context": {
+		"op": "update",
+		"relation": "accounts",
+		"block": 0,
+		"offset": 9
+	},
+	"edges": [
+		{
+			"pid": 5521,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 3340"
+			},
+			"blockedBy": 5530
+		},
+		{
+			"pid": 5530,
+			"modeName": "ShareLock",
+			"mode": "SHARE",
+			"target": {
+				"kind": "transaction",
+				"raw": "transaction 3338"
+			},
+			"blockedBy": 5521
+		}
+	],
+	"processes": [
+		{
+			"pid": 5521,
+			"query": "UPDATE accounts SET balance = balance - 100 WHERE id = 9"
+		},
+		{
+			"pid": 5530,
+			"query": "UPDATE accounts SET balance = balance + 100 WHERE id = 3"
+		}
+	],
+	"warnings": []
+}
