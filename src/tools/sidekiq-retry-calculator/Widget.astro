@@ -1,0 +1,511 @@
+---
+// Sidekiq / Active Job retry schedule widget (TOOLS_ROADMAP.md §8.1). Markup and one
+// script; the arithmetic lives in logic.ts. Output is built with createElement,
+// textContent, replaceChildren and createElementNS only (no HTML strings).
+import { DEFAULTS, POLY, VERSIONS } from './logic';
+const d = DEFAULTS;
+---
+
+<div class="sr-calc" data-sr-calc>
+	<form class="sr-form" id="sr-form" novalidate aria-label="Retry inputs">
+		<div class="tool-fields two-col">
+			<div class="tool-field" data-field="engine">
+				<div>
+					<label class="tool-label" for="sr-engine">Engine</label>
+					<span class="tool-hint">Which retry mechanism to model</span>
+				</div>
+				<select id="sr-engine" class="tool-select" aria-describedby="sr-err-engine">
+					<option value="sidekiq">Sidekiq (default formula)</option>
+					<option value="custom">Sidekiq custom sidekiq_retry_in</option>
+					<option value="activejob">Active Job retry_on</option>
+				</select>
+				<p class="tool-error" id="sr-err-engine"></p>
+			</div>
+
+			<div class="tool-field" data-field="version">
+				<div>
+					<label class="tool-label" for="sr-version">Sidekiq version</label>
+					<span class="tool-hint">8.0 changed the jitter</span>
+				</div>
+				<select id="sr-version" class="tool-select" aria-describedby="sr-err-version">
+					{VERSIONS.map((v) => <option value={v} selected={v === d.version}>{`Sidekiq ${v}`}</option>)}
+				</select>
+				<p class="tool-error" id="sr-err-version"></p>
+			</div>
+
+			<div class="tool-field" data-field="retry">
+				<div>
+					<label class="tool-label" for="sr-retry">Retries</label>
+					<span class="tool-hint">Sidekiq retry: option, 0–100</span>
+				</div>
+				<input id="sr-retry" class="tool-input" type="text" inputmode="numeric" autocomplete="off" value={String(d.retry)} aria-describedby="sr-err-retry" />
+				<p class="tool-error" id="sr-err-retry"></p>
+			</div>
+
+			<div class="tool-field" data-field="attempts" hidden>
+				<div>
+					<label class="tool-label" for="sr-attempts">Attempts</label>
+					<span class="tool-hint">Executions, including the first, 1–100</span>
+				</div>
+				<input id="sr-attempts" class="tool-input" type="text" inputmode="numeric" autocomplete="off" value={String(d.attempts)} aria-describedby="sr-err-attempts" />
+				<p class="tool-error" id="sr-err-attempts"></p>
+			</div>
+
+			<div class="tool-field" data-field="waitmode" hidden>
+				<div>
+					<label class="tool-label" for="sr-wait-mode">Active Job wait</label>
+					<span class="tool-hint">Fixed seconds, or the polynomial</span>
+				</div>
+				<select id="sr-wait-mode" class="tool-select">
+					<option value="fixed">Fixed seconds</option>
+					<option value={POLY}>polynomially_longer</option>
+				</select>
+			</div>
+
+			<div class="tool-field" data-field="wait" hidden>
+				<div>
+					<label class="tool-label" for="sr-wait">Wait (seconds)</label>
+					<span class="tool-hint">0–86,400</span>
+				</div>
+				<input id="sr-wait" class="tool-input" type="text" inputmode="decimal" autocomplete="off" value={String(d.wait)} aria-describedby="sr-err-wait" />
+				<p class="tool-error" id="sr-err-wait"></p>
+			</div>
+
+			<div class="tool-field" data-field="jitter" hidden>
+				<div>
+					<label class="tool-label" for="sr-jitter">Jitter</label>
+					<span class="tool-hint">Active Job only. Rails default 0.15 (load_defaults 6.1+), else 0</span>
+				</div>
+				<input id="sr-jitter" class="tool-input" type="text" inputmode="decimal" autocomplete="off" value={String(d.jitter)} aria-describedby="sr-err-jitter" />
+				<p class="tool-error" id="sr-err-jitter"></p>
+			</div>
+
+			<div class="tool-field" data-field="a" hidden>
+				<div>
+					<label class="tool-label" for="sr-a">a</label>
+					<span class="tool-hint">Seconds × count^p, a ≥ 0</span>
+				</div>
+				<input id="sr-a" class="tool-input" type="text" inputmode="decimal" autocomplete="off" value={String(d.a)} aria-describedby="sr-err-a" />
+				<p class="tool-error" id="sr-err-a"></p>
+			</div>
+
+			<div class="tool-field" data-field="p" hidden>
+				<div>
+					<label class="tool-label" for="sr-p">p</label>
+					<span class="tool-hint">Exponent, 0–6 (0 gives a constant)</span>
+				</div>
+				<input id="sr-p" class="tool-input" type="text" inputmode="decimal" autocomplete="off" value={String(d.p)} aria-describedby="sr-err-p" />
+				<p class="tool-error" id="sr-err-p"></p>
+			</div>
+
+			<div class="tool-field" data-field="b" hidden>
+				<div>
+					<label class="tool-label" for="sr-b">b</label>
+					<span class="tool-hint">Seconds added, b ≥ 0</span>
+				</div>
+				<input id="sr-b" class="tool-input" type="text" inputmode="decimal" autocomplete="off" value={String(d.b)} aria-describedby="sr-err-b" />
+				<p class="tool-error" id="sr-err-b"></p>
+			</div>
+
+			<div class="tool-field" data-field="start">
+				<div>
+					<label class="tool-label" for="sr-start">First failure (optional)</label>
+					<span class="tool-hint">Adds clock times to the table</span>
+				</div>
+				<input id="sr-start" class="tool-input wide" type="datetime-local" aria-describedby="sr-err-start" />
+				<p class="tool-error" id="sr-err-start"></p>
+			</div>
+
+			<div class="tool-field" data-field="timeZone">
+				<div>
+					<label class="tool-label" for="sr-tz">Time zone</label>
+					<span class="tool-hint">For the clock times</span>
+				</div>
+				<select id="sr-tz" class="tool-select" aria-describedby="sr-err-timeZone"></select>
+				<p class="tool-error" id="sr-err-timeZone"></p>
+			</div>
+		</div>
+
+		<div class="tool-actions-row">
+			<button type="button" class="btn btn-secondary btn-sm" data-reset>Reset to defaults</button>
+		</div>
+	</form>
+
+	<section class="tool-result" data-result aria-label="Retry schedule result" hidden>
+		<p class="tool-verdict" data-verdict><span class="state" data-verdict-word></span> <span data-verdict-text></span></p>
+		<p class="tool-hint" data-warnings hidden></p>
+		<ul class="tool-hint sr-notes" data-notes></ul>
+		<dl class="tool-metrics" data-metrics></dl>
+
+		<figure class="sr-timeline" data-timeline hidden>
+			<svg class="sr-svg" data-svg viewBox="0 0 360 40" role="img" preserveAspectRatio="xMidYMid meet" aria-label="Timeline of retry times"></svg>
+			<div class="sr-scale tool-hint" aria-hidden="true"><span>0 s</span><span data-scale-max></span></div>
+			<figcaption class="tool-hint" data-timeline-text></figcaption>
+		</figure>
+
+		<div class="tool-table-wrap" data-table></div>
+
+		<div class="tool-output">
+			<div class="tool-output-head"><span>Ruby configuration</span></div>
+			<pre tabindex="0"><code data-snippet></code></pre>
+		</div>
+	</section>
+</div>
+
+<style is:global>
+	.sr-calc [hidden] { display: none !important; }
+	.sr-calc .sr-notes { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
+	.sr-calc .sr-notes li + li { margin-top: .25rem; }
+	.sr-calc .sr-timeline { margin: var(--space-5) 0 0; }
+	.sr-calc .sr-svg { display: block; width: 100%; height: auto; overflow: visible; }
+	.sr-calc .sr-svg .sr-axis { stroke: var(--border-strong); stroke-width: 1; }
+	.sr-calc .sr-svg .sr-band { stroke: var(--brand); stroke-width: 4; stroke-linecap: round; opacity: .55; }
+	.sr-calc .sr-svg .sr-dot { fill: var(--text); }
+	.sr-calc .sr-scale { display: flex; justify-content: space-between; font-family: var(--font-mono); margin-top: var(--space-1); }
+	.sr-calc .tool-metrics .tool-metric dd { overflow-wrap: anywhere; }
+	.sr-calc .sr-form .tool-input.wide { width: min(100%, 14rem); }
+	.sr-calc .tool-fields { grid-template-columns: minmax(0, 1fr); }
+	@media (min-width: 720px) { .sr-calc .tool-fields.two-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+	.sr-calc .tool-field > div { flex: 1 1 9rem; min-width: 0; }
+	.sr-calc .tool-field select.tool-select { max-width: 100%; }
+	@media (max-width: 560px) {
+		.sr-calc .tool-field > select, .sr-calc .tool-field > input { width: 100%; max-width: 100%; }
+		.sr-calc .tool-field > div { flex-basis: 100%; }
+	}
+	.sr-calc .tool-table-wrap { max-height: 28rem; }
+	.sr-calc .tool-table td:first-child { font-family: var(--font-mono); }
+	.sr-calc .tool-output pre code { white-space: pre; }
+</style>
+
+<script>
+	import { DEFAULTS, HASH_KEYS, POLY, buildReport, parseInput, toHashState, type Parsed, type RawInput, type Report } from './logic';
+	import { decodeHashState } from '../_shared/hash-state';
+	import { formatDateTime, formatDuration, formatNumber } from '../_shared/format';
+
+	type Field = 'engine' | 'version' | 'retry' | 'attempts' | 'wait' | 'jitter' | 'a' | 'p' | 'b' | 'start' | 'timeZone';
+	const FIELDS: Field[] = ['engine', 'version', 'retry', 'attempts', 'wait', 'jitter', 'a', 'p', 'b', 'start', 'timeZone'];
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+
+	const root = document.querySelector<HTMLElement>('[data-sr-calc]');
+	if (root) setup(root);
+
+	function setup(root: HTMLElement): void {
+		const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+		const q = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel) as T;
+
+		const form = byId<HTMLFormElement>('sr-form');
+		const inputs: Record<Field, HTMLInputElement | HTMLSelectElement> = {
+			engine: byId<HTMLSelectElement>('sr-engine'),
+			version: byId<HTMLSelectElement>('sr-version'),
+			retry: byId<HTMLInputElement>('sr-retry'),
+			attempts: byId<HTMLInputElement>('sr-attempts'),
+			wait: byId<HTMLInputElement>('sr-wait'),
+			jitter: byId<HTMLInputElement>('sr-jitter'),
+			a: byId<HTMLInputElement>('sr-a'),
+			p: byId<HTMLInputElement>('sr-p'),
+			b: byId<HTMLInputElement>('sr-b'),
+			start: byId<HTMLInputElement>('sr-start'),
+			timeZone: byId<HTMLSelectElement>('sr-tz'),
+		};
+		const waitMode = byId<HTMLSelectElement>('sr-wait-mode');
+		const resultEl = q<HTMLElement>('[data-result]');
+		const verdictEl = q<HTMLElement>('[data-verdict]');
+		const verdictWord = q<HTMLElement>('[data-verdict-word]');
+		const verdictText = q<HTMLElement>('[data-verdict-text]');
+		const warnEl = q<HTMLElement>('[data-warnings]');
+		const notesEl = q<HTMLElement>('[data-notes]');
+		const metricsEl = q<HTMLElement>('[data-metrics]');
+		const figure = q<HTMLElement>('[data-timeline]');
+		const svg = q<SVGSVGElement>('[data-svg]');
+		const figcaption = q<HTMLElement>('[data-timeline-text]');
+		const scaleMax = q<HTMLElement>('[data-scale-max]');
+		const tableWrap = q<HTMLElement>('[data-table]');
+		const snippetEl = q<HTMLElement>('[data-snippet]');
+
+		// Time zones: the browser's zone first, then UTC, then the runtime's list.
+		let browserZone = 'UTC';
+		try {
+			browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+		} catch {
+			/* keep UTC */
+		}
+		let supported: string[] = [];
+		try {
+			supported = Intl.supportedValuesOf('timeZone');
+		} catch {
+			/* older runtimes: the browser zone and UTC only */
+		}
+		const zones = [...new Set([browserZone, 'UTC', ...supported])];
+		inputs.timeZone.replaceChildren(
+			...zones.map((z) => {
+				const o = document.createElement('option');
+				o.value = z;
+				o.textContent = z;
+				return o;
+			}),
+		);
+		inputs.timeZone.value = browserZone;
+
+		const readRaw = (): RawInput => ({
+			engine: inputs.engine.value,
+			version: inputs.version.value,
+			retry: inputs.retry.value,
+			attempts: inputs.attempts.value,
+			wait: waitMode.value === POLY ? POLY : inputs.wait.value,
+			jitter: inputs.jitter.value,
+			a: inputs.a.value,
+			p: inputs.p.value,
+			b: inputs.b.value,
+			start: inputs.start.value,
+			timeZone: inputs.timeZone.value,
+		});
+
+		const writeRaw = (raw: RawInput): void => {
+			inputs.engine.value = raw.engine ?? DEFAULTS.engine;
+			inputs.version.value = raw.version ?? DEFAULTS.version;
+			inputs.retry.value = raw.retry ?? String(DEFAULTS.retry);
+			inputs.attempts.value = raw.attempts ?? String(DEFAULTS.attempts);
+			const w = (raw.wait ?? String(DEFAULTS.wait)).trim();
+			waitMode.value = w === POLY ? POLY : 'fixed';
+			inputs.wait.value = w === POLY ? String(DEFAULTS.wait) : w;
+			inputs.jitter.value = raw.jitter ?? String(DEFAULTS.jitter);
+			inputs.a.value = raw.a ?? String(DEFAULTS.a);
+			inputs.p.value = raw.p ?? String(DEFAULTS.p);
+			inputs.b.value = raw.b ?? String(DEFAULTS.b);
+			inputs.start.value = raw.start ?? '';
+			if (raw.timeZone) inputs.timeZone.value = raw.timeZone;
+		};
+
+		const setShown = (name: string, shown: boolean): void => {
+			const wrap = root.querySelector<HTMLElement>(`[data-field="${name}"]`);
+			if (wrap) wrap.hidden = !shown;
+		};
+
+		const applyVisibility = (): void => {
+			const engine = inputs.engine.value;
+			const sidekiq = engine !== 'activejob';
+			const custom = engine === 'custom';
+			const aj = engine === 'activejob';
+			setShown('version', sidekiq);
+			setShown('retry', sidekiq);
+			setShown('attempts', aj);
+			setShown('waitmode', aj);
+			setShown('wait', aj && waitMode.value !== POLY);
+			setShown('jitter', aj);
+			setShown('a', custom);
+			setShown('p', custom);
+			setShown('b', custom);
+		};
+
+		const showErrors = (errors: { field: string; message: string }[]): void => {
+			for (const f of FIELDS) {
+				const err = errors.find((e) => e.field === f)?.message ?? '';
+				const errEl = byId<HTMLElement>(`sr-err-${f}`);
+				errEl.textContent = err;
+				inputs[f].setAttribute('aria-invalid', err ? 'true' : 'false');
+			}
+		};
+
+		const metric = (label: string, value: string): HTMLElement => {
+			const wrap = document.createElement('div');
+			wrap.className = 'tool-metric';
+			const dt = document.createElement('dt');
+			dt.textContent = label;
+			const dd = document.createElement('dd');
+			dd.textContent = value;
+			wrap.append(dt, dd);
+			return wrap;
+		};
+
+		const dur = (s: number): string => (s === 0 ? '0 s' : formatDuration(s));
+
+		const svgNode = <K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number>, text?: string): SVGElementTagNameMap[K] => {
+			const n = document.createElementNS(SVG_NS, tag);
+			for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+			if (text !== undefined) n.textContent = text;
+			return n;
+		};
+
+		const drawTimeline = (report: Report): void => {
+			const { rows, total, retries } = report.schedule;
+			if (!(total.max > 0)) {
+				figure.hidden = true;
+				svg.replaceChildren();
+				return;
+			}
+			figure.hidden = false;
+			const W = 360;
+			const pad = 14;
+			const y = 20;
+			const span = W - pad * 2;
+			const x = (t: number): number => pad + (t / total.max) * span;
+			const nodes: SVGElement[] = [
+				svgNode('title', {}, `Retry timeline: ${retries} retries over ${dur(total.max)} at most`),
+				svgNode('line', { x1: pad, y1: y, x2: W - pad, y2: y, class: 'sr-axis' }),
+			];
+			for (const r of rows) {
+				nodes.push(svgNode('line', { x1: x(r.cumMin), y1: y, x2: x(r.cumMax), y2: y, class: 'sr-band' }));
+				nodes.push(svgNode('circle', { cx: x(r.cumExpected), cy: y, r: 2.5, class: 'sr-dot' }));
+			}
+			scaleMax.textContent = dur(total.max);
+			svg.replaceChildren(...nodes);
+			svg.setAttribute('aria-label', `Retry timeline: ${retries} retries. Dead set between ${dur(total.min)} and ${dur(total.max)}.`);
+			figcaption.textContent =
+				`Each dot is an expected retry time; the bar spans its min-to-max range. ` +
+				`Times are seconds after the first failure. The table below lists every retry.`;
+		};
+
+		const cell = (tag: 'th' | 'td', text: string, numeric = false): HTMLElement => {
+			const c = document.createElement(tag);
+			c.textContent = text;
+			if (numeric) c.className = 'num';
+			return c;
+		};
+
+		const buildTable = (report: Report, parsed: Parsed): HTMLElement => {
+			const hasTime = !!parsed.start;
+			const table = document.createElement('table');
+			table.className = 'tool-table';
+			const caption = document.createElement('caption');
+			caption.className = 'sr-only';
+			caption.textContent = 'Retry schedule, one row per retry';
+			const thead = document.createElement('thead');
+			const headRow = document.createElement('tr');
+			const heads: [string, boolean][] = [
+				['Retry', false],
+				['Min (s)', true],
+				['Expected (s)', true],
+				['Max (s)', true],
+				['Cumulative expected (s)', true],
+			];
+			if (hasTime) heads.push(['Time range', false]);
+			headRow.append(...heads.map(([h, n]) => cell('th', h, n)));
+			thead.append(headRow);
+			const tbody = document.createElement('tbody');
+			if (report.schedule.rows.length === 0) {
+				const tr = document.createElement('tr');
+				const td = cell('td', report.verdict);
+				td.colSpan = heads.length;
+				tr.append(td);
+				tbody.append(tr);
+			}
+			const tz = parsed.timeZone;
+			for (const r of report.schedule.rows) {
+				const tr = document.createElement('tr');
+				const cells = [
+					cell('td', String(r.retry)),
+					cell('td', formatNumber(r.min, 1), true),
+					cell('td', formatNumber(r.expected, 1), true),
+					cell('td', formatNumber(r.max, 1), true),
+					cell('td', formatNumber(r.cumExpected, 1), true),
+				];
+				if (hasTime) {
+					cells.push(
+						cell('td', r.from && r.to ? `${formatDateTime(r.from, tz)} – ${formatDateTime(r.to, tz)}` : 'beyond the Date range'),
+					);
+				}
+				tr.append(...cells);
+				tbody.append(tr);
+			}
+			table.append(caption, thead, tbody);
+			return table;
+		};
+
+		const render = (report: Report, parsed: Parsed): void => {
+			const { total, retries } = report.schedule;
+			const tone = report.tone === 'risk' ? 'is-risk' : 'is-ok';
+			verdictEl.className = `tool-verdict ${tone}`;
+			verdictWord.textContent = report.verdictWord;
+			verdictText.textContent = report.verdict;
+
+			warnEl.textContent = report.warnings.join(' ');
+			warnEl.hidden = report.warnings.length === 0;
+
+			notesEl.replaceChildren(
+				...report.notes.map((n) => {
+					const li = document.createElement('li');
+					li.textContent = n;
+					return li;
+				}),
+			);
+			notesEl.hidden = report.notes.length === 0;
+
+			metricsEl.replaceChildren(
+				metric('Retries', formatNumber(retries, 0)),
+				metric('Minimum total', dur(total.min)),
+				metric('Expected total', dur(total.expected)),
+				metric('Maximum total', dur(total.max)),
+			);
+
+			drawTimeline(report);
+			tableWrap.replaceChildren(buildTable(report, parsed));
+			snippetEl.textContent = report.snippet;
+			resultEl.hidden = false;
+		};
+
+		const recompute = (): void => {
+			applyVisibility();
+			const raw = readRaw();
+			const r = parseInput(raw);
+			if (!r.ok) {
+				showErrors(r.errors);
+				resultEl.hidden = true;
+				root.dispatchEvent(new CustomEvent('tool:clear', { bubbles: true }));
+				root.dispatchEvent(new CustomEvent('tool:error', { bubbles: true, detail: { message: r.errors[0]?.message ?? 'Check the inputs.' } }));
+				return;
+			}
+			showErrors([]);
+			const report = buildReport(r.value, r.warnings);
+			render(report, r.value);
+			root.dispatchEvent(
+				new CustomEvent('tool:result', {
+					bubbles: true,
+					detail: {
+						text: report.plainText,
+						state: toHashState(report.schedule.settings),
+						cta: report.cta,
+						tone: report.tone,
+					},
+				}),
+			);
+		};
+
+		let timer: number | undefined;
+		const schedule = (): void => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(recompute, 150);
+		};
+		const now = (): void => {
+			window.clearTimeout(timer);
+			recompute();
+		};
+
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			now();
+		});
+		for (const f of FIELDS) {
+			inputs[f].addEventListener('input', schedule);
+		}
+		inputs.engine.addEventListener('change', now);
+		inputs.version.addEventListener('change', now);
+		inputs.timeZone.addEventListener('change', now);
+		waitMode.addEventListener('change', now);
+		q<HTMLButtonElement>('[data-reset]').addEventListener('click', () => {
+			writeRaw({});
+			waitMode.value = 'fixed';
+			inputs.timeZone.value = browserZone;
+			try {
+				history.replaceState(null, '', location.pathname + location.search);
+			} catch {
+				/* sandboxed contexts: the hash stays */
+			}
+			now();
+		});
+
+		// Share-link state from the hash, re-validated by parseInput on load.
+		const fromHash = decodeHashState(location.hash, HASH_KEYS);
+		writeRaw(fromHash ? (fromHash as RawInput) : {});
+		now();
+	}
+</script>
