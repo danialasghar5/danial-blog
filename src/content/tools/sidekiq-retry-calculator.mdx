@@ -56,6 +56,8 @@ The jitter is random, so the calculator does not sample it. It reports the minim
 
 A custom `sidekiq_retry_in` block replaces the base delay with any expression you return in seconds. The calculator models that as `a × count^p + b`. Setting `a` to 0 and `p` to 0 gives a constant. Sidekiq still adds the version's jitter on top.
 
+Sidekiq converts the returned value with `to_i`, so fractions are truncated to whole seconds, and it only uses a value greater than zero. If the block returns 0 or a negative number, Sidekiq falls back to the default `count**4 + 15`. The calculator does the same.
+
 ## Transient and permanent errors
 
 A backoff schedule only helps with transient failures: a timeout, a 5xx response, a briefly locked row. A job that fails because a record was deleted or a payload is invalid will fail on every attempt. For that kind of error the schedule only delays the job's arrival in the Dead set. Decide per error whether to retry at all; the [retry strategy post](/blog/sidekiq-retry-strategy-transient-vs-permanent-failures/) walks through that split.
