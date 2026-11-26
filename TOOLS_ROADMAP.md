@@ -45,7 +45,7 @@
 | — | Strategy and roadmap (this document) | ✅ Written | `docs/tools-roadmap` | Strategy approved 2026-11-26 |
 | 0 | Prep: merge redesign, baseline data, keyword validation | 🔄 Mostly done: redesign merged (D1, D2), SEO baseline, security:check (S0-2), npm audit clean (S0-3), site-wide headers + enforced CSP live (S0-4), header overflow fix. Open: S0-1 and S0-8 (owner), S0-5 CI, S0-6 Dependabot, S0-7 JSON-LD helper migration, D3, D4 | `chore/seo-baseline` | — |
 | 1 | Foundation and first five tools | ✅ Done: foundation + 5 tools live, discovery hub, Tools dropdown, Postgres group page; all audited against §10.8 | `feat/tools-wave1` → `main` | Owner: "if all fixed and done, push" (2026-11-26) |
-| 2 | Signature depth and first utilities | 🔄 Started early (owner request): #11 and #17 built and audited against §10.8, both in draft, not on `main` yet. Remaining Wave 2: #3, #4, #10, #12, #24, #28, #34, #35 | `feat/tool-rails-safe-migration-checker`, `feat/tool-puma-workers-threads-calculator` | — |
+| 2 | Signature depth and first utilities | 🔄 Started early (owner request): #11 and #17 built and audited against §10.8; code merged to `main` in draft (not live). Remaining Wave 2: #3, #4, #10, #12, #24, #28, #34, #35 | `feat/tool-rails-safe-migration-checker`, `feat/tool-puma-workers-threads-calculator` | — |
 | 3 | AI, Rails runtime and the utilities batch | ⏳ Not started | — | — |
 | 4 | Long tail | ⏳ Not started | — | — |
 
@@ -2521,8 +2521,8 @@ starts.**
 - Pushes to `main` so far: `7b14a60` (SEO baseline + roadmap), `5082160` (npm audit fix, Node 22.23.5),
   `e2be6dc` (security:check), `79b88d8` (headers, CSP report-only), `4bf165b` (CSP enforced),
   `4634f00` (header fix for narrow phones), `c936cd0` (Phase 1: 49 commits, one per concern).
-- Not pushed (Wave 2, draft, audited): `feat/tool-rails-safe-migration-checker`,
-  `feat/tool-puma-workers-threads-calculator`.
+- Wave 2 #11 and #17 merged to `main` as drafts (owner request): `feat/tool-rails-safe-migration-checker`,
+  `feat/tool-puma-workers-threads-calculator`. Not live until their `status` is set to `live`.
 - Tools work happens in separate worktrees (DEC-15), not in the main checkout.
 - Branch `backup/premium-redesign-before-split` at `0cc6ac8`.
 - `stash@{0}` ("experimental-uncoordinated-redesign-edits", made on `main`).
