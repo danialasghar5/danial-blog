@@ -786,7 +786,7 @@ export function analyzeMigration(text: string): Result<MigrationReport> {
 		verdictText,
 		notes,
 		safeSet: buildSafeSet(findings),
-		linesChecked: text.split('\n').length,
+		linesChecked: text.replace(/\s+$/, '').split('\n').length,
 	});
 }
 

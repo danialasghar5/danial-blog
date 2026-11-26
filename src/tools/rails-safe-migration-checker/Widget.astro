@@ -1,0 +1,299 @@
+---
+// Rails safe migration checker (TOOLS_ROADMAP.md §7 #11). Markup only; behaviour is in the
+// script below and in analyze.ts. DOM is built with createElement, textContent and
+// replaceChildren only. The migration text is never written to the URL or to storage.
+---
+
+<div class="rsm-widget" data-tool-widget>
+	<div class="tool-field stacked">
+		<label class="tool-label" for="rsm-input">Migration</label>
+		<p class="tool-hint" id="rsm-hint">Paste the up, down or change method, or the whole file (up to 200 KB). Ctrl or Cmd + Enter checks it. The text stays in this page.</p>
+		<textarea class="tool-textarea rsm-input" id="rsm-input" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="rsm-hint rsm-error" aria-invalid="false"></textarea>
+		<p class="tool-error" id="rsm-error" aria-live="polite"></p>
+	</div>
+
+	<div class="tool-actions-row rsm-actions">
+		<button type="button" class="btn btn-primary btn-sm" id="rsm-check">Check migration</button>
+		<button type="button" class="btn btn-secondary btn-sm" id="rsm-example">Load example</button>
+	</div>
+	<p class="tool-hint" id="rsm-status" aria-live="polite"></p>
+
+	<section class="rsm-result" id="rsm-result" aria-labelledby="rsm-result-heading" hidden>
+		<h3 id="rsm-result-heading">Findings</h3>
+		<p class="tool-verdict" id="rsm-verdict" role="status"><span class="state"></span> <span id="rsm-verdict-text"></span></p>
+		<dl class="tool-metrics rsm-metrics" id="rsm-metrics"></dl>
+		<ul class="rsm-notes" id="rsm-notes"></ul>
+		<div class="tool-table-wrap">
+			<table class="tool-table rsm-table" id="rsm-table">
+				<caption class="sr-only">Findings by migration line: lock taken, risk, and a details row with the safer version</caption>
+				<thead>
+					<tr>
+						<th scope="col">Line</th>
+						<th scope="col">Method</th>
+						<th scope="col">Lock</th>
+						<th scope="col">Risk</th>
+					</tr>
+				</thead>
+				<tbody id="rsm-rows"></tbody>
+			</table>
+		</div>
+		<div class="tool-output" id="rsm-safe" hidden>
+			<div class="tool-output-head"><span>Suggested split, in deploy order</span></div>
+			<pre id="rsm-safe-text" tabindex="0"></pre>
+		</div>
+	</section>
+
+	<p class="tool-hint rsm-limits">The checker reads the text with a pattern scanner. It is not a Ruby parser, so dynamic code, metaprogramming and anything outside the listed methods is not seen. Treat a clean result as a prompt to look again, not as a sign-off.</p>
+</div>
+
+<script>
+	import { analyzeMigration, reportToText, type Finding, type MigrationReport } from './analyze.ts';
+	import { EXAMPLE_MIGRATION } from './examples.ts';
+	import { decodeHashState } from '../_shared/hash-state.ts';
+
+	const root = document.querySelector<HTMLElement>('[data-tool-widget]');
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+	const make = <K extends keyof HTMLElementTagNameMap>(tag: K, text?: string, cls?: string): HTMLElementTagNameMap[K] => {
+		const node = document.createElement(tag);
+		if (text !== undefined) node.textContent = text;
+		if (cls) node.className = cls;
+		return node;
+	};
+
+	const input = $<HTMLTextAreaElement>('rsm-input');
+	const errorLine = $<HTMLElement>('rsm-error');
+	const status = $<HTMLElement>('rsm-status');
+	const checkButton = $<HTMLButtonElement>('rsm-check');
+	const exampleButton = $<HTMLButtonElement>('rsm-example');
+	const result = $<HTMLElement>('rsm-result');
+	const verdict = $<HTMLElement>('rsm-verdict');
+	const verdictState = verdict?.querySelector<HTMLElement>('.state') ?? null;
+	const verdictText = $<HTMLElement>('rsm-verdict-text');
+	const metrics = $<HTMLElement>('rsm-metrics');
+	const notes = $<HTMLUListElement>('rsm-notes');
+	const rows = $<HTMLTableSectionElement>('rsm-rows');
+	const safe = $<HTMLElement>('rsm-safe');
+	const safeText = $<HTMLElement>('rsm-safe-text');
+
+	const RISK_LABEL: Record<Finding['risk'], string> = { high: 'High', medium: 'Medium', low: 'Low', info: 'Info' };
+
+	const announce = (name: string, detail: Record<string, unknown>) => {
+		root?.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+	};
+
+	const showError = (message: string) => {
+		if (errorLine) errorLine.textContent = message;
+		input?.setAttribute('aria-invalid', 'true');
+		if (result) result.hidden = true;
+		announce('tool:clear', {});
+		announce('tool:error', { message });
+	};
+
+	const clearError = () => {
+		if (errorLine) errorLine.textContent = '';
+		input?.setAttribute('aria-invalid', 'false');
+	};
+
+	const outputBox = (heading: string, text: string): HTMLElement => {
+		const box = make('div', undefined, 'tool-output');
+		const head = make('div', undefined, 'tool-output-head');
+		head.append(make('span', heading));
+		const pre = make('pre', text);
+		pre.tabIndex = 0;
+		box.append(head, pre);
+		return box;
+	};
+
+	const renderFinding = (f: Finding): DocumentFragment => {
+		const frag = document.createDocumentFragment();
+		const row = make('tr');
+		const line = make('td', String(f.line), 'num');
+		const method = make('td');
+		method.append(make('code', f.method));
+		const risk = make('td');
+		risk.append(make('span', RISK_LABEL[f.risk], `rsm-risk rsm-risk-${f.risk}`));
+		row.append(line, method, make('td', f.lockText), risk);
+
+		const detailRow = make('tr', undefined, 'rsm-detail');
+		const cell = make('td');
+		cell.colSpan = 4;
+		const details = make('details');
+		details.append(make('summary', 'Why, and the safer version'), make('p', f.explanation));
+		if (f.sql) details.append(outputBox('SQL as written', f.sql));
+		if (f.saferRewrite) details.append(outputBox('Safer version', f.saferRewrite));
+		cell.append(details);
+		detailRow.append(cell);
+		frag.append(row, detailRow);
+		return frag;
+	};
+
+	const render = (report: MigrationReport) => {
+		if (!result || !verdict || !verdictState || !verdictText || !metrics || !notes || !rows || !safe || !safeText) return;
+		verdict.className = `tool-verdict ${report.verdict}`;
+		verdictState.textContent = report.verdict === 'is-risk' ? 'Risky.' : report.verdict === 'is-warn' ? 'Review.' : 'No risk found.';
+		verdictText.textContent = report.verdictText;
+
+		const items: Array<[string, number]> = [
+			['High', report.counts.high],
+			['Medium', report.counts.medium],
+			['Low', report.counts.low],
+			['Info', report.counts.info],
+			['Lines checked', report.linesChecked],
+		];
+		metrics.replaceChildren(
+			...items.map(([label, value]) => {
+				const div = make('div', undefined, 'tool-metric');
+				div.append(make('dt', label), make('dd', String(value)));
+				return div;
+			}),
+		);
+
+		notes.replaceChildren(...report.notes.map((n) => make('li', n)));
+		notes.hidden = report.notes.length === 0;
+		rows.replaceChildren(...report.findings.map(renderFinding));
+
+		safe.hidden = report.safeSet === '';
+		safeText.textContent = report.safeSet;
+		result.hidden = false;
+
+		const total = report.findings.length;
+		const lines = `${report.linesChecked} line${report.linesChecked === 1 ? '' : 's'}`;
+		if (status) status.textContent = `Checked ${lines}: ${total} finding${total === 1 ? '' : 's'}, ${report.counts.high} high and ${report.counts.medium} medium.`;
+	};
+
+	const check = () => {
+		clearError();
+		const outcome = analyzeMigration(input?.value ?? '');
+		if (!outcome.ok) {
+			showError(outcome.errors[0]?.message ?? 'The migration could not be checked.');
+			return;
+		}
+		const report = outcome.value;
+		render(report);
+		announce('tool:result', {
+			text: reportToText(report),
+			state: { count: report.findings.length, high: report.counts.high, medium: report.counts.medium },
+			cta: report.counts.high > 0,
+			tone: report.counts.high > 0 || report.counts.medium > 0 ? 'risk' : 'ok',
+		});
+	};
+
+	checkButton?.addEventListener('click', check);
+	exampleButton?.addEventListener('click', () => {
+		if (input) input.value = EXAMPLE_MIGRATION;
+		check();
+	});
+	input?.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			check();
+		}
+	});
+
+	// A share link carries counts only. It cannot restore the lines, so say so.
+	try {
+		const shared = decodeHashState(location.hash, ['count', 'high', 'medium']);
+		if (shared && status) {
+			status.textContent = `This link summarises an earlier check: ${shared.count ?? '?'} findings, ${shared.high ?? '?'} high, ${shared.medium ?? '?'} medium. Paste the migration again to see the lines.`;
+		}
+	} catch {
+		// Storage and hash access can fail in some browsers; the widget works without them.
+	}
+</script>
+
+<style>
+	.rsm-widget {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-4);
+		min-width: 0;
+	}
+	.rsm-input {
+		white-space: pre;
+		min-height: 14rem;
+	}
+	.rsm-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	.rsm-result {
+		min-width: 0;
+	}
+	.rsm-result h3 {
+		margin-bottom: var(--space-2);
+	}
+	.rsm-metrics {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+		gap: var(--space-3);
+		margin-top: var(--space-4);
+	}
+	.rsm-notes {
+		margin: var(--space-4) 0 0;
+		padding-left: 1.2rem;
+		font-size: var(--fs-sm);
+		color: var(--text-muted);
+	}
+	.rsm-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--fs-sm);
+	}
+	.rsm-table th,
+	.rsm-table td {
+		padding: 0.45rem 0.5rem;
+		text-align: left;
+		vertical-align: top;
+		overflow-wrap: anywhere;
+	}
+	.rsm-table td.num {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+	.rsm-table code {
+		font-family: var(--font-mono);
+		font-size: var(--fs-xs);
+		overflow-wrap: anywhere;
+	}
+	.rsm-detail td {
+		padding-top: 0;
+	}
+	.rsm-detail details {
+		font-size: var(--fs-sm);
+	}
+	.rsm-detail summary {
+		cursor: pointer;
+		font-weight: 600;
+		padding: 0.25rem 0;
+	}
+	.rsm-detail p {
+		margin: var(--space-2) 0;
+		max-width: 65ch;
+	}
+	.rsm-detail .tool-output {
+		margin-top: var(--space-2);
+	}
+	.rsm-risk {
+		display: inline-block;
+		font-weight: 700;
+		font-size: var(--fs-xs);
+		padding: 0.1rem 0.45rem;
+		border: 1px solid currentColor;
+		border-radius: var(--radius-sm);
+		white-space: nowrap;
+	}
+	.rsm-risk-high,
+	.rsm-risk-medium {
+		color: var(--dg-hazard);
+	}
+	.rsm-risk-low {
+		color: var(--dg-accent);
+	}
+	.rsm-risk-info {
+		color: var(--text-muted);
+	}
+	.rsm-limits {
+		max-width: 65ch;
+	}
+</style>
