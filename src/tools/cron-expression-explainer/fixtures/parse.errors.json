@@ -1,0 +1,19 @@
+[
+  { "input": "", "field": 0, "column": 1, "message": "Enter a cron expression, such as 0 3 * * *." },
+  { "input": "0 25 * * *", "field": 2, "column": 3, "message": "Field 2 (hour): 25 is out of range 0–23" },
+  { "input": "60 * * * *", "field": 1, "column": 1, "message": "Field 1 (minute): 60 is out of range 0–59" },
+  { "input": "0 0 32 * *", "field": 3, "column": 5, "message": "Field 3 (day of month): 32 is out of range 1–31" },
+  { "input": "0 0 * 13 *", "field": 4, "column": 7, "message": "Field 4 (month): 13 is out of range 1–12" },
+  { "input": "0 0 * * 8", "field": 5, "column": 9, "message": "Field 5 (day of week): 8 is out of range 0–7" },
+  { "input": "0 0 * *", "field": 0, "column": 8, "message": "Expected 5 fields (minute hour day-of-month month day-of-week) or 6 with seconds first, found 4" },
+  { "input": "5-1 * * * *", "field": 1, "column": 1, "message": "Field 1 (minute): range 5-1 runs backwards" },
+  { "input": "*/0 * * * *", "field": 1, "column": 3, "message": "Field 1 (minute): step \"0\" must be a whole number of at least 1" },
+  { "input": "0 0 * * MON#2", "field": 5, "column": 9, "message": "Field 5 (day of week): \"MON#2\" uses nth weekday (#). This is a Fugit extension, not evaluated by this tool" },
+  { "input": "0 0 L * *", "field": 3, "column": 5, "message": "Field 3 (day of month): \"L\" uses last day (L). This is a Fugit extension, not evaluated by this tool" },
+  { "input": "0 5 * * * Mars/Olympus", "field": 0, "column": 11, "message": "Unknown time zone \"Mars/Olympus\"" },
+  { "input": "@fortnightly", "field": 0, "column": 1, "message": "Unknown macro \"@fortnightly\". Use one of @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly." },
+  { "input": "0 0 * * FOO", "field": 5, "column": 9, "message": "Field 5 (day of week): \"FOO\" is not a number or a day name such as MON" },
+  { "input": "0 0 1,,5 * *", "field": 3, "column": 7, "message": "Field 3 (day of month): empty list item" },
+  { "input": "60 0 * * * *", "field": 1, "column": 1, "message": "Field 1 (second): 60 is out of range 0–59" },
+  { "input": "0 0 25 * * *", "field": 3, "column": 5, "message": "Field 3 (hour): 25 is out of range 0–23" }
+]
