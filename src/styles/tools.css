@@ -42,11 +42,12 @@ a.tool-badge:hover { border-color: var(--text-faint); color: var(--text); }
 .tool-surface[data-state='ok'] .tool-faceplate .dot { background: var(--dg-accent); }
 .tool-surface[data-state='risk'] .tool-faceplate .dot,
 .tool-surface[data-state='error'] .tool-faceplate .dot { background: var(--dg-hazard); }
-.tool-body { padding: var(--space-5) var(--space-6) var(--space-6); }
+.tool-body { padding: var(--space-5) var(--space-6) var(--space-6); min-width: 0; }
 
 /* ---- Fields ---------------------------------------------------------------- */
-.tool-fields { display: grid; grid-template-columns: 1fr; column-gap: var(--space-10); }
-@media (min-width: 720px) { .tool-fields.two-col { grid-template-columns: 1fr 1fr; } }
+/* minmax(0, 1fr): a track never grows past its container, so long content wraps or scrolls instead of being clipped by the surface. */
+.tool-fields { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--space-10); }
+@media (min-width: 720px) { .tool-fields.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .tool-field {
 	display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
 	padding: var(--space-3) 0; border-bottom: 1px solid var(--border);
