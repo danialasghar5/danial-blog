@@ -242,7 +242,10 @@ export function delayRange(s: Settings, k: number): Range {
 	}
 	const count = k - 1;
 	const [a, p, b] = s.engine === 'sidekiq' ? [1, 4, 15] : [s.a, s.p, s.b];
-	const base = a * count ** p + b;
+	// Sidekiq calls rv.to_i and only uses a custom value when it is > 0; otherwise it
+	// falls back to the default count**4 + 15 (job_retry.rb delay_for).
+	const custom = Math.trunc(a * count ** p + b);
+	const base = s.engine === 'sidekiq' || custom <= 0 ? count ** 4 + 15 : custom;
 	const jit =
 		s.version === '7.x'
 			? { expected: 4.5 * (count + 1), max: 9 * (count + 1) }

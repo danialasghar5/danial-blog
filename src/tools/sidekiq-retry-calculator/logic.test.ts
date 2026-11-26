@@ -239,3 +239,13 @@ test('Active Job attempts 1 allows no retries', () => {
 	assert.equal(rep.schedule.retries, 0);
 	assert.match(rep.verdict, /re-raised at once/);
 });
+
+test('custom sidekiq_retry_in mirrors Sidekiq: to_i truncation, fallback to default when <= 0', () => {
+	const custom = { ...DEFAULTS, engine: 'custom' as const, version: '8.x' as const };
+	// a·count^p + b = 0.5·1^1 + 10.9 = 11.4 → to_i → 11 (count = 1 is the 2nd retry)
+	assert.equal(delayRange({ ...custom, a: 0.5, p: 1, b: 10.9 }, 2).min, 11);
+	// 0 → Sidekiq ignores it and uses count**4 + 15 (count = 2 → 31)
+	assert.equal(delayRange({ ...custom, a: 0, p: 1, b: 0 }, 3).min, 31);
+	// a positive custom value is used as-is
+	assert.equal(delayRange({ ...custom, a: 0, p: 1, b: 60 }, 3).min, 60);
+});
